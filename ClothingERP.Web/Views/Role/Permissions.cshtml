@@ -1,0 +1,208 @@
+﻿@model List<RolePermissionDto>
+@{
+    ViewData["Title"] = "Role Permissions";
+    var role = (RoleDto)ViewBag.Role;
+    var perms = new[] { "View","Insert","Update","Delete","Print","Export" };
+    var permColors = new Dictionary<string,string> {
+        ["View"]="primary",["Insert"]="success",["Update"]="warning",
+        ["Delete"]="danger",["Print"]="info",["Export"]="secondary"
+    };
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-key me-2 text-primary"></i>Permissions — <span class="text-primary">@role.Name</span></h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Roles</a></li>
+            <li class="breadcrumb-item active">Permissions</li>
+        </ol></nav>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success px-4" onclick="savePermissions(@role.Id)">
+            <i class="bi bi-cloud-check me-1"></i>Save Permissions
+        </button>
+        <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3 d-flex align-items-center gap-3 flex-wrap">
+        <span class="text-muted small fw-semibold">Quick Select:</span>
+        <button class="btn btn-sm btn-success" onclick="selectAll(true)">
+            <i class="bi bi-check-all me-1"></i>Grant All
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="selectAll(false)">
+            <i class="bi bi-x-lg me-1"></i>Revoke All
+        </button>
+        @foreach (var p in perms)
+        {
+            <button class="btn btn-sm btn-outline-@permColors[p]" onclick="selectColumn('@p', true)">
+                All @p
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Permissions Matrix -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="permTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4" style="min-width:200px;">Module</th>
+                        @foreach (var p in perms)
+                        {
+                            <th class="text-center" style="width:90px;">
+                                <div class="d-flex flex-column align-items-center gap-1">
+                                    <span class="badge bg-@permColors[p] rounded-pill px-2">@p</span>
+                                    <div class="form-check mb-0" title="Select all @p">
+                                        <input type="checkbox" class="form-check-input col-header"
+                                               data-col="@p" onchange="selectColumn('@p', this.checked)"
+                                               style="cursor:pointer;" />
+                                    </div>
+                                </div>
+                            </th>
+                        }
+                        <th class="text-center" style="width:70px;">
+                            <div class="d-flex flex-column align-items-center gap-1">
+                                <span class="small text-white-50">All</span>
+                                <input type="checkbox" class="form-check-input" onchange="selectAll(this.checked)" style="cursor:pointer;" />
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var perm in Model)
+                    {
+                        <tr data-module="@perm.ModuleId" class="perm-row">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi @(perm.ModuleIcon ?? "bi-circle") text-primary" style="width:18px;text-align:center;"></i>
+                                    <span class="fw-semibold small">@perm.ModuleName</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input perm perm-View"
+                                       @(perm.CanView ? "checked" : "") style="cursor:pointer;" />
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input perm perm-Insert"
+                                       @(perm.CanInsert ? "checked" : "") style="cursor:pointer;" />
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input perm perm-Update"
+                                       @(perm.CanUpdate ? "checked" : "") style="cursor:pointer;" />
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input perm perm-Delete"
+                                       @(perm.CanDelete ? "checked" : "") style="cursor:pointer;" />
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input perm perm-Print"
+                                       @(perm.CanPrint ? "checked" : "") style="cursor:pointer;" />
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input perm perm-Export"
+                                       @(perm.CanExport ? "checked" : "") style="cursor:pointer;" />
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input row-all" title="Select all for @perm.ModuleName"
+                                       onchange="selectRow(this)" data-row="@perm.ModuleId" style="cursor:pointer;" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Save Footer -->
+<div class="d-flex justify-content-end mt-3">
+    <button class="btn btn-success px-5" onclick="savePermissions(@role.Id)">
+        <i class="bi bi-cloud-check me-2"></i>Save Permissions
+    </button>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+// ── Row / Column / All Toggles ──────────────────────────────────────────
+function selectRow(cb) {
+    const row = cb.closest('tr');
+    row.querySelectorAll('.perm').forEach(c => c.checked = cb.checked);
+}
+
+function selectColumn(colName, checked) {
+    document.querySelectorAll(`.perm-${colName}`).forEach(c => c.checked = checked);
+    const header = document.querySelector(`[data-col="${colName}"]`);
+    if (header) header.checked = checked;
+}
+
+function selectAll(checked) {
+    document.querySelectorAll('.perm, .row-all, .col-header').forEach(c => c.checked = checked);
+}
+
+// ── Auto-check row-all when all row perms are checked ───────────────────
+document.querySelectorAll('.perm').forEach(cb => {
+    cb.addEventListener('change', function() {
+        const row     = this.closest('tr');
+        const rowAll  = row.querySelector('.row-all');
+        const perms   = row.querySelectorAll('.perm');
+        if (rowAll) rowAll.checked = [...perms].every(c => c.checked);
+    });
+});
+
+// ── Save via AJAX ────────────────────────────────────────────────────────
+function savePermissions(roleId) {
+    const permissions = [];
+
+    document.querySelectorAll('#permTable tbody tr[data-module]').forEach(row => {
+        const moduleId = parseInt(row.dataset.module);
+        permissions.push({
+            moduleId,
+            canView:   row.querySelector('.perm-View')?.checked   ?? false,
+            canInsert: row.querySelector('.perm-Insert')?.checked ?? false,
+            canUpdate: row.querySelector('.perm-Update')?.checked ?? false,
+            canDelete: row.querySelector('.perm-Delete')?.checked ?? false,
+            canPrint:  row.querySelector('.perm-Print')?.checked  ?? false,
+            canExport: row.querySelector('.perm-Export')?.checked ?? false
+        });
+    });
+
+    const btn = event?.currentTarget;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...'; }
+
+    fetch(`/Role/SavePermissions/${roleId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type':            'application/json',
+            'RequestVerificationToken': document.querySelector('[name=__RequestVerificationToken]').value
+        },
+        body: JSON.stringify(permissions)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success(data.message ?? 'Permissions saved successfully!');
+        } else {
+            toastr.error(data.message ?? 'Failed to save permissions.');
+        }
+    })
+    .catch(() => toastr.error('Network error. Please try again.'))
+    .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-cloud-check me-2"></i>Save Permissions'; }
+    });
+}
+</script>
+
+<style>
+#permTable tbody tr:hover { background: #f8f9ff; }
+#permTable .form-check-input { width: 18px; height: 18px; }
+#permTable thead .form-check-input { width: 16px; height: 16px; border-color: rgba(255,255,255,.5); }
+</style>
+}

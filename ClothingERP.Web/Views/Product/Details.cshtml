@@ -1,0 +1,247 @@
+﻿@model ProductDto
+@{
+    ViewData["Title"] = "Product Details";
+    var sizes = (IEnumerable<SizeDto>)ViewBag.Sizes;
+    var colors = (IEnumerable<ColorDto>)ViewBag.Colors;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-box-seam me-2 text-primary"></i>@Model.Name</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Products</a></li>
+                <li class="breadcrumb-item active">Details</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i>Edit Product
+        </a>
+        <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Product Info -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 text-center">
+                @if (!string.IsNullOrEmpty(Model.ImagePath))
+                {
+                    <img src="@Model.ImagePath" class="rounded mb-3" style="max-width:100%;max-height:200px;object-fit:contain;" />
+                }
+                else
+                {
+                    <div class="mx-auto mb-3" style="width:100px;height:100px;background:#f0f2f5;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">
+                        <i class="bi bi-box text-secondary"></i>
+                    </div>
+                }
+                <h5 class="fw-bold">@Model.Name</h5>
+                <code class="d-block mb-2">@Model.SKU</code>
+                <span class="badge @(Model.IsActive ? "bg-success" : "bg-danger") rounded-pill px-3">
+                    @(Model.IsActive ? "Active" : "Inactive")
+                </span>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold">Product Information</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><td class="text-muted ps-3">Category</td><td class="fw-semibold">@Model.CategoryName</td></tr>
+                        <tr><td class="text-muted ps-3">Sub-Category</td><td class="fw-semibold">@Model.SubCategoryName</td></tr>
+                        <tr><td class="text-muted ps-3">Brand</td><td class="fw-semibold">@Model.BrandName</td></tr>
+                        <tr><td class="text-muted ps-3">Cost Price</td><td class="fw-semibold">৳@Model.CostPrice.ToString("N2")</td></tr>
+                        <tr><td class="text-muted ps-3">Retail Price</td><td class="fw-semibold text-success">৳@Model.RetailPrice.ToString("N2")</td></tr>
+                        <tr><td class="text-muted ps-3">Wholesale</td><td class="fw-semibold">৳@Model.WholesalePrice.ToString("N2")</td></tr>
+                        @if (Model.SpecialPrice.HasValue)
+                        {
+                            <tr><td class="text-muted ps-3">Special</td><td class="fw-semibold text-danger">৳@Model.SpecialPrice.Value.ToString("N2")</td></tr>
+                        }
+                        <tr><td class="text-muted ps-3">Tax Rate</td><td class="fw-semibold">@Model.TaxRate%</td></tr>
+                        <tr><td class="text-muted ps-3">Reorder Point</td><td class="fw-semibold">@Model.ReorderPoint pcs</td></tr>
+                        <tr><td class="text-muted ps-3">Variants</td><td><span class="badge bg-primary">@Model.Variants.Count</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Variants -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                <span class="fw-semibold">
+                    <i class="bi bi-layers me-2 text-primary"></i>Variants & Stock
+                    <span class="badge bg-primary ms-1">@Model.Variants.Count</span>
+                </span>
+                <button class="btn btn-sm btn-primary" onclick="openAddVariantModal()">
+                    <i class="bi bi-plus me-1"></i>Add Variant
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Size</th>
+                                <th>Color</th>
+                                <th>Barcode</th>
+                                <th class="text-end">Cost</th>
+                                <th class="text-end">Retail</th>
+                                <th class="text-center">Stock</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center" width="80">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var v in Model.Variants)
+                            {
+                                <tr id="variant-@v.Id">
+                                    <td class="ps-4"><span class="badge bg-secondary">@v.SizeName</span></td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width:18px;height:18px;border-radius:4px;background:@v.ColorHex;border:1px solid #dee2e6;"></div>
+                                            <span class="small">@v.ColorName</span>
+                                        </div>
+                                    </td>
+                                    <td><code style="font-size:.72rem;">@v.Barcode</code></td>
+                                    <td class="text-end small">৳@v.EffectiveCostPrice.ToString("N2")</td>
+                                    <td class="text-end small fw-semibold">৳@v.EffectiveRetailPrice.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill @(v.StockQuantity <= 0 ? "bg-danger" : v.StockQuantity <= Model.ReorderPoint ? "bg-warning text-dark" : "bg-success") bg-opacity-15 @(v.StockQuantity <= 0 ? "text-danger" : v.StockQuantity <= Model.ReorderPoint ? "text-warning" : "text-success")">
+                                            @v.StockQuantity.ToString("N0")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @(v.IsActive ? "bg-success" : "bg-danger") bg-opacity-10 @(v.IsActive ? "text-success" : "text-danger")">
+                                            @(v.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-light border" onclick="delVariant(@v.Id,'@v.SizeName - @v.ColorName')"
+                                                title="Delete Variant">
+                                            <i class="bi bi-trash text-danger"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <span class="fw-semibold"><i class="bi bi-card-text me-2 text-primary"></i>Description</span>
+                </div>
+                <div class="card-body p-4 text-muted">@Model.Description</div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add Variant Modal -->
+<div class="modal fade" id="addVariantModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-layers me-2"></i>Add New Variant</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Size <span class="text-danger">*</span></label>
+                        <select class="form-select select2" id="avSize">
+                            <option value="">— Select Size —</option>
+                            @foreach (var s in sizes.OrderBy(x => x.SortOrder))
+                            {
+                                <option value="@s.Id">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Color <span class="text-danger">*</span></label>
+                        <select class="form-select select2" id="avColor">
+                            <option value="">— Select Color —</option>
+                            @foreach (var c in colors.OrderBy(x => x.Name))
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Cost Override <small class="text-muted">(optional)</small></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">৳</span>
+                            <input type="number" id="avCost" class="form-control" step="0.01" placeholder="Default" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Retail Override <small class="text-muted">(optional)</small></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">৳</span>
+                            <input type="number" id="avRetail" class="form-control" step="0.01" placeholder="Default" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary px-4" onclick="submitAddVariant()">
+                    <i class="bi bi-plus me-1"></i>Add Variant
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        $(function() {
+            $('#avSize, #avColor').select2({ theme:'bootstrap-5', width:'100%', dropdownParent: $('#addVariantModal') });
+        });
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function openAddVariantModal() { new bootstrap.Modal('#addVariantModal').show(); }
+
+        function submitAddVariant() {
+            const sizeId  = $('#avSize').val();
+            const colorId = $('#avColor').val();
+            if (!sizeId || !colorId) { toastr.error('Select Size and Color.'); return; }
+
+            $.post('/Product/AddVariant', {
+                productId: @Model.Id, sizeId, colorId,
+                costPriceOverride: $('#avCost').val() || null,
+                retailPriceOverride: $('#avRetail').val() || null,
+                __RequestVerificationToken: tok()
+            }, d => {
+                if (d.success) {
+                    toastr.success(d.message);
+                    bootstrap.Modal.getInstance('#addVariantModal').hide();
+                    setTimeout(() => location.reload(), 700);
+                } else toastr.error(d.message);
+            });
+        }
+
+        function delVariant(id, name) {
+            Swal.fire({ title:'Delete Variant?', text:`Delete "${name}"? Stock data will also be removed.`,
+                icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
+            .then(r => { if (r.isConfirmed) {
+                $.post('/Product/DeleteVariant', { variantId: id, __RequestVerificationToken: tok() },
+                    d => { if (d.success) { $(`#variant-${id}`).fadeOut(); toastr.success(d.message); } else toastr.error(d.message); });
+            }});
+        }
+    </script>
+}

@@ -1,0 +1,236 @@
+﻿@{
+    ViewData["Title"] = "Sizes & Colors";
+    var sizes = (IEnumerable<SizeDto>)ViewBag.Sizes;
+    var colors = (IEnumerable<ColorDto>)ViewBag.Colors;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-palette me-2 text-primary"></i>Sizes & Colors</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Attributes</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- ── Sizes ──────────────────────────────────────────────────────────── -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                <span class="fw-semibold">
+                    <i class="bi bi-rulers me-2 text-primary"></i>Sizes
+                    <span class="badge bg-primary ms-1">@sizes.Count()</span>
+                </span>
+                <button class="btn btn-sm btn-primary" onclick="openSizeModal()">
+                    <i class="bi bi-plus me-1"></i>Add Size
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Size</th>
+                            <th class="text-center">Order</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center" width="90">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in sizes.OrderBy(x => x.SortOrder))
+                        {
+                            <tr id="size-@s.Id" data-id="@s.Id" data-name="@s.Name" data-sort="@s.SortOrder">
+                                <td class="ps-4 fw-semibold">@s.Name</td>
+                                <td class="text-center text-muted small">@s.SortOrder</td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill @(s.IsActive ? "bg-success" : "bg-secondary") bg-opacity-15 @(s.IsActive ? "text-success" : "text-secondary") px-2">
+                                        @(s.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-light border me-1" onclick="openSizeModal(@s.Id,'@s.Name',@s.SortOrder)">
+                                        <i class="bi bi-pencil text-primary"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light border" onclick="delSize(@s.Id,'@s.Name')">
+                                        <i class="bi bi-trash text-danger"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Colors ─────────────────────────────────────────────────────────── -->
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                <span class="fw-semibold">
+                    <i class="bi bi-palette2 me-2 text-primary"></i>Colors
+                    <span class="badge bg-primary ms-1">@colors.Count()</span>
+                </span>
+                <button class="btn btn-sm btn-primary" onclick="openColorModal()">
+                    <i class="bi bi-plus me-1"></i>Add Color
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Color</th>
+                            <th>Hex Code</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center" width="90">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in colors.OrderBy(x => x.Name))
+                        {
+                            <tr id="color-@c.Id">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width:24px;height:24px;border-radius:6px;background:@c.HexCode;border:1px solid #dee2e6;"></div>
+                                        <span class="fw-semibold small">@c.Name</span>
+                                    </div>
+                                </td>
+                                <td><code class="small">@c.HexCode</code></td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill @(c.IsActive ? "bg-success" : "bg-secondary") bg-opacity-15 @(c.IsActive ? "text-success" : "text-secondary") px-2">
+                                        @(c.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-light border me-1"
+                                            onclick="openColorModal(@c.Id,'@c.Name','@c.HexCode')">
+                                        <i class="bi bi-pencil text-primary"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light border" onclick="delColor(@c.Id,'@c.Name')">
+                                        <i class="bi bi-trash text-danger"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Size Modal -->
+<div class="modal fade" id="sizeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold" id="sizeMTitle">Add Size</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="sId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Size Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="sName" placeholder="e.g. S, M, L, XL" />
+                </div>
+                <div class="mb-1">
+                    <label class="form-label fw-semibold">Sort Order</label>
+                    <input type="number" class="form-control" id="sSort" value="0" min="0" />
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary px-4" onclick="saveSize()"><i class="bi bi-check-lg me-1"></i>Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Color Modal -->
+<div class="modal fade" id="colorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold" id="colorMTitle">Add Color</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Color Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="cName" placeholder="e.g. Sky Blue, Crimson Red" />
+                </div>
+                <div class="mb-1">
+                    <label class="form-label fw-semibold">Hex Code <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="color" class="form-control form-control-color" id="cHexPicker" value="#000000"
+                               oninput="$('#cHex').val(this.value)" style="width:50px;" />
+                        <input type="text" class="form-control" id="cHex" placeholder="#000000" maxlength="7"
+                               oninput="$('#cHexPicker').val(this.value)" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary px-4" onclick="saveColor()"><i class="bi bi-check-lg me-1"></i>Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function openSizeModal(id, name, sort) {
+            $('#sizeMTitle').text(id ? 'Edit Size' : 'Add Size');
+            $('#sId').val(id || ''); $('#sName').val(name || ''); $('#sSort').val(sort || 0);
+            new bootstrap.Modal('#sizeModal').show();
+        }
+
+        function saveSize() {
+            const id = $('#sId').val();
+            if (!$('#sName').val().trim()) { toastr.error('Name required.'); return; }
+            $.post(id ? `/Attribute/EditSize/${id}` : '/Attribute/CreateSize',
+                { Name: $('#sName').val(), SortOrder: $('#sSort').val(), __RequestVerificationToken: tok() },
+                d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
+        }
+
+        function delSize(id, name) {
+            Swal.fire({ title:'Delete?', text:`Delete size "${name}"?`, icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
+            .then(r => { if (r.isConfirmed)
+                $.post('/Attribute/DeleteSize', { id, __RequestVerificationToken: tok() },
+                    d => { if (d.success) { $(`#size-${id}`).fadeOut(); toastr.success(d.message); } else toastr.error(d.message); });
+            });
+        }
+
+        function openColorModal(id, name, hex) {
+            $('#colorMTitle').text(id ? 'Edit Color' : 'Add Color');
+            $('#cId').val(id || ''); $('#cName').val(name || '');
+            const h = hex || '#000000';
+            $('#cHex').val(h); $('#cHexPicker').val(h);
+            new bootstrap.Modal('#colorModal').show();
+        }
+
+        function saveColor() {
+            const id = $('#cId').val();
+            if (!$('#cName').val().trim() || !$('#cHex').val()) { toastr.error('Fill all fields.'); return; }
+            $.post(id ? `/Attribute/EditColor/${id}` : '/Attribute/CreateColor',
+                { Name: $('#cName').val(), HexCode: $('#cHex').val(), __RequestVerificationToken: tok() },
+                d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
+        }
+
+        function delColor(id, name) {
+            Swal.fire({ title:'Delete?', text:`Delete color "${name}"?`, icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
+            .then(r => { if (r.isConfirmed)
+                $.post('/Attribute/DeleteColor', { id, __RequestVerificationToken: tok() },
+                    d => { if (d.success) { $(`#color-${id}`).fadeOut(); toastr.success(d.message); } else toastr.error(d.message); });
+            });
+        }
+    </script>
+}

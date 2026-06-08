@@ -1,0 +1,310 @@
+﻿@model IEnumerable<StockListDto>
+@{
+    ViewData["Title"] = "Stock Management";
+    var categories = (IEnumerable<CategoryDto>)ViewBag.Categories;
+    var filter     = ViewBag.Filter as string;
+    var catId      = ViewBag.CategoryId as int?;
+    var items      = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-archive me-2 text-primary"></i>Stock Management</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active">Stock</li>
+        </ol></nav>
+    </div>
+    <a asp-action="Adjustment" class="btn btn-warning">
+        <i class="bi bi-sliders me-1"></i>Stock Adjustment
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md col-lg">
+        <a asp-action="Index" class="text-decoration-none">
+            <div class="stat-card h-100 @(string.IsNullOrEmpty(filter) && catId == null ? "border-start border-3 border-primary" : "")">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-wrap" style="background:#e8f0fe;"><i class="bi bi-archive" style="color:#4f7cff;"></i></div>
+                    <div><div class="text-muted small">Total Items</div><h4 class="mb-0 fw-bold">@ViewBag.TotalCount</h4></div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md col-lg">
+        <a asp-action="Index" asp-route-filter="in" class="text-decoration-none">
+            <div class="stat-card h-100 @(filter == "in" ? "border-start border-3 border-success" : "")">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-check-circle" style="color:#43a047;"></i></div>
+                    <div><div class="text-muted small">In Stock</div><h4 class="mb-0 fw-bold text-success">@ViewBag.InStock</h4></div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md col-lg">
+        <a asp-action="Index" asp-route-filter="low" class="text-decoration-none">
+            <div class="stat-card h-100 @(filter == "low" ? "border-start border-3 border-warning" : "")">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-wrap" style="background:#fff3e0;"><i class="bi bi-exclamation-triangle" style="color:#f57c00;"></i></div>
+                    <div><div class="text-muted small">Low Stock</div><h4 class="mb-0 fw-bold text-warning">@ViewBag.LowStock</h4></div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md col-lg">
+        <a asp-action="Index" asp-route-filter="out" class="text-decoration-none">
+            <div class="stat-card h-100 @(filter == "out" ? "border-start border-3 border-danger" : "")">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-x-circle" style="color:#e53935;"></i></div>
+                    <div><div class="text-muted small">Out of Stock</div><h4 class="mb-0 fw-bold text-danger">@ViewBag.OutOfStock</h4></div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-md col-lg">
+        <div class="stat-card h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#f3e5f5;"><i class="bi bi-cash-stack" style="color:#8e24aa;"></i></div>
+                <div><div class="text-muted small">Total Value</div><h4 class="mb-0 fw-bold">৳@ViewBag.TotalValue.ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Row -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap">
+        <i class="bi bi-funnel text-muted"></i>
+        <select id="filterCat" class="form-select form-select-sm" style="width:180px;"
+                onchange="filterByCategory(this.value)">
+            <option value="">All Categories</option>
+            @foreach (var c in categories)
+            {
+                @if(catId == c.Id)
+                {
+                    <option value="@c.Id" selected>@c.Name</option>
+                }
+                else
+                {
+                    <option value="@c.Id">@c.Name</option>
+                }
+            }
+        </select>
+        <div class="ms-auto d-flex gap-1">
+            <a asp-action="Index" class="btn btn-sm @(string.IsNullOrEmpty(filter) ? "btn-primary" : "btn-light border")">All</a>
+            <a asp-action="Index" asp-route-filter="in"  class="btn btn-sm @(filter=="in"  ? "btn-success" : "btn-light border")">In Stock</a>
+            <a asp-action="Index" asp-route-filter="low" class="btn btn-sm @(filter=="low" ? "btn-warning"  : "btn-light border")">Low Stock</a>
+            <a asp-action="Index" asp-route-filter="out" class="btn btn-sm @(filter=="out" ? "btn-danger"   : "btn-light border")">Out of Stock</a>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="stockTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>Product</th>
+                        <th>Variant</th>
+                        <th>Barcode</th>
+                        <th class="text-center" style="min-width:160px;">Stock Level</th>
+                        <th class="text-end">Value</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center" width="110">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int sn = 1; }
+                    @foreach (var s in items)
+                    {
+                        var pct = s.ReorderPoint > 0
+                            ? (int)Math.Min(s.Quantity / (s.ReorderPoint * 2) * 100, 100)
+                            : (s.Quantity > 0 ? 100 : 0);
+                        var barColor = s.Status == "Out of Stock" ? "danger"
+                                     : s.Status == "Low Stock"    ? "warning" : "success";
+
+                        <tr id="stock-@s.ProductVariantId">
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td>
+                                <div class="fw-semibold small">@s.ProductName</div>
+                                <code style="font-size:.7rem;">@s.ProductSKU</code>
+                                <div class="text-muted" style="font-size:.7rem;">@s.CategoryName</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-secondary">@s.SizeName</span>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <div style="width:14px;height:14px;border-radius:3px;background:@s.ColorName;border:1px solid #dee2e6;"></div>
+                                        <span class="small">@s.ColorName</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code style="font-size:.7rem;">@s.Barcode</code></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="fw-bold small @(s.Status == "Out of Stock" ? "text-danger" : s.Status == "Low Stock" ? "text-warning" : "text-success")">
+                                                @s.Quantity.ToString("N0") pcs
+                                            </span>
+                                            <span class="text-muted" style="font-size:.7rem;">Min: @s.ReorderPoint.ToString("N0")</span>
+                                        </div>
+                                        <div class="progress" style="height:6px;border-radius:3px;">
+                                            <div class="progress-bar bg-@barColor"
+                                                 style="width:@pct%;" role="progressbar"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end small fw-semibold">৳@s.StockValue.ToString("N0")</td>
+                            <td class="text-center">
+                                <span class="badge rounded-pill px-2
+                                    @(s.Status == "Out of Stock" ? "bg-danger"
+                                    : s.Status == "Low Stock"    ? "bg-warning text-dark"
+                                    : "bg-success")
+                                    bg-opacity-15
+                                    @(s.Status == "Out of Stock" ? "text-danger"
+                                    : s.Status == "Low Stock"    ? "text-warning"
+                                    : "text-success")">
+                                    @s.Status
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary me-1"
+                                        title="Quick Adjust"
+                                        onclick="openAdjust(@s.ProductVariantId, '@s.ProductName', '@s.SizeName', '@s.ColorName', @s.Quantity)">
+                                    <i class="bi bi-sliders"></i>
+                                </button>
+                                <a asp-action="Movements" asp-route-id="@s.ProductVariantId"
+                                   class="btn btn-sm btn-outline-secondary" title="Movement History">
+                                    <i class="bi bi-clock-history"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Adjust Modal -->
+<div class="modal fade" id="adjustModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-sliders me-2 text-warning"></i>Quick Stock Adjustment</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="rounded p-3 mb-3" style="background:#f8f9ff;">
+                    <div class="fw-semibold" id="adjProductName">—</div>
+                    <div class="text-muted small" id="adjVariantInfo">—</div>
+                    <div class="mt-2">
+                        <span class="text-muted small">Current Stock:</span>
+                        <span class="fw-bold ms-2 fs-5" id="adjCurrentQty">0</span>
+                        <span class="text-muted small">pcs</span>
+                    </div>
+                </div>
+
+                <input type="hidden" id="adjVariantId" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">New Quantity <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <button class="btn btn-light border" type="button" onclick="changeQty(-1)">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <input type="number" class="form-control text-center fw-bold" id="adjNewQty" min="0" step="1" />
+                        <button class="btn btn-light border" type="button" onclick="changeQty(1)">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                    <div class="d-flex gap-1 mt-1">
+                        @foreach (var n in new[] { 0, 5, 10, 20, 50 })
+                        {
+                            <button class="btn btn-sm btn-light border" type="button" onclick="$('#adjNewQty').val(@n)">@n</button>
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-1">
+                    <label class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+                    <select class="form-select mb-2" id="adjReasonSelect" onchange="if(this.value) $('#adjReason').val(this.value)">
+                        <option value="">— Select quick reason —</option>
+                        <option>Physical count correction</option>
+                        <option>Damaged goods write-off</option>
+                        <option>Opening balance entry</option>
+                        <option>Transfer from other branch</option>
+                        <option>Found during audit</option>
+                    </select>
+                    <textarea class="form-control" id="adjReason" rows="2" placeholder="Enter reason for adjustment..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-warning px-4" onclick="submitAdjust()">
+                    <i class="bi bi-check-lg me-1"></i>Apply Adjustment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+$(function() { initDataTable('#stockTable', { order: [[6, 'asc']] }); });
+
+function filterByCategory(catId) {
+    const filter = '@filter';
+    const url = catId ? `/Stock/Index?filter=${filter}&categoryId=${catId}` : `/Stock/Index?filter=${filter}`;
+    window.location.href = url;
+}
+
+// ── Quick Adjust ──────────────────────────────────────────────────────────
+function openAdjust(variantId, productName, size, color, currentQty) {
+    $('#adjVariantId').val(variantId);
+    $('#adjProductName').text(productName);
+    $('#adjVariantInfo').text(`${size} / ${color}`);
+    $('#adjCurrentQty').text(currentQty);
+    $('#adjNewQty').val(currentQty);
+    $('#adjReason').val('');
+    $('#adjReasonSelect').val('');
+    new bootstrap.Modal('#adjustModal').show();
+    setTimeout(() => $('#adjNewQty').focus().select(), 400);
+}
+
+function changeQty(delta) {
+    const val = parseInt($('#adjNewQty').val()) || 0;
+    $('#adjNewQty').val(Math.max(0, val + delta));
+}
+
+function submitAdjust() {
+    const variantId = $('#adjVariantId').val();
+    const newQty    = $('#adjNewQty').val();
+    const reason    = $('#adjReason').val().trim();
+
+    if (!newQty && newQty !== '0') { toastr.error('Enter new quantity.'); return; }
+    if (!reason) { toastr.error('Reason is required.'); return; }
+
+    $.post('/Stock/Adjust', {
+        ProductVariantId: variantId,
+        NewQuantity: newQty,
+        Reason: reason,
+        __RequestVerificationToken: $('[name=__RequestVerificationToken]').val()
+    }, d => {
+        if (d.success) {
+            toastr.success(d.message);
+            bootstrap.Modal.getInstance('#adjustModal').hide();
+            setTimeout(() => location.reload(), 800);
+        } else toastr.error(d.message);
+    });
+}
+</script>
+}

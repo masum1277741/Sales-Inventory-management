@@ -1,0 +1,860 @@
+﻿@{ Layout = null; ViewData["Title"] = "POS"; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>POS — Clothing ERP</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: #eef0f4; }
+
+        /* ── POS Layout ── */
+        .pos-wrapper { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Header */
+        .pos-header {
+            height: 54px; background: #1a1d23; display: flex; align-items: center;
+            padding: 0 16px; gap: 12px; flex-shrink: 0;
+        }
+        .pos-header .brand { color: #fff; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 6px; }
+        .pos-header .brand i { color: #4f7cff; }
+        .pos-search { flex: 1; max-width: 420px; }
+        .pos-search input { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+                            color: #fff; border-radius: 8px; padding: 6px 12px; width: 100%; font-size: .9rem; }
+        .pos-search input::placeholder { color: rgba(255,255,255,.5); }
+        .pos-search input:focus { outline: none; background: rgba(255,255,255,.15); border-color: #4f7cff; }
+        .pos-header .user-info { margin-left: auto; color: rgba(255,255,255,.7); font-size: .8rem; display: flex; align-items: center; gap: 8px; }
+
+        /* Body */
+        .pos-body { flex: 1; display: flex; gap: 10px; padding: 10px; overflow: hidden; min-height: 0; }
+
+        /* Left Panel */
+        .pos-left { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+
+        /* Center Panel */
+        .pos-center { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow: hidden; }
+
+        /* Right Panel */
+        .pos-right { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+
+        /* Cards */
+        .pos-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+        .pos-card-header { padding: 10px 14px; border-bottom: 1px solid #f0f2f5; font-weight: 600; font-size: .82rem; color: #555; display: flex; align-items: center; justify-content: space-between; }
+
+        /* Search Results */
+        .search-results { flex: 1; overflow-y: auto; }
+        .search-item { padding: 8px 14px; border-bottom: 1px solid #f7f8fc; cursor: pointer; transition: background .15s; }
+        .search-item:hover { background: #f0f4ff; }
+        .search-item .name { font-weight: 600; font-size: .82rem; }
+        .search-item .meta { font-size: .72rem; color: #888; }
+        .search-item .price { font-weight: 700; color: #4f7cff; font-size: .85rem; }
+        .search-item .stock-badge { font-size: .65rem; padding: 2px 6px; border-radius: 10px; }
+
+        /* Cart */
+        .cart-container { flex: 1; overflow-y: auto; }
+        .cart-table { width: 100%; border-collapse: collapse; }
+        .cart-table th { font-size: .72rem; text-transform: uppercase; color: #999; padding: 6px 8px; background: #f8f9fb; border-bottom: 1px solid #eee; font-weight: 600; }
+        .cart-table td { padding: 6px 8px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        .cart-table tr:last-child td { border-bottom: none; }
+        .cart-table .product-name { font-weight: 600; font-size: .82rem; }
+        .cart-table .product-meta { font-size: .7rem; color: #888; }
+        .qty-input { width: 50px; text-align: center; border: 1px solid #dee2e6; border-radius: 6px; padding: 2px 4px; font-weight: 700; font-size: .85rem; }
+        .qty-btn { width: 22px; height: 22px; border-radius: 4px; border: none; background: #e8f0fe; color: #4f7cff; font-size: .8rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        .qty-btn:hover { background: #4f7cff; color: #fff; }
+        .remove-btn { width: 24px; height: 24px; border-radius: 50%; border: none; background: #fce4ec; color: #e53935; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
+        .remove-btn:hover { background: #e53935; color: #fff; }
+        .empty-cart { text-align: center; padding: 40px 20px; color: #bbb; }
+        .empty-cart i { font-size: 3rem; }
+
+        /* Customer Panel */
+        .customer-display { padding: 10px 14px; cursor: pointer; border-radius: 0 0 12px 12px; }
+        .customer-display:hover { background: #f8f9fb; }
+
+        /* Totals */
+        .totals-row { display: flex; justify-content: space-between; padding: 5px 14px; font-size: .85rem; }
+        .totals-row.grand { font-weight: 700; font-size: 1.1rem; color: #1a1d23; border-top: 2px solid #eef; padding-top: 8px; margin-top: 4px; }
+        .totals-row .label { color: #666; }
+        .totals-row .value { font-weight: 600; }
+
+        /* Payment Methods */
+        .pay-method-tab { border: none; background: transparent; padding: 6px 12px; border-radius: 8px; font-size: .8rem; font-weight: 600; color: #888; cursor: pointer; transition: all .15s; }
+        .pay-method-tab.active { background: #e8f0fe; color: #4f7cff; }
+        .pay-method-tab:hover:not(.active) { background: #f0f2f5; }
+
+        /* Checkout Button */
+        .btn-checkout { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 12px; border: none;
+                        background: linear-gradient(135deg, #4f7cff, #764ba2); color: #fff; cursor: pointer; transition: opacity .2s; }
+        .btn-checkout:hover { opacity: .9; }
+        .btn-checkout:disabled { opacity: .6; cursor: not-allowed; }
+
+        /* Receipt Modal */
+        .receipt-header { text-align: center; padding: 20px; border-bottom: 2px dashed #eee; }
+        .receipt-item { display: flex; justify-content: space-between; padding: 3px 0; font-size: .85rem; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+        /* Held badge */
+        .held-badge { position: absolute; top: -6px; right: -6px; background: #e53935; color: #fff; border-radius: 50%; width: 18px; height: 18px; font-size: .6rem; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    </style>
+</head>
+<body>
+<div class="pos-wrapper">
+
+    <!-- ══ Header ═══════════════════════════════════════════════════════════ -->
+    <header class="pos-header">
+        <div class="brand"><i class="bi bi-bag-heart-fill"></i> Clothing ERP — POS</div>
+
+        <div class="pos-search position-relative">
+            <input type="text" id="globalSearch" placeholder="&#xF52A; Scan barcode or type product name..."
+                   autocomplete="off" />
+            <div id="searchDropdown"
+                 class="position-absolute w-100 bg-white rounded shadow border"
+                 style="top:calc(100% + 4px);z-index:9999;max-height:300px;overflow-y:auto;display:none;"></div>
+        </div>
+
+        <div class="user-info ms-auto">
+            <span><i class="bi bi-calendar3 me-1"></i><span id="posDate"></span></span>
+            <span><i class="bi bi-person-circle me-1"></i>@User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value</span>
+            <a href="/Sales" class="btn btn-sm btn-outline-light" style="font-size:.75rem;">
+                <i class="bi bi-list-ul me-1"></i>History
+            </a>
+            <a href="/Dashboard" class="btn btn-sm btn-outline-light" style="font-size:.75rem;">
+                <i class="bi bi-house"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- ══ Body ══════════════════════════════════════════════════════════════ -->
+    <div class="pos-body">
+
+        <!-- ── Left Panel: Search Results / Categories ────────────────────── -->
+        <div class="pos-left">
+            <div class="pos-card d-flex flex-column" style="flex:1;overflow:hidden;">
+                <div class="pos-card-header">
+                    <span><i class="bi bi-grid me-1 text-primary"></i>Products</span>
+                    <span class="text-muted small" id="searchResultCount">0 results</span>
+                </div>
+                <div class="search-results" id="searchResultsList">
+                    <div class="empty-cart pt-4">
+                        <i class="bi bi-search d-block mb-2" style="font-size:2rem;"></i>
+                        <p class="small">Scan or type to search</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hold List Button -->
+            <div class="pos-card">
+                <div class="d-grid p-2 gap-2">
+                    <button class="btn btn-outline-warning position-relative" onclick="showHeldInvoices()">
+                        <i class="bi bi-pause-circle me-1"></i>Held Invoices
+                        <span id="heldBadge" class="held-badge" style="display:none;">0</span>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="clearCart()">
+                        <i class="bi bi-trash me-1"></i>Clear Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Center Panel: Cart ──────────────────────────────────────────── -->
+        <div class="pos-center">
+            <div class="pos-card d-flex flex-column" style="flex:1;overflow:hidden;">
+                <div class="pos-card-header">
+                    <span><i class="bi bi-cart3 me-1 text-primary"></i>Cart
+                        <span class="badge bg-primary ms-1" id="cartCount">0</span>
+                    </span>
+                    <span class="text-muted small" id="cartItemsCount">0 items</span>
+                </div>
+                <div class="cart-container px-2">
+                    <table class="cart-table" id="cartTable">
+                        <thead>
+                            <tr>
+                                <th style="width:40%">Product</th>
+                                <th class="text-center" style="width:18%">Qty</th>
+                                <th class="text-right" style="width:18%">Price</th>
+                                <th class="text-right" style="width:16%">Total</th>
+                                <th style="width:8%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartBody">
+                            <tr id="emptyCartRow">
+                                <td colspan="5">
+                                    <div class="empty-cart">
+                                        <i class="bi bi-cart-x d-block"></i>
+                                        <p class="mt-2 small">Cart is empty</p>
+                                        <p class="text-muted" style="font-size:.75rem;">Scan barcode or search products</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Discount & Notes -->
+            <div class="pos-card">
+                <div class="d-flex gap-2 p-2">
+                    <div class="input-group input-group-sm" style="max-width:200px;">
+                        <span class="input-group-text bg-light">Discount ৳</span>
+                        <input type="number" class="form-control" id="globalDiscount" value="0" min="0" step="1"
+                               oninput="recalculate()" />
+                    </div>
+                    <div class="input-group input-group-sm" style="max-width:200px;">
+                        <span class="input-group-text bg-light">Tax ৳</span>
+                        <input type="number" class="form-control" id="globalTax" value="0" min="0" step="1"
+                               oninput="recalculate()" />
+                    </div>
+                    <input type="text" class="form-control form-control-sm" id="cartNotes" placeholder="Notes..." />
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Right Panel: Payment ────────────────────────────────────────── -->
+        <div class="pos-right">
+
+            <!-- Customer -->
+            <div class="pos-card">
+                <div class="pos-card-header">
+                    <span><i class="bi bi-person me-1 text-primary"></i>Customer</span>
+                    <button class="btn btn-sm btn-light border" onclick="clearCustomer()" id="clearCustomerBtn" style="display:none;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="customer-display" id="customerDisplay" onclick="openCustomerSearch()">
+                    <div id="customerName" class="fw-semibold small text-muted">
+                        <i class="bi bi-plus-circle me-1"></i>Select Customer (Walk-in)
+                    </div>
+                    <div id="customerInfo" class="text-muted" style="font-size:.72rem;display:none;"></div>
+                </div>
+                <input type="hidden" id="customerId" />
+                <div id="customerSearchBox" class="px-2 pb-2" style="display:none;">
+                    <div class="position-relative">
+                        <input type="text" class="form-control form-control-sm" id="customerSearchInput"
+                               placeholder="Name or Phone..." oninput="searchCustomer(this.value)"
+                               autocomplete="off" />
+                        <div id="customerDropdown"
+                             class="position-absolute w-100 bg-white border rounded shadow-sm"
+                             style="z-index:9999;max-height:200px;overflow-y:auto;display:none;top:100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Totals -->
+            <div class="pos-card py-2">
+                <div class="totals-row"><span class="label">Subtotal</span><span class="value" id="totSubtotal">৳0.00</span></div>
+                <div class="totals-row"><span class="label text-warning">Discount</span><span class="value text-warning" id="totDiscount">৳0.00</span></div>
+                <div class="totals-row"><span class="label">Tax</span><span class="value" id="totTax">৳0.00</span></div>
+                <div class="totals-row grand"><span>TOTAL</span><span id="totTotal">৳0.00</span></div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="pos-card" style="flex:1;display:flex;flex-direction:column;">
+                <div class="pos-card-header">
+                    <span><i class="bi bi-credit-card me-1 text-primary"></i>Payment</span>
+                    <div class="d-flex gap-1">
+                        @foreach (var (label, val) in new[] { ("Cash",1), ("Card",5), ("Mobile",4) })
+                        {
+                            <button class="pay-method-tab @(label == "Cash" ? "active" : "")"
+                                    data-method="@val" onclick="setPayMethod(@val, this)">@label</button>
+                        }
+                    </div>
+                </div>
+
+                <div class="p-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Amount Received</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light fw-bold">৳</span>
+                            <input type="number" class="form-control fw-bold fs-5 text-end" id="payAmount"
+                                   min="0" step="0.01" oninput="calcChange()" placeholder="0.00" />
+                        </div>
+                        <!-- Quick amount buttons -->
+                        <div class="d-flex gap-1 mt-2 flex-wrap" id="quickAmounts"></div>
+                    </div>
+
+                    <div class="mb-3 rounded p-2" style="background:#f8f9fb;">
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted">Received</span>
+                            <span class="fw-bold" id="payReceived">৳0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted">Change</span>
+                            <span class="fw-bold text-success" id="payChange">৳0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Multi-payment list -->
+                    <div id="multiPayList" style="display:none;max-height:80px;overflow-y:auto;" class="mb-2"></div>
+                    <button class="btn btn-sm btn-outline-secondary w-100 mb-2" onclick="addMultiPayment()" id="addPayBtn">
+                        <i class="bi bi-plus me-1"></i>Add Payment
+                    </button>
+
+                    <!-- Credit Sale Toggle -->
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="isCreditSale" onchange="toggleCredit(this.checked)" />
+                        <label class="form-check-label small fw-semibold" for="isCreditSale">Credit Sale</label>
+                    </div>
+                </div>
+
+                <div class="mt-auto p-3 pt-0 d-grid gap-2">
+                    <button class="btn-checkout" id="checkoutBtn" onclick="checkout()">
+                        <i class="bi bi-check-circle me-2"></i>Checkout
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="holdCart()">
+                        <i class="bi bi-pause-circle me-1"></i>Hold Invoice
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Receipt Modal ════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="receiptModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-0">
+                <div class="receipt-header" style="background:linear-gradient(135deg,#4f7cff,#764ba2);color:#fff;">
+                    <div style="font-size:2rem;"><i class="bi bi-check-circle-fill"></i></div>
+                    <h5 class="fw-bold mt-2 mb-0">Sale Successful!</h5>
+                    <p class="small opacity-75 mb-0" id="rcpInvoiceNum">—</p>
+                </div>
+                <div class="p-4">
+                    <div class="receipt-item"><span class="text-muted">Total</span><span class="fw-bold" id="rcpTotal"></span></div>
+                    <div class="receipt-item"><span class="text-muted">Paid</span><span class="fw-bold text-success" id="rcpPaid"></span></div>
+                    <div class="receipt-item" id="rcpChangeRow"><span class="text-muted">Change</span><span class="fw-bold text-primary" id="rcpChange"></span></div>
+                    <div class="receipt-item" id="rcpDueRow" style="display:none;"><span class="text-muted">Due</span><span class="fw-bold text-danger" id="rcpDue"></span></div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 gap-2">
+                <a id="rcpPrintBtn" href="#" target="_blank" class="btn btn-outline-primary">
+                    <i class="bi bi-printer me-1"></i>Print
+                </a>
+                <button class="btn btn-success flex-fill" onclick="newSale()">
+                    <i class="bi bi-plus-circle me-1"></i>New Sale
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Held Invoices Modal ═══════════════════════════════════════════════════ -->
+<div class="modal fade" id="heldModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-pause-circle me-2 text-warning"></i>Held Invoices</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="heldInvoiceList">
+                <div class="text-center py-4 text-muted">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<script>
+// ══ State ══════════════════════════════════════════════════════════════════
+const state = {
+    items:      [],   // cart items
+    customerId: null,
+    isCredit:   false,
+    payMethod:  1,    // 1=Cash, 5=Card, 4=Mobile
+    payments:   [],   // multi-payment [{method, amount}]
+    heldInvoiceId: null // if resuming a held invoice
+};
+
+const tok = () => document.querySelector('[name=__RequestVerificationToken]').value;
+const fmt = v => '৳' + parseFloat(v || 0).toFixed(2);
+
+// ══ Init ═══════════════════════════════════════════════════════════════════
+document.getElementById('posDate').textContent = new Date().toLocaleDateString('en-BD', { weekday:'short', day:'numeric', month:'short' });
+
+toastr.options = { positionClass:'toast-top-right', timeOut:2000 };
+
+document.getElementById('globalSearch').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); doSearch(e.target.value.trim(), true); }
+});
+document.getElementById('globalSearch').addEventListener('input', e => {
+    const val = e.target.value.trim();
+    if (val.length >= 2) doSearch(val, false);
+    else { document.getElementById('searchDropdown').style.display = 'none'; showSearchResults([]); }
+});
+document.getElementById('globalSearch').focus();
+
+// Close dropdowns on outside click
+document.addEventListener('click', e => {
+    if (!e.target.closest('#globalSearch') && !e.target.closest('#searchDropdown'))
+        document.getElementById('searchDropdown').style.display = 'none';
+    if (!e.target.closest('#customerSearchInput') && !e.target.closest('#customerDropdown'))
+        document.getElementById('customerDropdown').style.display = 'none';
+});
+
+// ══ Search ════════════════════════════════════════════════════════════════
+let searchTimer;
+async function doSearch(val, isEnter) {
+    if (!val) return;
+    clearTimeout(searchTimer);
+
+    if (isEnter) {
+        // Try barcode first
+        const data = await fetch(`/Sales/SearchByBarcode?barcode=${encodeURIComponent(val)}`).then(r => r.json());
+        if (data) { addToCart(data); document.getElementById('globalSearch').value = ''; return; }
+    }
+
+    searchTimer = setTimeout(async () => {
+        const results = await fetch(`/Sales/SearchProducts?keyword=${encodeURIComponent(val)}`).then(r => r.json());
+        showSearchResults(results);
+        if (!isEnter) showSearchDropdown(results);
+    }, 200);
+}
+
+function showSearchDropdown(results) {
+    const dd = document.getElementById('searchDropdown');
+    if (!results.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = results.map(v => `
+        <div class="p-2 border-bottom" style="cursor:pointer;" onmousedown="event.preventDefault();selectProduct(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div style="font-weight:600;font-size:.82rem;">${v.productName}</div>
+                    <div style="font-size:.72rem;color:#888;">${v.sizeName} · ${v.colorName} · ${v.barcode}</div>
+                </div>
+                <div class="text-end">
+                    <div style="font-weight:700;color:#4f7cff;font-size:.85rem;">৳${v.retailPrice}</div>
+                    <div style="font-size:.65rem;" class="badge ${v.stock > 0 ? 'bg-success' : 'bg-danger'} bg-opacity-15 ${v.stock > 0 ? 'text-success' : 'text-danger'}">${v.stock} in stock</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    dd.style.display = 'block';
+}
+
+function showSearchResults(results) {
+    const container = document.getElementById('searchResultsList');
+    document.getElementById('searchResultCount').textContent = results.length + ' results';
+    if (!results.length) {
+        container.innerHTML = `<div class="empty-cart pt-4"><i class="bi bi-search d-block mb-2" style="font-size:2rem;"></i><p class="small">No products found</p></div>`;
+        return;
+    }
+    container.innerHTML = results.map(v => `
+        <div class="search-item" onclick="addToCart(${JSON.stringify(v).replace(/'/g,'\\\'').replace(/"/g,'&quot;')})">
+            <div class="d-flex justify-content-between align-items-start">
+                <div style="flex:1;min-width:0;">
+                    <div class="name text-truncate">${v.productName}</div>
+                    <div class="meta">
+                        <span class="badge bg-secondary" style="font-size:.6rem;">${v.sizeName}</span>
+                        <span style="margin-left:4px;">· ${v.colorName}</span>
+                    </div>
+                </div>
+                <div class="text-end ms-2">
+                    <div class="price">৳${v.retailPrice}</div>
+                    <div class="stock-badge badge ${v.stock > 0 ? 'bg-success bg-opacity-15 text-success' : 'bg-danger bg-opacity-15 text-danger'}">${v.stock}</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectProduct(v) {
+    addToCart(v);
+    document.getElementById('globalSearch').value = '';
+    document.getElementById('searchDropdown').style.display = 'none';
+    document.getElementById('globalSearch').focus();
+}
+
+// ══ Cart ══════════════════════════════════════════════════════════════════
+function addToCart(v) {
+    if (v.stock <= 0) { toastr.error('Out of stock: ' + v.productName); return; }
+
+    const existing = state.items.find(i => i.variantId === v.variantId);
+    if (existing) {
+        if (existing.qty >= v.stock) { toastr.warning('Max stock reached!'); return; }
+        existing.qty++;
+    } else {
+        state.items.push({
+            variantId: v.variantId, productName: v.productName,
+            sizeName: v.sizeName, colorName: v.colorName, colorHex: v.colorHex,
+            barcode: v.barcode, qty: 1, unitPrice: v.retailPrice,
+            costPrice: v.costPrice, discount: 0, stock: v.stock
+        });
+    }
+    renderCart();
+    document.getElementById('globalSearch').focus();
+}
+
+function removeFromCart(idx) { state.items.splice(idx, 1); renderCart(); }
+
+function setQty(idx, qty) {
+    const item = state.items[idx];
+    qty = Math.max(1, Math.min(parseInt(qty) || 1, item.stock));
+    item.qty = qty;
+    renderCart();
+}
+
+function renderCart() {
+    const tbody = document.getElementById('cartBody');
+    const empty = document.getElementById('emptyCartRow');
+
+    if (!state.items.length) {
+        tbody.innerHTML = '';
+        tbody.appendChild(empty);
+        empty.style.display = '';
+        document.getElementById('cartCount').textContent = '0';
+        document.getElementById('cartItemsCount').textContent = '0 items';
+        recalculate();
+        return;
+    }
+
+    empty.style.display = 'none';
+    tbody.innerHTML = state.items.map((item, i) => `
+        <tr>
+            <td>
+                <div class="product-name">${item.productName}</div>
+                <div class="product-meta d-flex gap-1 align-items-center">
+                    <span class="badge bg-secondary" style="font-size:.6rem;">${item.sizeName}</span>
+                    <div style="width:10px;height:10px;border-radius:2px;background:${item.colorHex || '#ccc'};border:1px solid #ddd;"></div>
+                    <span>${item.colorName}</span>
+                </div>
+            </td>
+            <td class="text-center">
+                <div class="d-flex align-items-center justify-content-center gap-1">
+                    <button class="qty-btn" onclick="setQty(${i}, ${item.qty - 1})">−</button>
+                    <input class="qty-input" type="number" value="${item.qty}" min="1" max="${item.stock}"
+                           onchange="setQty(${i}, this.value)" />
+                    <button class="qty-btn" onclick="setQty(${i}, ${item.qty + 1})">+</button>
+                </div>
+            </td>
+            <td class="text-end">
+                <input type="number" class="qty-input" style="width:65px;font-size:.8rem;"
+                       value="${item.unitPrice}" min="0" step="0.01"
+                       onchange="state.items[${i}].unitPrice=parseFloat(this.value)||0;recalculate();" />
+            </td>
+            <td class="text-end fw-bold" style="font-size:.85rem;">৳${(item.qty * item.unitPrice).toFixed(2)}</td>
+            <td class="text-center"><button class="remove-btn" onclick="removeFromCart(${i})"><i class="bi bi-x"></i></button></td>
+        </tr>
+    `).join('');
+
+    document.getElementById('cartCount').textContent = state.items.length;
+    document.getElementById('cartItemsCount').textContent = state.items.reduce((s, i) => s + i.qty, 0) + ' items';
+    recalculate();
+}
+
+// ══ Totals ════════════════════════════════════════════════════════════════
+function recalculate() {
+    const subtotal  = state.items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
+    const discount  = parseFloat(document.getElementById('globalDiscount').value) || 0;
+    const tax       = parseFloat(document.getElementById('globalTax').value)      || 0;
+    const total     = Math.max(0, subtotal - discount + tax);
+
+    document.getElementById('totSubtotal').textContent = fmt(subtotal);
+    document.getElementById('totDiscount').textContent = fmt(discount);
+    document.getElementById('totTax').textContent      = fmt(tax);
+    document.getElementById('totTotal').textContent    = fmt(total);
+
+    // Quick amount buttons
+    const quickAmts = [Math.ceil(total/10)*10, Math.ceil(total/50)*50, Math.ceil(total/100)*100, Math.ceil(total/500)*500].filter((v,i,a) => a.indexOf(v)===i && v > 0);
+    document.getElementById('quickAmounts').innerHTML = [total, ...quickAmts.slice(0,3)].map(v =>
+        `<button class="btn btn-sm btn-light border flex-fill" onclick="$('#payAmount').val(${v.toFixed(2)});calcChange();">৳${v.toFixed(0)}</button>`
+    ).join('');
+
+    calcChange();
+}
+
+function getTotal() {
+    const subtotal = state.items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
+    const discount = parseFloat(document.getElementById('globalDiscount').value) || 0;
+    const tax      = parseFloat(document.getElementById('globalTax').value)      || 0;
+    return Math.max(0, subtotal - discount + tax);
+}
+
+function calcChange() {
+    const total    = getTotal();
+    const received = parseFloat(document.getElementById('payAmount').value) || 0;
+    const change   = received - total;
+    document.getElementById('payReceived').textContent = fmt(received);
+    document.getElementById('payChange').textContent   = fmt(Math.max(0, change));
+    document.getElementById('payChange').className     = `fw-bold ${change >= 0 ? 'text-success' : 'text-danger'}`;
+}
+
+// ══ Payment Method ════════════════════════════════════════════════════════
+function setPayMethod(method, btn) {
+    state.payMethod = method;
+    document.querySelectorAll('.pay-method-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function toggleCredit(checked) {
+    state.isCredit = checked;
+    document.getElementById('payAmount').disabled = checked;
+    if (checked) document.getElementById('payAmount').value = '';
+}
+
+function addMultiPayment() {
+    const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+    if (!amount) { toastr.warning('Enter amount.'); return; }
+    const methods = {1:'Cash', 4:'Mobile Banking', 5:'Card', 2:'Bank Transfer', 3:'Cheque'};
+    state.payments.push({ method: state.payMethod, amount, label: methods[state.payMethod] || 'Cash' });
+    document.getElementById('payAmount').value = '';
+    renderMultiPayments();
+}
+
+function renderMultiPayments() {
+    if (!state.payments.length) { document.getElementById('multiPayList').style.display = 'none'; return; }
+    document.getElementById('multiPayList').style.display = '';
+    document.getElementById('multiPayList').innerHTML = state.payments.map((p, i) => `
+        <div class="d-flex justify-content-between align-items-center px-2 py-1 border-bottom small">
+            <span>${p.label}</span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold">৳${p.amount.toFixed(2)}</span>
+                <button class="btn btn-sm p-0 text-danger" onclick="state.payments.splice(${i},1);renderMultiPayments();">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ══ Checkout ══════════════════════════════════════════════════════════════
+async function checkout() {
+    if (!state.items.length) { toastr.error('Cart is empty!'); return; }
+
+    const total    = getTotal();
+    const discount = parseFloat(document.getElementById('globalDiscount').value) || 0;
+    const tax      = parseFloat(document.getElementById('globalTax').value)      || 0;
+
+    let payments = [...state.payments];
+    if (!payments.length) {
+        const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+        if (!state.isCredit) {
+            if (amount < total) { toastr.error('Insufficient payment amount!'); return; }
+            payments = [{ method: state.payMethod, amount }];
+        }
+    }
+
+    const dto = {
+        customerId:     state.customerId,
+        discountAmount: discount,
+        taxAmount:      tax,
+        isCredit:       state.isCredit,
+        notes:          document.getElementById('cartNotes').value,
+        items:          state.items.map(i => ({
+            productVariantId: i.variantId,
+            quantity:         i.qty,
+            unitPrice:        i.unitPrice,
+            discountAmount:   0,
+            taxAmount:        0
+        })),
+        payments: payments.map(p => ({ paymentMethod: p.method, amount: p.amount }))
+    };
+
+    const btn = document.getElementById('checkoutBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+    try {
+        const resp = await fetch('/Sales/CreateInvoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+            body: JSON.stringify(dto)
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            showReceipt(data.data, payments.reduce((s,p) => s+p.amount, 0));
+        } else {
+            toastr.error(data.message);
+        }
+    } catch (e) {
+        toastr.error('Network error. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Checkout';
+    }
+}
+
+function showReceipt(data, paid) {
+    const change = Math.max(0, paid - data.totalAmount);
+    document.getElementById('rcpInvoiceNum').textContent = 'Invoice: ' + data.invoiceNumber;
+    document.getElementById('rcpTotal').textContent = fmt(data.totalAmount);
+    document.getElementById('rcpPaid').textContent  = fmt(paid);
+    document.getElementById('rcpChange').textContent = fmt(change);
+    document.getElementById('rcpPrintBtn').href = `/Sales/Print/${data.invoiceId}`;
+
+    if (data.dueAmount > 0) {
+        document.getElementById('rcpDueRow').style.display = '';
+        document.getElementById('rcpDue').textContent = fmt(data.dueAmount);
+        document.getElementById('rcpChangeRow').style.display = 'none';
+    } else {
+        document.getElementById('rcpDueRow').style.display = 'none';
+        document.getElementById('rcpChangeRow').style.display = '';
+    }
+
+    new bootstrap.Modal('#receiptModal').show();
+}
+
+function newSale() {
+    bootstrap.Modal.getInstance('#receiptModal').hide();
+    clearCart();
+}
+
+// ══ Hold ══════════════════════════════════════════════════════════════════
+async function holdCart() {
+    if (!state.items.length) { toastr.error('Cart is empty!'); return; }
+
+    const dto = {
+        customerId: state.customerId, discountAmount: 0, taxAmount: 0,
+        isCredit: false, notes: 'HOLD: ' + document.getElementById('cartNotes').value,
+        items: state.items.map(i => ({
+            productVariantId: i.variantId, quantity: i.qty, unitPrice: i.unitPrice,
+            discountAmount: 0, taxAmount: 0
+        })),
+        payments: []
+    };
+
+    const resp = await fetch('/Sales/CreateInvoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+        body: JSON.stringify(dto)
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+        // Hold the created invoice
+        $.post(`/Sales/Hold?id=${data.data.invoiceId}`, { __RequestVerificationToken: tok() }, d => {
+            if (d.success) { toastr.success('Invoice held: ' + data.data.invoiceNumber); clearCart(); }
+        });
+    } else toastr.error(data.message);
+}
+
+async function showHeldInvoices() {
+    const modal = new bootstrap.Modal('#heldModal');
+    modal.show();
+    const data = await fetch('/Sales/GetHeldInvoices').then(r => r.json());
+    const container = document.getElementById('heldInvoiceList');
+
+    if (!data.length) {
+        container.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-inbox fs-2"></i><p class="mt-2">No held invoices</p></div>';
+        return;
+    }
+
+    document.getElementById('heldBadge').textContent = data.length;
+    document.getElementById('heldBadge').style.display = 'flex';
+
+    container.innerHTML = data.map(inv => `
+        <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom">
+            <div><i class="bi bi-pause-circle text-warning fs-4"></i></div>
+            <div class="flex-grow-1">
+                <div class="fw-semibold">${inv.invoiceNumber}</div>
+                <div class="text-muted small">${inv.customerName} · ৳${inv.totalAmount.toFixed(2)}</div>
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="loadHeld(${inv.id})">
+                <i class="bi bi-play-fill me-1"></i>Resume
+            </button>
+        </div>
+    `).join('');
+}
+
+async function loadHeld(id) {
+    const inv = await fetch(`/Sales/GetInvoice/${id}`).then(r => r.json());
+    if (!inv) { toastr.error('Could not load invoice.'); return; }
+
+    clearCart(false);
+    state.heldInvoiceId = id;
+
+    // Load items into cart
+    inv.items.forEach(item => {
+        state.items.push({
+            variantId: item.productVariantId, productName: item.productName,
+            sizeName: item.sizeName, colorName: item.colorName, colorHex: '#888',
+            barcode: item.barcode, qty: item.quantity, unitPrice: item.unitPrice,
+            costPrice: 0, discount: 0, stock: 999
+        });
+    });
+
+    // Unhold the invoice
+    $.post(`/Sales/Unhold?id=${id}`, { __RequestVerificationToken: tok() });
+
+    bootstrap.Modal.getInstance('#heldModal').hide();
+    renderCart();
+    toastr.success('Invoice loaded: ' + inv.invoiceNumber);
+}
+
+// ══ Customer ══════════════════════════════════════════════════════════════
+function openCustomerSearch() {
+    const box = document.getElementById('customerSearchBox');
+    box.style.display = box.style.display === 'none' ? '' : 'none';
+    if (box.style.display !== 'none') setTimeout(() => document.getElementById('customerSearchInput').focus(), 100);
+}
+
+let customerTimer;
+async function searchCustomer(val) {
+    clearTimeout(customerTimer);
+    if (val.length < 2) { document.getElementById('customerDropdown').style.display = 'none'; return; }
+    customerTimer = setTimeout(async () => {
+        const data = await fetch(`/Sales/SearchCustomers?keyword=${encodeURIComponent(val)}`).then(r => r.json());
+        const dd = document.getElementById('customerDropdown');
+        if (!data.length) { dd.style.display = 'none'; return; }
+        dd.innerHTML = data.map(c => `
+            <div class="p-2 border-bottom" style="cursor:pointer;"
+                 onmousedown="event.preventDefault();selectCustomer(${c.id},'${c.name}','${c.phoneNumber || ''}',${c.currentBalance})">
+                <div class="fw-semibold small">${c.name}</div>
+                <div class="text-muted" style="font-size:.72rem;">${c.phoneNumber || ''} · ${c.groupName} · Due: ৳${c.currentBalance}</div>
+            </div>
+        `).join('');
+        dd.style.display = 'block';
+    }, 250);
+}
+
+function selectCustomer(id, name, phone, balance) {
+    state.customerId = id;
+    document.getElementById('customerId').value = id;
+    document.getElementById('customerName').innerHTML = `<i class="bi bi-person-check me-1 text-success"></i>${name}`;
+    document.getElementById('customerInfo').textContent = (phone ? phone + ' · ' : '') + 'Due: ৳' + balance.toFixed(2);
+    document.getElementById('customerInfo').style.display = '';
+    document.getElementById('customerSearchBox').style.display = 'none';
+    document.getElementById('clearCustomerBtn').style.display = '';
+    document.getElementById('customerDropdown').style.display = 'none';
+}
+
+function clearCustomer() {
+    state.customerId = null;
+    document.getElementById('customerId').value = '';
+    document.getElementById('customerName').innerHTML = '<i class="bi bi-plus-circle me-1"></i>Select Customer (Walk-in)';
+    document.getElementById('customerInfo').style.display = 'none';
+    document.getElementById('clearCustomerBtn').style.display = 'none';
+}
+
+// ══ Helpers ════════════════════════════════════════════════════════════════
+function clearCart(showToast = true) {
+    state.items = [];
+    state.customerId = null;
+    state.isCredit = false;
+    state.payments = [];
+    state.heldInvoiceId = null;
+    document.getElementById('globalDiscount').value = 0;
+    document.getElementById('globalTax').value = 0;
+    document.getElementById('cartNotes').value = '';
+    document.getElementById('payAmount').value = '';
+    document.getElementById('isCreditSale').checked = false;
+    document.getElementById('payAmount').disabled = false;
+    clearCustomer();
+    renderMultiPayments();
+    renderCart();
+    if (showToast) toastr.info('Cart cleared.');
+    document.getElementById('globalSearch').focus();
+}
+</script>
+</body>
+</html>

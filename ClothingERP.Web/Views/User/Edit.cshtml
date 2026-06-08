@@ -1,0 +1,113 @@
+﻿@model UpdateUserDto
+@{ ViewData["Title"] = "Edit User"; var user = (UserDto)ViewBag.User; }
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit User</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Users</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        </ol></nav>
+    </div>
+    <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row">
+    <!-- Profile Card -->
+    <div class="col-md-3 mb-4">
+        <div class="card border-0 shadow-sm text-center p-4">
+            @if (!string.IsNullOrEmpty(user.ProfileImage))
+            {
+                <img src="@user.ProfileImage" class="rounded-circle mx-auto mb-3" width="80" height="80" style="object-fit:cover;" />
+            }
+            else
+            {
+                <div class="mx-auto mb-3" style="width:80px;height:80px;border-radius:50%;background:#4f7cff;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;font-weight:700;">
+                    @user.FullName[0].ToString().ToUpper()
+                </div>
+            }
+            <h6 class="fw-bold mb-0">@user.FullName</h6>
+            <p class="text-muted small mb-2">@@@user.Username</p>
+            <span class="badge bg-primary rounded-pill px-3">@user.RoleName</span>
+            <hr />
+            <small class="text-muted">Member since<br/><strong>@user.CreatedAt.ToString("dd MMM yyyy")</strong></small>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="col-md-9">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-pencil me-2 text-primary"></i>Update Information</span>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Edit" asp-route-id="@user.Id" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="FullName" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Username</label>
+                            <input class="form-control bg-light" value="@user.Username" disabled />
+                            <small class="text-muted">Username cannot be changed.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                            <input asp-for="Email" class="form-control" type="email" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold">Phone</label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="01XXXXXXXXX" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="RoleId" class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
+                            <select asp-for="RoleId" class="form-select select2" id="editRoleSelect">
+                                @foreach (var role in (IEnumerable<RoleDto>)ViewBag.Roles)
+                                {
+                                    @if(role.Id == Model.RoleId)
+                                    {
+                                        <option value="@role.Id" selected>@role.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@role.Id">@role.Name</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="RoleId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Profile Image</label>
+                            <input type="file" name="profileImage" class="form-control" accept="image/*" />
+                            <small class="text-muted">Leave blank to keep current image.</small>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsActive" class="form-check-label fw-semibold">Active Account</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+                        <a asp-action="Index" class="btn btn-light px-4 border">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>$(function () { $('#editRoleSelect').select2({ theme: 'bootstrap-5', width: '100%' }); });</script>
+}

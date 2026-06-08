@@ -1,0 +1,256 @@
+﻿@model IEnumerable<CustomerListDto>
+@{
+    ViewData["Title"] = "Customer Management"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-people me-2 text-primary"></i>Customer Management</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Customers</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Groups" class="btn btn-outline-secondary">
+            <i class="bi bi-collection me-1"></i>Groups
+        </a>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i>Add Customer
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f0fe;"><i class="bi bi-people" style="color:#4f7cff;"></i></div>
+                <div><div class="text-muted small">Total</div><h4 class="mb-0 fw-bold">@items.Count</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-person-check" style="color:#43a047;"></i></div>
+                <div><div class="text-muted small">Active</div><h4 class="mb-0 fw-bold text-success">@items.Count(c => c.IsActive)</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-exclamation-circle" style="color:#e53935;"></i></div>
+                <div><div class="text-muted small">Total Due</div><h4 class="mb-0 fw-bold text-danger">৳@items.Sum(c => c.CurrentBalance).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fff3e0;"><i class="bi bi-star" style="color:#f57c00;"></i></div>
+                <div><div class="text-muted small">Loyalty Pts</div><h4 class="mb-0 fw-bold">@items.Sum(c => c.LoyaltyPoints).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="customerTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Group</th>
+                        <th class="text-end">Total Purchase</th>
+                        <th class="text-end">Current Due</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center" width="120">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sn = 1;
+                    }
+                    @foreach (var c in items)
+                    {
+                        <tr id="cust-@c.Id">
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar-sm-cust">@c.Name[0].ToString().ToUpper()</div>
+                                    <div>
+                                        <div class="fw-semibold small">@c.Name</div>
+                                        <div class="text-muted" style="font-size:.72rem;">@c.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="small">@(c.PhoneNumber ?? "—")</td>
+                            <td>
+                                <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-2">@c.GroupName</span>
+                            </td>
+                            <td class="text-end small fw-semibold">৳@c.TotalPurchaseAmount.ToString("N0")</td>
+                            <td class="text-end @(c.CurrentBalance > 0 ? "text-danger fw-bold" : "text-muted")">
+                                @(c.CurrentBalance > 0 ? "৳" + c.CurrentBalance.ToString("N2") : "—")
+                            </td>
+                            <td class="text-center">
+                                <span class="badge rounded-pill @(c.IsActive ? "bg-success" : "bg-danger") bg-opacity-15 @(c.IsActive ? "text-success" : "text-danger") px-2">
+                                    @(c.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown">Actions</button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        <li>
+                                            <a class="dropdown-item" asp-action="Edit" asp-route-id="@c.Id">
+                                                <i class="bi bi-pencil me-2 text-primary"></i>Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-action="Ledger" asp-route-id="@c.Id">
+                                                <i class="bi bi-journal-text me-2 text-info"></i>Ledger
+                                            </a>
+                                        </li>
+                                        @if (c.CurrentBalance > 0)
+                                        {
+                                            <li>
+                                                <button class="dropdown-item" onclick="openPaymentModal(@c.Id,'@c.Name',@c.CurrentBalance)">
+                                                    <i class="bi bi-cash me-2 text-success"></i>Receive Payment
+                                                </button>
+                                            </li>
+                                        }
+                                        <li>
+                                            <button class="dropdown-item" onclick="toggleStatus(@c.Id)">
+                                                <i class="bi bi-arrow-repeat me-2 text-warning"></i>Toggle Status
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider my-1"></li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" onclick="deleteCustomer(@c.Id,'@c.Name')">
+                                                <i class="bi bi-trash me-2"></i>Delete
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-cash me-2 text-success"></i>Receive Payment</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="rounded p-3 mb-3" style="background:#f8f9ff;">
+                    <div class="fw-semibold" id="pmCustomerName"></div>
+                    <div class="d-flex justify-content-between mt-1">
+                        <span class="text-muted small">Outstanding Due:</span>
+                        <span class="fw-bold text-danger" id="pmDueAmount"></span>
+                    </div>
+                </div>
+                <input type="hidden" id="pmCustomerId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Amount <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">৳</span>
+                        <input type="number" class="form-control" id="pmAmount" min="0.01" step="0.01" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Description</label>
+                    <input type="text" class="form-control" id="pmDescription" placeholder="e.g. Cash payment received" value="Payment received" />
+                </div>
+                <div>
+                    <label class="form-label fw-semibold">Reference</label>
+                    <input type="text" class="form-control" id="pmReference" placeholder="Optional (e.g. cheque #, bKash #)" />
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-success px-4" onclick="submitPayment()">
+                    <i class="bi bi-check-lg me-1"></i>Save Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        $(function() { initDataTable('#customerTable'); });
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function openPaymentModal(id, name, due) {
+            $('#pmCustomerId').val(id);
+            $('#pmCustomerName').text(name);
+            $('#pmDueAmount').text('৳' + due.toFixed(2));
+            $('#pmAmount').val(due.toFixed(2));
+            new bootstrap.Modal('#paymentModal').show();
+        }
+
+        function submitPayment() {
+            const customerId  = $('#pmCustomerId').val();
+            const amount      = parseFloat($('#pmAmount').val());
+            const description = $('#pmDescription').val().trim();
+            const reference   = $('#pmReference').val().trim();
+            if (!amount || amount <= 0) { toastr.error('Enter valid amount.'); return; }
+            $.post('/Customer/AddPayment', {
+                customerId, amount, description, reference,
+                __RequestVerificationToken: tok()
+            }, d => {
+                if (d.success) { toastr.success(d.message); bootstrap.Modal.getInstance('#paymentModal').hide(); setTimeout(() => location.reload(), 700); }
+                else toastr.error(d.message);
+            });
+        }
+
+        function toggleStatus(id) {
+            $.post('/Customer/ToggleStatus', { id, __RequestVerificationToken: tok() },
+                d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
+        }
+
+        function deleteCustomer(id, name) {
+            Swal.fire({ title:'Delete Customer?', text:`Delete "${name}"? Ledger history will also be removed.`,
+                icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
+            .then(r => { if (r.isConfirmed) {
+                $.post('/Customer/Delete', { id, __RequestVerificationToken: tok() },
+                    d => { if (d.success) { $(`#cust-${id}`).fadeOut(); toastr.success(d.message); } else toastr.error(d.message); });
+            }});
+        }
+    </script>
+
+    <style>
+        .user-avatar-sm-cust {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e8f0fe;
+            color: #4f7cff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: .85rem;
+            flex-shrink: 0;
+        }
+    </style>
+}

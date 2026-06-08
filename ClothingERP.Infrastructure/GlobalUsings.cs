@@ -1,0 +1,17 @@
+﻿global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Linq.Expressions;
+global using System.Reflection;
+global using System.Globalization;
+global using System.Threading.Tasks;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Metadata.Builders;
+global using Microsoft.EntityFrameworkCore.Storage;
+global using Microsoft.Extensions.Configuration;
+global using Microsoft.Extensions.DependencyInjection;
+global using ClothingERP.Domain.Common;
+global using ClothingERP.Domain.Entities;
+global using ClothingERP.Domain.Enums;
+global using ClothingERP.Application.Interfaces.Repositories;
+global using ClothingERP.Infrastructure.Data;

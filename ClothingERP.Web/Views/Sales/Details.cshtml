@@ -1,0 +1,256 @@
+﻿@model SalesInvoiceDto
+@{
+    ViewData["Title"] = "Invoice #" + Model.InvoiceNumber;
+    var (statusCls, statusLabel) = Model.Status switch
+    {
+        "FullyPaid" => ("bg-success", "Fully Paid"),
+        "PartiallyPaid" => ("bg-warning text-dark", "Partially Paid"),
+        "Confirmed" => ("bg-info", "Confirmed"),
+        "Cancelled" => ("bg-secondary", "Cancelled"),
+        _ => ("bg-light text-dark", Model.Status)
+    };
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-receipt me-2 text-primary"></i>Invoice — @Model.InvoiceNumber</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Sales</a></li>
+                <li class="breadcrumb-item active">@Model.InvoiceNumber</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Print" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-primary">
+            <i class="bi bi-printer me-1"></i>Print
+        </a>
+        <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Invoice Card -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <!-- Invoice Header -->
+            <div class="card-body p-4" style="background:linear-gradient(135deg,#f8f9ff,#fff);">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted small">Invoice Number</div>
+                        <h4 class="fw-bold mb-1">@Model.InvoiceNumber</h4>
+                        <div class="text-muted small">@Model.InvoiceDate.ToString("dd MMMM yyyy, hh:mm tt")</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge @statusCls rounded-pill px-3 py-2 fs-6">@statusLabel</span>
+                        @if (Model.IsCredit)
+                        {
+                            <div class="mt-1"><span class="badge bg-warning bg-opacity-15 text-warning">Credit Sale</span></div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="card-body p-4 border-top">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Bill To</div>
+                        <div class="fw-semibold">@Model.CustomerName</div>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                        <div class="text-muted small mb-1">Prepared By</div>
+                        <div class="fw-semibold">@User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">#</th>
+                            <th>Product</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Discount</th>
+                            <th class="text-end pe-4">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int i = 1;
+                        }
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-4 text-muted small">@(i++)</td>
+                                <td>
+                                    <div class="fw-semibold small">@item.ProductName</div>
+                                    <div class="d-flex gap-1 align-items-center mt-1">
+                                        <span class="badge bg-secondary" style="font-size:.6rem;">@item.SizeName</span>
+                                        <span class="text-muted" style="font-size:.72rem;">@item.ColorName</span>
+                                        <code style="font-size:.65rem;">@item.Barcode</code>
+                                    </div>
+                                </td>
+                                <td class="text-center fw-semibold">@item.Quantity.ToString("N0")</td>
+                                <td class="text-end">৳@item.UnitPrice.ToString("N2")</td>
+                                <td class="text-end text-warning">@(item.DiscountAmount > 0 ? "৳" + item.DiscountAmount.ToString("N2") : "—")</td>
+                                <td class="text-end fw-semibold pe-4">৳@item.TotalAmount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="5" class="text-end pe-3 fw-semibold">Sub Total:</td>
+                            <td class="text-end fw-semibold pe-4">৳@Model.SubTotal.ToString("N2")</td>
+                        </tr>
+                        @if (Model.DiscountAmount > 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-end pe-3 text-warning">Discount:</td>
+                                <td class="text-end text-warning pe-4">- ৳@Model.DiscountAmount.ToString("N2")</td>
+                            </tr>
+                        }
+                        @if (Model.TaxAmount > 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-end pe-3">Tax:</td>
+                                <td class="text-end pe-4">৳@Model.TaxAmount.ToString("N2")</td>
+                            </tr>
+                        }
+                        <tr style="border-top:2px solid #dee2e6;">
+                            <td colspan="5" class="text-end pe-3 fw-bold fs-5">TOTAL:</td>
+                            <td class="text-end fw-bold fs-5 pe-4">৳@Model.TotalAmount.ToString("N2")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <div class="card-body p-4 border-top">
+                    <div class="text-muted small">Notes:</div>
+                    <div class="small">@Model.Notes</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="col-lg-4">
+
+        <!-- Payment Summary -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-cash-stack me-2 text-success"></i>Payment Summary</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Invoice Total</span>
+                    <span class="fw-semibold">৳@Model.TotalAmount.ToString("N2")</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Amount Paid</span>
+                    <span class="fw-semibold text-success">৳@Model.PaidAmount.ToString("N2")</span>
+                </div>
+                <hr />
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">@(Model.DueAmount > 0 ? "Amount Due" : "Balance")</span>
+                    <span class="fw-bold @(Model.DueAmount > 0 ? "text-danger" : "text-success") fs-5">
+                        ৳@Model.DueAmount.ToString("N2")
+                    </span>
+                </div>
+
+                @if (Model.DueAmount > 0 && Model.Status != "Cancelled")
+                {
+                    <button class="btn btn-success w-100 mt-3" onclick="$('#addPaySection').toggle()">
+                        <i class="bi bi-plus-circle me-1"></i>Add Payment
+                    </button>
+                    <div id="addPaySection" class="mt-3" style="display:none;">
+                        <select class="form-select form-select-sm mb-2" id="addPayMethod">
+                            <option value="1">Cash</option>
+                            <option value="4">Mobile Banking</option>
+                            <option value="5">Card</option>
+                            <option value="2">Bank Transfer</option>
+                        </select>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text">৳</span>
+                            <input type="number" class="form-control" id="addPayAmt" value="@Model.DueAmount.ToString("F2")" />
+                        </div>
+                        <button class="btn btn-sm btn-success w-100" onclick="quickAddPayment(@Model.Id)">Save</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Payment History -->
+        @if (Model.Payments.Any())
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <span class="fw-semibold"><i class="bi bi-clock-history me-2 text-primary"></i>Payment History</span>
+                </div>
+                <div class="card-body p-0">
+                    @foreach (var p in Model.Payments.OrderByDescending(x => x.PaymentDate))
+                    {
+                        <div class="d-flex justify-content-between align-items-center px-4 py-3 border-bottom">
+                            <div>
+                                <div class="fw-semibold small">@p.PaymentMethod</div>
+                                <div class="text-muted" style="font-size:.72rem;">@p.PaymentDate.ToString("dd MMM, HH:mm")</div>
+                                @if (!string.IsNullOrEmpty(p.ReferenceNumber))
+                                {
+                                    <div class="text-muted" style="font-size:.7rem;"><i class="bi bi-hash"></i>@p.ReferenceNumber</div>
+                                }
+                            </div>
+                            <div class="fw-bold text-success">৳@p.Amount.ToString("N2")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Actions -->
+        @if (Model.Status != "Cancelled")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3 d-grid gap-2">
+                    @if (Model.Status != "FullyPaid")
+                    {
+                        <button class="btn btn-outline-danger btn-sm" onclick="cancelInv(@Model.Id,'@Model.InvoiceNumber')">
+                            <i class="bi bi-x-circle me-1"></i>Cancel Invoice
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function quickAddPayment(id) {
+            const dto = { paymentMethod: parseInt($('#addPayMethod').val()), amount: parseFloat($('#addPayAmt').val()) };
+            $.ajax({ url: `/Sales/AddPayment?id=${id}`, method:'POST', contentType:'application/json',
+                     data: JSON.stringify(dto), headers:{ 'RequestVerificationToken': tok() },
+                     success: d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 800); } else toastr.error(d.message); }
+            });
+        }
+
+        function cancelInv(id, num) {
+            Swal.fire({ title:'Cancel Invoice?', text:`Cancel invoice "${num}"? Stock will be restored.`,
+                icon:'warning', input:'text', inputPlaceholder:'Reason...', showCancelButton:true,
+                confirmButtonColor:'#d33', confirmButtonText:'Cancel' })
+            .then(r => {
+                if (r.isConfirmed && r.value)
+                    $.post('/Sales/Cancel', { id, reason: r.value, __RequestVerificationToken: tok() },
+                        d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 800); } else toastr.error(d.message); });
+            });
+        }
+    </script>
+}

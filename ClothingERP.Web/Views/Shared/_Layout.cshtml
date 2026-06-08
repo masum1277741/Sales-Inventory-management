@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Clothing ERP</title>
+
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <!-- Select2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <!-- Toastr -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <style>
+            :root { --sidebar-width: 260px; --sidebar-bg: #1a1d23; --sidebar-text: #a8b2c3; --sidebar-active: #4f7cff; --topbar-h: 60px; }
+            body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+
+            /* Sidebar */
+            #sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; top: 0; left: 0;
+                       background: var(--sidebar-bg); overflow-y: auto; transition: width .25s; z-index: 1040;
+                       display: flex; flex-direction: column; }
+            #sidebar .brand { padding: 18px 20px; color: #fff; font-size: 1.2rem; font-weight: 700;
+                              border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 10px; }
+            #sidebar .brand i { color: var(--sidebar-active); }
+            #sidebar .nav-label { padding: 12px 20px 4px; font-size: .65rem; text-transform: uppercase;
+                                  letter-spacing: .08em; color: rgba(255,255,255,.3); font-weight: 600; }
+            #sidebar .nav-link { color: var(--sidebar-text); padding: 9px 20px; display: flex; align-items: center;
+                                 gap: 10px; font-size: .875rem; border-radius: 6px; margin: 1px 8px;
+                                 transition: all .2s; text-decoration: none; }
+            #sidebar .nav-link i { font-size: 1.1rem; width: 20px; text-align: center; flex-shrink: 0; }
+            #sidebar .nav-link:hover  { background: rgba(255,255,255,.06); color: #fff; }
+            #sidebar .nav-link.active { background: var(--sidebar-active); color: #fff; }
+
+            /* Top Bar */
+            #topbar { height: var(--topbar-h); background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+                      display: flex; align-items: center; padding: 0 24px; position: fixed;
+                      top: 0; left: var(--sidebar-width); right: 0; z-index: 1030; gap: 16px; }
+            #topbar .page-title { font-weight: 600; font-size: 1rem; color: #2d3748; flex: 1; }
+            #topbar .topbar-right { display: flex; align-items: center; gap: 12px; }
+            #topbar .user-badge { display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+                                  border-radius: 8px; background: #f7f8fc; cursor: pointer; }
+            #topbar .user-badge .avatar { width: 32px; height: 32px; border-radius: 50%;
+                                           background: var(--sidebar-active); color: #fff;
+                                           display: flex; align-items: center; justify-content: center; font-weight: 700; }
+            /* Main Content */
+            #main-content { margin-left: var(--sidebar-width); margin-top: var(--topbar-h); padding: 24px; min-height: 100vh; }
+
+            /* Cards */
+            .stat-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+            .stat-card .icon-wrap { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+
+            /* DataTables */
+            .dataTables_wrapper .dataTables_length select,
+            .dataTables_wrapper .dataTables_filter input { border: 1px solid #dee2e6; border-radius: 6px; padding: 4px 8px; }
+            table.dataTable thead th { background: #f7f8fc; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+
+            /* Breadcrumb */
+            .page-header { margin-bottom: 20px; }
+            .page-header h4 { font-weight: 700; color: #2d3748; margin: 0; }
+
+            /* Utilities */
+            .badge-status-active   { background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 20px; font-size: .75rem; }
+            .badge-status-inactive { background: #fce4ec; color: #c62828; padding: 3px 10px; border-radius: 20px; font-size: .75rem; }
+
+            /* Collapsed sidebar */
+            body.sidebar-collapsed #sidebar { width: 70px; }
+            body.sidebar-collapsed #sidebar .nav-link span,
+            body.sidebar-collapsed #sidebar .brand span,
+            body.sidebar-collapsed #sidebar .nav-label { display: none; }
+            body.sidebar-collapsed #sidebar .nav-link { justify-content: center; padding: 10px; }
+            body.sidebar-collapsed #topbar,
+            body.sidebar-collapsed #main-content { left: 70px; margin-left: 70px; }
+
+            @@media (max-width: 768px) {
+                #sidebar { transform: translateX(-100%); }
+                body.sidebar-open #sidebar { transform: translateX(0); }
+                #topbar, #main-content { margin-left: 0; left: 0; }
+            }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <!-- ══ SIDEBAR ════════════════════════════════════════════════════════════ -->
+    <nav id="sidebar">
+        <div class="brand">
+            <i class="bi bi-bag-heart-fill"></i>
+            <span>Clothing ERP</span>
+        </div>
+
+        @if (ViewBag.SidebarMenus != null)
+        {
+            var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString();
+
+            <div class="nav-label">Navigation</div>
+            <nav class="nav flex-column py-1">
+                @foreach (var menu in (IEnumerable<ClothingERP.Domain.Entities.AppModule>)ViewBag.SidebarMenus)
+                {
+                    var isActive = currentCtrl?.Equals(menu.Controller, StringComparison.OrdinalIgnoreCase) == true;
+                    <a class="nav-link @(isActive ? "active" : "")"
+                           href="/@menu.Controller/@menu.Action"
+                           title="@menu.Name">
+                        <i class="bi @(menu.Icon ?? "bi-circle")"></i>
+                        <span>@menu.Name</span>
+                    </a>
+                }
+            </nav>
+        }
+
+        <div class="mt-auto p-3">
+            <a asp-controller="Auth" asp-action="Logout"
+                   class="nav-link text-danger" onclick="return confirm('Logout?')">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ══ TOP BAR ════════════════════════════════════════════════════════════ -->
+    <header id="topbar">
+        <button class="btn btn-sm btn-light" id="sidebarToggle">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+        <span class="page-title">@(ViewData["Title"] ?? "Dashboard")</span>
+
+        <div class="topbar-right">
+            <!-- Quick Stats -->
+            <a asp-controller="Stock" asp-action="Index" class="btn btn-sm btn-light position-relative">
+                <i class="bi bi-archive"></i>
+                <span class="d-none d-md-inline ms-1">Stock</span>
+            </a>
+            <a asp-controller="Sales" asp-action="POS" class="btn btn-sm btn-primary">
+                <i class="bi bi-cart-plus"></i>
+                <span class="d-none d-md-inline ms-1">New Sale</span>
+            </a>
+
+            <!-- User Menu -->
+            <div class="dropdown">
+                <div class="user-badge dropdown-toggle" data-bs-toggle="dropdown">
+                    <div class="avatar">@(ViewBag.CurrentUser?.Substring(0, 1).ToUpper() ?? "U")</div>
+                    <div class="d-none d-md-block">
+                        <div style="font-size:.8rem;font-weight:600;">@ViewBag.CurrentUser</div>
+                        <div style="font-size:.7rem;color:#888;">@ViewBag.CurrentRole</div>
+                    </div>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><a class="dropdown-item" asp-controller="Auth" asp-action="Profile"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                    <li><a class="dropdown-item" asp-controller="Auth" asp-action="ChangePassword"><i class="bi bi-key me-2"></i>Change Password</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" asp-controller="Auth" asp-action="Logout"><i class="bi bi-box-arrow-left me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══ MAIN CONTENT ════════════════════════════════════════════════════════ -->
+    <main id="main-content">
+        @RenderBody()
+    </main>
+
+    <!-- ══ SCRIPTS ════════════════════════════════════════════════════════════ -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // ── Sidebar Toggle ───────────────────────────────────────────────────
+        $('#sidebarToggle').on('click', function () {
+        if ($(window).width() <= 768) {
+        $('body').toggleClass('sidebar-open');
+        } else {
+        $('body').toggleClass('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapsed'));
+        }
+        });
+        if (localStorage.getItem('sidebarCollapsed') === 'true') $('body').addClass('sidebar-collapsed');
+
+        // ── Toastr Config ────────────────────────────────────────────────────
+        toastr.options = { positionClass: 'toast-top-right', timeOut: 3500, closeButton: true, progressBar: true };
+
+        // ── TempData Notifications ───────────────────────────────────────────
+        @if (TempData["Success"] != null)
+        {
+            <text>toastr.success('@Html.Raw(TempData["Success"])');</text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>toastr.error('@Html.Raw(TempData["Error"])');</text>
+        }
+        @if (TempData["Warning"] != null)
+        {
+            <text>toastr.warning('@Html.Raw(TempData["Warning"])');</text>
+        }
+
+        // ── Default DataTable Init ───────────────────────────────────────────
+        function initDataTable(selector, options) {
+        if ($(selector).length) {
+        $(selector).DataTable($.extend({
+        responsive: true, pageLength: 25,
+        language: { search: '', searchPlaceholder: 'Search...' }
+        }, options || {}));
+        }
+        }
+
+        // ── Delete Confirm ───────────────────────────────────────────────────
+        function confirmDelete(url, name) {
+        Swal.fire({ title: 'Delete?', text: `Delete "${name}"?`, icon: 'warning',
+        showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete!' })
+        .then((result) => { if (result.isConfirmed) window.location.href = url; });
+        }
+
+        // ── Select2 Init ─────────────────────────────────────────────────────
+        $(document).ready(function () {
+        $('select.select2').select2({ theme: 'bootstrap-5', width: '100%' });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

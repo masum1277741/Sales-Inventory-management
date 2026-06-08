@@ -1,0 +1,97 @@
+﻿@model IEnumerable<CustomerGroupDto>
+@{
+    ViewData["Title"] = "Customer Groups";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-collection me-2 text-primary"></i>Customer Groups</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Customers</a></li>
+                <li class="breadcrumb-item active">Groups</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" onclick="openGroupModal()">
+            <i class="bi bi-plus-circle me-1"></i>Add Group
+        </button>
+        <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    @foreach (var g in Model)
+    {
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 text-center">
+                    <div class="mx-auto mb-3" style="width:56px;height:56px;border-radius:14px;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">
+                        <i class="bi bi-people-fill text-primary"></i>
+                    </div>
+                    <h6 class="fw-bold mb-1">@g.Name</h6>
+                    <div class="badge bg-success bg-opacity-15 text-success mb-2">@g.DiscountPercentage% Discount</div>
+                    <div class="text-muted small">@g.CustomerCount customer(s)</div>
+                    <hr />
+                    <span class="badge @(g.IsActive ? "bg-success" : "bg-secondary") bg-opacity-15 @(g.IsActive ? "text-success" : "text-secondary")">
+                        @(g.IsActive ? "Active" : "Inactive")
+                    </span>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Group Modal -->
+<div class="modal fade" id="groupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-collection me-2 text-primary"></i>Add Customer Group</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Group Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="gName" placeholder="e.g. VIP, Wholesale" />
+                </div>
+                <div>
+                    <label class="form-label fw-semibold">Discount (%)</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="gDiscount" value="0" min="0" max="100" step="0.5" />
+                        <span class="input-group-text bg-light">%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary px-4" onclick="saveGroup()">
+                    <i class="bi bi-check-lg me-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function openGroupModal() { new bootstrap.Modal('#groupModal').show(); }
+
+        function saveGroup() {
+            const name = $('#gName').val().trim();
+            if (!name) { toastr.error('Name required.'); return; }
+            $.post('/Customer/CreateGroup', {
+                Name: name, DiscountPercentage: parseFloat($('#gDiscount').val()) || 0,
+                __RequestVerificationToken: tok()
+            }, d => {
+                if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); }
+                else toastr.error(d.message);
+            });
+        }
+    </script>
+}

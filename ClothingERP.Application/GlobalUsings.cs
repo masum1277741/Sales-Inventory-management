@@ -1,0 +1,16 @@
+﻿global using System;
+global using System.Collections.Generic;
+global using System.ComponentModel.DataAnnotations;
+global using System.Linq;
+global using System.Linq.Expressions;
+global using System.Threading.Tasks;
+global using AutoMapper;
+global using ClothingERP.Domain.Common;
+global using ClothingERP.Domain.Entities;
+global using ClothingERP.Domain.Enums;
+global using ClothingERP.Application.Common;
+global using ClothingERP.Application.DTOs;
+global using ClothingERP.Application.Interfaces.Repositories;
+global using ClothingERP.Application.Interfaces.Services;
+global using System.Text.Json;
+global using Microsoft.EntityFrameworkCore;

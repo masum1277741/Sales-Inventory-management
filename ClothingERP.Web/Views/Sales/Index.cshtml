@@ -1,0 +1,263 @@
+﻿@model IEnumerable<SalesInvoiceListDto>
+@{
+    ViewData["Title"] = "Sales History";
+    var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-receipt me-2 text-primary"></i>Sales History</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Sales</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="POS" class="btn btn-primary">
+        <i class="bi bi-cart-plus me-1"></i>New Sale (POS)
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f0fe;"><i class="bi bi-receipt" style="color:#4f7cff;"></i></div>
+                <div><div class="text-muted small">Invoices (Filtered)</div><h4 class="mb-0 fw-bold">@ViewBag.TotalCount</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-cash-coin" style="color:#43a047;"></i></div>
+                <div><div class="text-muted small">Total Sales</div><h4 class="mb-0 fw-bold">৳@((decimal)ViewBag.TotalSales).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-exclamation-circle" style="color:#e53935;"></i></div>
+                <div><div class="text-muted small">Total Due</div><h4 class="mb-0 fw-bold text-danger">৳@((decimal)ViewBag.TotalDue).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fff3e0;"><i class="bi bi-sun" style="color:#f57c00;"></i></div>
+                <div><div class="text-muted small">Today's Sales</div><h4 class="mb-0 fw-bold">৳@((decimal)ViewBag.TodaySales).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<form asp-action="Index" method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap">
+        <i class="bi bi-calendar-range text-muted"></i>
+        <input type="date" name="fromDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.FromDate" />
+        <span class="text-muted small">to</span>
+        <input type="date" name="toDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.ToDate" />
+        <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-filter me-1"></i>Filter
+        </button>
+        <a asp-action="Index" class="btn btn-sm btn-light border">Reset</a>
+
+        <div class="ms-auto d-flex gap-2">
+            <span class="badge bg-success bg-opacity-15 text-success">Paid: @items.Count(i => i.Status == "FullyPaid")</span>
+            <span class="badge bg-warning bg-opacity-15 text-warning">Partial: @items.Count(i => i.Status == "PartiallyPaid")</span>
+            <span class="badge bg-danger bg-opacity-15 text-danger">Due: @items.Count(i => i.DueAmount > 0 && i.Status != "Cancelled")</span>
+        </div>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="salesTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Due</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center" width="110">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sn = 1;
+                    }
+                    @foreach (var inv in items)
+                    {
+                        var (cls, label) = inv.Status switch
+                        {
+                            "FullyPaid" => ("bg-success", "Paid"),
+                            "PartiallyPaid" => ("bg-warning text-dark", "Partial"),
+                            "Confirmed" => ("bg-info", "Confirmed"),
+                            "Cancelled" => ("bg-secondary", "Cancelled"),
+                            "Hold" => ("bg-light text-dark border", "Hold"),
+                            _ => ("bg-light text-dark", inv.Status)
+                        };
+                        <tr>
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@inv.Id"
+                                       class="fw-semibold text-primary text-decoration-none small">
+                                    @inv.InvoiceNumber
+                                </a>
+                                <div class="text-muted" style="font-size:.72rem;">@inv.InvoiceDate.ToString("dd MMM yyyy, HH:mm")</div>
+                            </td>
+                            <td class="small">
+                                <span class="fw-semibold">@inv.CustomerName</span>
+                                @if (inv.IsCredit)
+                                {
+                                    <span class="badge bg-warning bg-opacity-15 text-warning ms-1" style="font-size:.6rem;">Credit</span>
+                                }
+                            </td>
+                            <td class="text-end fw-semibold">৳@inv.TotalAmount.ToString("N2")</td>
+                            <td class="text-end text-success">৳@inv.PaidAmount.ToString("N2")</td>
+                            <td class="text-end @(inv.DueAmount > 0 ? "text-danger fw-bold" : "text-muted")">
+                                @(inv.DueAmount > 0 ? "৳" + inv.DueAmount.ToString("N2") : "—")
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @cls rounded-pill px-2">@label</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        <li>
+                                            <a class="dropdown-item" asp-action="Details" asp-route-id="@inv.Id">
+                                                <i class="bi bi-eye me-2 text-info"></i>Details
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-action="Print" asp-route-id="@inv.Id" target="_blank">
+                                                <i class="bi bi-printer me-2 text-primary"></i>Print
+                                            </a>
+                                        </li>
+                                        @if (inv.DueAmount > 0 && inv.Status != "Cancelled")
+                                        {
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li>
+                                                <button class="dropdown-item" onclick="addPaymentModal(@inv.Id, @inv.DueAmount, '@inv.InvoiceNumber')">
+                                                    <i class="bi bi-cash me-2 text-success"></i>Add Payment
+                                                </button>
+                                            </li>
+                                        }
+                                        @if (inv.Status != "Cancelled" && inv.Status != "FullyPaid")
+                                        {
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li>
+                                                <button class="dropdown-item text-danger" onclick="cancelInvoice(@inv.Id,'@inv.InvoiceNumber')">
+                                                    <i class="bi bi-x-circle me-2"></i>Cancel
+                                                </button>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-cash me-2 text-success"></i>Add Payment</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Invoice: <strong id="payInvoiceNum"></strong></p>
+                <input type="hidden" id="payInvoiceId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Payment Method</label>
+                    <select class="form-select" id="payMethodSelect">
+                        <option value="1">Cash</option>
+                        <option value="4">Mobile Banking (bKash/Nagad)</option>
+                        <option value="5">Credit Card</option>
+                        <option value="2">Bank Transfer</option>
+                        <option value="3">Cheque</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">৳</span>
+                        <input type="number" class="form-control" id="payModalAmount" min="0.01" step="0.01" />
+                    </div>
+                    <small class="text-muted">Due: <strong id="payDueAmount"></strong></small>
+                </div>
+                <div>
+                    <label class="form-label fw-semibold">Reference</label>
+                    <input type="text" class="form-control" id="payRef" placeholder="Optional" />
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-success px-4" onclick="submitPayment()">
+                    <i class="bi bi-check-lg me-1"></i>Save Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        $(function() { initDataTable('#salesTable', { order:[[1,'desc']] }); });
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function addPaymentModal(id, due, invNum) {
+            $('#payInvoiceId').val(id);
+            $('#payInvoiceNum').text(invNum);
+            $('#payDueAmount').text('৳' + due.toFixed(2));
+            $('#payModalAmount').val(due.toFixed(2));
+            new bootstrap.Modal('#payModal').show();
+        }
+
+        function submitPayment() {
+            const id     = $('#payInvoiceId').val();
+            const dto    = { paymentMethod: parseInt($('#payMethodSelect').val()), amount: parseFloat($('#payModalAmount').val()), referenceNumber: $('#payRef').val() };
+            $.ajax({ url: `/Sales/AddPayment?id=${id}`, method:'POST', contentType:'application/json',
+                     data: JSON.stringify(dto), headers: { 'RequestVerificationToken': tok() },
+                     success: d => {
+                         if (d.success) { toastr.success(d.message); bootstrap.Modal.getInstance('#payModal').hide(); setTimeout(() => location.reload(), 800); }
+                         else toastr.error(d.message);
+                     }
+            });
+        }
+
+        function cancelInvoice(id, num) {
+            Swal.fire({ title:'Cancel Invoice?', text:`Cancel invoice "${num}"? This will restore stock.`, icon:'warning',
+                input: 'text', inputPlaceholder: 'Enter reason...', showCancelButton:true,
+                confirmButtonColor:'#d33', confirmButtonText:'Cancel Invoice' })
+            .then(r => {
+                if (r.isConfirmed) {
+                    if (!r.value) { toastr.error('Reason required.'); return; }
+                    $.post('/Sales/Cancel', { id, reason: r.value, __RequestVerificationToken: tok() },
+                        d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 800); } else toastr.error(d.message); });
+                }
+            });
+        }
+    </script>
+}

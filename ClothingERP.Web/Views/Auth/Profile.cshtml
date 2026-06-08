@@ -1,0 +1,86 @@
+﻿@model ClothingERP.Application.DTOs.UserDto
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><i class="bi bi-person-circle me-2 text-primary"></i>My Profile</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Profile</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="ChangePassword" class="btn btn-outline-primary">
+        <i class="bi bi-key me-1"></i>Change Password
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-sm text-center p-4">
+            <div class="mx-auto mb-3" style="width:90px;height:90px;border-radius:50%;background:#4f7cff;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:#fff;font-weight:700;">
+                @Model.FullName[0].ToString().ToUpper()
+            </div>
+            <h5 class="mb-1 fw-bold">@Model.FullName</h5>
+            <p class="text-muted mb-2">@@@Model.Username</p>
+            <span class="badge bg-primary px-3 py-2 rounded-pill">@Model.RoleName</span>
+            <hr />
+            <div class="text-start small text-muted">
+                <div class="d-flex justify-content-between mb-1">
+                    <span><i class="bi bi-envelope me-1"></i>Email</span>
+                    <strong class="text-dark">@Model.Email</strong>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                {
+                    <div class="d-flex justify-content-between mb-1">
+                        <span><i class="bi bi-phone me-1"></i>Phone</span>
+                        <strong class="text-dark">@Model.PhoneNumber</strong>
+                    </div>
+                }
+                <div class="d-flex justify-content-between mb-1">
+                    <span><i class="bi bi-circle-fill me-1 @(Model.IsActive ? "text-success" : "text-danger")" style="font-size:.5rem;vertical-align:middle;"></i>Status</span>
+                    <strong>@(Model.IsActive ? "Active" : "Inactive")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-info-circle me-2 text-primary"></i>Account Information
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-muted small">Full Name</label>
+                        <p class="fw-semibold mb-0">@Model.FullName</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-muted small">Username</label>
+                        <p class="fw-semibold mb-0">@Model.Username</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-muted small">Email</label>
+                        <p class="fw-semibold mb-0">@Model.Email</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-muted small">Role</label>
+                        <p class="fw-semibold mb-0"><span class="badge bg-primary">@Model.RoleName</span></p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-muted small">Last Login</label>
+                        <p class="fw-semibold mb-0">@(Model.LastLoginAt.HasValue ? Model.LastLoginAt.Value.ToString("dd MMM yyyy, hh:mm tt") : "N/A")</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-muted small">Member Since</label>
+                        <p class="fw-semibold mb-0">@Model.CreatedAt.ToString("dd MMM yyyy")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

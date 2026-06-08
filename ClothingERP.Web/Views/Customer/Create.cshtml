@@ -1,0 +1,92 @@
+﻿@model CreateCustomerDto
+@{
+    ViewData["Title"] = "Add Customer";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Add New Customer</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Customers</a></li>
+                <li class="breadcrumb-item active">Add</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-person-circle me-2 text-primary"></i>Customer Information</span>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Name" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" placeholder="Customer full name" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold">Phone Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-phone"></i></span>
+                                <input asp-for="PhoneNumber" class="form-control" placeholder="01XXXXXXXXX" />
+                            </div>
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-semibold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" type="email" placeholder="Optional" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="CustomerGroupId" class="form-label fw-semibold">Customer Group <span class="text-danger">*</span></label>
+                            <select asp-for="CustomerGroupId" class="form-select select2">
+                                <option value="">— Select Group —</option>
+                                @foreach (var g in (IEnumerable<CustomerGroupDto>)ViewBag.Groups)
+                                {
+                                    <option value="@g.Id">@g.Name (@g.DiscountPercentage%)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="CustomerGroupId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="NIDNumber" class="form-label fw-semibold">NID Number</label>
+                            <input asp-for="NIDNumber" class="form-control" placeholder="Optional" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Profile Photo</label>
+                            <input type="file" name="profileImage" class="form-control" accept="image/*" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Address" class="form-label fw-semibold">Address</label>
+                            <textarea asp-for="Address" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-lg me-1"></i>Create Customer
+                        </button>
+                        <a asp-action="Index" class="btn btn-light border px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>$(function(){ $('select.select2').select2({ theme:'bootstrap-5', width:'100%' }); });</script>
+}

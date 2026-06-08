@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ClothingERP.Application/ClothingERP.Application.csproj" />
+  <Project Path="ClothingERP.Domain/ClothingERP.Domain.csproj" />
+  <Project Path="ClothingERP.Infrastructure/ClothingERP.Infrastructure.csproj" />
+  <Project Path="ClothingERP.Web/ClothingERP.Web.csproj" />
+</Solution>
