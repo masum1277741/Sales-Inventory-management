@@ -1,0 +1,94 @@
+﻿@model IEnumerable<CustomerListDto>
+@{
+    ViewData["Title"] = "Customer Due Report"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-person-exclamation me-2 text-primary"></i>Customer Due Report</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Reports</a></li>
+                <li class="breadcrumb-item active">Customer Due</li>
+            </ol>
+        </nav>
+    </div>
+    <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer me-1"></i>Print</button>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="stat-card border-start border-3 border-danger">
+            <div class="text-muted small">Total Outstanding</div>
+            <h3 class="fw-bold text-danger mb-0">৳@((decimal)ViewBag.TotalDue).ToString("N2")</h3>
+        </div>
+    </div>
+    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Customers with Due</div><h4 class="fw-bold mb-0">@ViewBag.TotalCount</h4></div></div>
+    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Due &gt; ৳5,000</div><h4 class="fw-bold text-danger mb-0">@ViewBag.Above5k</h4></div></div>
+    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Due ৳1,000–5,000</div><h4 class="fw-bold text-warning mb-0">@ViewBag.Above1k</h4></div></div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="customerDueTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Group</th>
+                        <th class="text-end">Total Purchase</th>
+                        <th class="text-end">Outstanding Due</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sn = 1; decimal cumulativeDue = 0;
+                    }
+                    @foreach (var c in items)
+                    {
+                        cumulativeDue += c.CurrentBalance;
+                        var duePct = (decimal)ViewBag.TotalDue > 0 ? c.CurrentBalance / (decimal)ViewBag.TotalDue * 100 : 0;
+                        <tr>
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td>
+                                <div class="fw-semibold small">@c.Name</div>
+                                <div class="text-muted" style="font-size:.72rem;">@c.Email</div>
+                            </td>
+                            <td class="small">@(c.PhoneNumber ?? "—")</td>
+                            <td><span class="badge bg-primary bg-opacity-10 text-primary px-2 small">@c.GroupName</span></td>
+                            <td class="text-end small">৳@c.TotalPurchaseAmount.ToString("N2")</td>
+                            <td class="text-end">
+                                <div class="fw-bold text-danger">৳@c.CurrentBalance.ToString("N2")</div>
+                                <div class="progress mt-1" style="height:4px;width:80px;margin-left:auto;">
+                                    <div class="progress-bar bg-danger" style="width:@Math.Min(duePct, 100).ToString("F0")%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <a asp-controller="Customer" asp-action="Ledger" asp-route-id="@c.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-journal-text me-1"></i>Ledger
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr class="fw-bold">
+                        <td colspan="4" class="ps-4">Total</td>
+                        <td class="text-end">৳@items.Sum(c => c.TotalPurchaseAmount).ToString("N2")</td>
+                        <td class="text-end text-danger">৳@items.Sum(c => c.CurrentBalance).ToString("N2")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(function() { initDataTable('#customerDueTable', { order:[[5,'desc']] }); });</script>
+}

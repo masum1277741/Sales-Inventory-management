@@ -89,4 +89,32 @@ public class ReportService : IReportService
         if (supplierId.HasValue) orders = orders.Where(po => po.SupplierId == supplierId.Value);
         return _mapper.Map<IEnumerable<PurchaseReportItemDto>>(orders);
     }
+
+    public async Task<decimal> GetSalesReturnsTotalAsync(DateTime from, DateTime to)
+    {
+        var returns = await _uow.SalesReturns.GetByDateRangeAsync(from, to);
+        return returns.Sum(r => r.RefundAmount);
+    }
+
+    public async Task<decimal> GetCOGSAsync(DateTime from, DateTime to)
+    {
+        var invoices = await _uow.SalesInvoices.GetByDateRangeAsync(from, to);
+        var invoicesList = invoices.Where(i => i.Status != InvoiceStatus.Cancelled).ToList();
+
+        decimal totalCogs = 0;
+
+        foreach (var invoice in invoicesList)
+        {
+            var invoiceDetails = await _uow.SalesInvoices.GetWithDetailsAsync(invoice.Id);
+            if(invoiceDetails != null)
+            {
+               foreach(var item in invoiceDetails.Items) 
+               {
+                   totalCogs += item.Quantity * item.ProductVariant.Product.CostPrice;
+               }
+            }
+        }
+
+        return totalCogs;
+    }
 }

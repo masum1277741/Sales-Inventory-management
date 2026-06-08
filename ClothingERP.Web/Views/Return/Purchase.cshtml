@@ -1,0 +1,110 @@
+﻿@model IEnumerable<PurchaseReturnListDto>
+@{
+    ViewData["Title"] = "Purchase Returns"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-arrow-return-right me-2 text-primary"></i>Purchase Returns</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Purchase Returns</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Sales" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-return-left me-1"></i>Sales Returns
+        </a>
+        <a asp-action="CreatePurchaseReturn" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>New Return
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f0fe;"><i class="bi bi-arrow-return-right" style="color:#4f7cff;"></i></div>
+                <div><div class="text-muted small">Total Returns</div><h4 class="mb-0 fw-bold">@ViewBag.TotalReturns</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-cash-stack" style="color:#e53935;"></i></div>
+                <div><div class="text-muted small">Total Value</div><h4 class="mb-0 fw-bold text-danger">৳@((decimal)ViewBag.TotalAmount).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-calendar-month" style="color:#43a047;"></i></div>
+                <div><div class="text-muted small">This Month</div><h4 class="mb-0 fw-bold">@items.Count(r => r.ReturnDate.Month == DateTime.Today.Month)</h4></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<form asp-action="Purchase" method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center">
+        <i class="bi bi-calendar-range text-muted"></i>
+        <input type="date" name="fromDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.FromDate" />
+        <span class="text-muted small">to</span>
+        <input type="date" name="toDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.ToDate" />
+        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-filter me-1"></i>Filter</button>
+        <a asp-action="Purchase" class="btn btn-sm btn-light border">Reset</a>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="prTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>Return #</th>
+                        <th>PO #</th>
+                        <th>Supplier</th>
+                        <th>Date</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-center" width="90">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sn = 1;
+                    }
+                    @foreach (var r in items)
+                    {
+                        <tr>
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td class="fw-semibold small text-primary">@r.ReturnNumber</td>
+                            <td><a asp-controller="Purchase" asp-action="Details" asp-route-id="@r.PurchaseOrderId" class="text-decoration-none small">@r.PONumber</a></td>
+                            <td class="small">@r.SupplierName</td>
+                            <td class="small text-muted">@r.ReturnDate.ToString("dd MMM yyyy")</td>
+                            <td class="text-end fw-semibold text-danger">৳@r.TotalAmount.ToString("N2")</td>
+                            <td class="text-center">
+                                <a asp-action="PurchaseReturnDetails" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(function() { initDataTable('#prTable', { order:[[4,'desc']] }); });</script>
+}

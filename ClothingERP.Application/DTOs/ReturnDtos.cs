@@ -5,6 +5,7 @@ public class SalesReturnListDto
 {
     public int Id { get; set; }
     public string ReturnNumber { get; set; } = string.Empty;
+    public int SalesInvoiceId { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
     public DateTime ReturnDate { get; set; }
@@ -65,6 +66,7 @@ public class PurchaseReturnListDto
 {
     public int Id { get; set; }
     public string ReturnNumber { get; set; } = string.Empty;
+    public int PurchaseOrderId { get; set; }
     public string PONumber { get; set; } = string.Empty;
     public string SupplierName { get; set; } = string.Empty;
     public DateTime ReturnDate { get; set; }

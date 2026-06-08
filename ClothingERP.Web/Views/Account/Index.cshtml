@@ -1,0 +1,159 @@
+﻿@model IEnumerable<AccountTransactionDto>
+@{ ViewData["Title"] = "Account Transactions"; var items = Model.ToList(); }
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-journal-bookmark me-2 text-primary"></i>Account Transactions</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active">Accounts</li>
+        </ol></nav>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Add Transaction
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card border-start border-3 border-success">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-arrow-down-circle" style="color:#43a047;"></i></div>
+                <div>
+                    <div class="text-muted small">Total Income</div>
+                    <h4 class="mb-0 fw-bold text-success">৳@((decimal)ViewBag.TotalIncome).ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card border-start border-3 border-danger">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-arrow-up-circle" style="color:#e53935;"></i></div>
+                <div>
+                    <div class="text-muted small">Total Expense</div>
+                    <h4 class="mb-0 fw-bold text-danger">৳@((decimal)ViewBag.TotalExpense).ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        @{
+            var net = (decimal)ViewBag.NetBalance;
+            var netCls = net >= 0 ? "success" : "danger";
+        }
+        <div class="stat-card border-start border-3 border-@netCls">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#@(net>=0?"e8f5e9":"fce4ec");"><i class="bi bi-wallet2" style="color:@(net>=0?"#43a047":"#e53935");"></i></div>
+                <div>
+                    <div class="text-muted small">Net Balance</div>
+                    <h4 class="mb-0 fw-bold text-@netCls">@(net < 0 ? "-" : "")৳@Math.Abs(net).ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter -->
+<form asp-action="Index" method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap">
+        <i class="bi bi-funnel text-muted"></i>
+        <input type="date" name="fromDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.FromDate" />
+        <span class="text-muted small">to</span>
+        <input type="date" name="toDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.ToDate" />
+        <select name="type" class="form-select form-select-sm" style="width:140px;">
+            <option value="">All Types</option>
+            @if(ViewBag.FilterType=="Income")
+            {
+                <option value="Income" selected>Income</option>
+            }
+            else
+            {
+                <option value="Income">Income</option>
+            }
+            @if(ViewBag.FilterType=="Expense")
+            {
+                <option value="Expense" selected>Expense</option>
+            }
+            else
+            {
+                <option value="Expense">Expense</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-filter me-1"></i>Filter</button>
+        <a asp-action="Index" class="btn btn-sm btn-light border">Reset</a>
+        <span class="ms-auto text-muted small">@items.Count records</span>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="accountTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Reference</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center" width="80">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int sn = 1; }
+                    @foreach (var t in items)
+                    {
+                        var isIncome = t.TransactionType == "Income";
+                        <tr id="txn-@t.Id">
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td class="small">
+                                @t.TransactionDate.ToString("dd MMM yyyy")
+                                <div class="text-muted" style="font-size:.7rem;">@t.TransactionDate.ToString("HH:mm")</div>
+                            </td>
+                            <td>
+                                <span class="badge @(isIncome ? "bg-success" : "bg-danger") bg-opacity-15 @(isIncome ? "text-success" : "text-danger") rounded-pill px-2">
+                                    <i class="bi @(isIncome ? "bi-arrow-down-circle" : "bi-arrow-up-circle") me-1"></i>
+                                    @t.TransactionType
+                                </span>
+                            </td>
+                            <td class="small fw-semibold">@t.Category</td>
+                            <td class="small text-muted">@(t.Description ?? "—")</td>
+                            <td><code class="small">@(t.ReferenceNumber ?? "—")</code></td>
+                            <td class="text-end fw-bold @(isIncome ? "text-success" : "text-danger")">
+                                @(isIncome ? "+" : "-")৳@t.Amount.ToString("N2")
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-danger" onclick="delTxn(@t.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+$(function() { initDataTable('#accountTable', { order:[[1,'desc']] }); });
+const tok = () => $('[name=__RequestVerificationToken]').val();
+
+function delTxn(id) {
+    Swal.fire({ title:'Delete?', text:'Remove this transaction?', icon:'warning',
+        showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
+    .then(r => { if (r.isConfirmed) {
+        $.post('/Account/Delete', { id, __RequestVerificationToken: tok() },
+            d => { if (d.success) { $(`#txn-${id}`).fadeOut(); toastr.success(d.message); } else toastr.error(d.message); });
+    }});
+}
+</script>
+}

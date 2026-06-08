@@ -1,0 +1,129 @@
+﻿@model CreateAccountTransactionDto
+@{
+    ViewData["Title"] = "Add Transaction";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-plus-square me-2 text-primary"></i>Add Transaction</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Accounts</a></li>
+                <li class="breadcrumb-item active">Add</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-journal-plus me-2 text-primary"></i>Transaction Details</span>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <!-- Type Selector -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Transaction Type <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-3">
+                            <div class="flex-fill">
+                                <input type="radio" class="btn-check" name="TransactionType" id="typeIncome" value="Income" checked
+                                       onchange="updateCategories('Income')" />
+                                <label class="btn btn-outline-success w-100 py-3" for="typeIncome">
+                                    <i class="bi bi-arrow-down-circle-fill d-block fs-3 mb-1"></i>
+                                    <span class="fw-bold">Income</span>
+                                </label>
+                            </div>
+                            <div class="flex-fill">
+                                <input type="radio" class="btn-check" name="TransactionType" id="typeExpense" value="Expense"
+                                       onchange="updateCategories('Expense')" />
+                                <label class="btn btn-outline-danger w-100 py-3" for="typeExpense">
+                                    <i class="bi bi-arrow-up-circle-fill d-block fs-3 mb-1"></i>
+                                    <span class="fw-bold">Expense</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select asp-for="Category" class="form-select" id="categorySelect">
+                                <option value="">— Select Category —</option>
+                                <optgroup label="Income" id="incomeGroup">
+                                    <option>Other Income</option>
+                                    <option>Interest Income</option>
+                                    <option>Discount Received</option>
+                                    <option>Commission Income</option>
+                                </optgroup>
+                                <optgroup label="Expense" id="expenseGroup" style="display:none;">
+                                    <option>Rent</option>
+                                    <option>Salary & Wages</option>
+                                    <option>Utilities</option>
+                                    <option>Marketing & Advertising</option>
+                                    <option>Transport & Delivery</option>
+                                    <option>Office Supplies</option>
+                                    <option>Bank Charges</option>
+                                    <option>Repairs & Maintenance</option>
+                                    <option>Insurance</option>
+                                    <option>Other Expense</option>
+                                </optgroup>
+                            </select>
+                            <span asp-validation-for="Category" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Amount" class="form-label fw-semibold">Amount <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light fw-bold">৳</span>
+                                <input asp-for="Amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" />
+                            </div>
+                            <span asp-validation-for="Amount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="TransactionDate" class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+                            <input asp-for="TransactionDate" class="form-control" type="date" />
+                            <span asp-validation-for="TransactionDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ReferenceNumber" class="form-label fw-semibold">Reference #</label>
+                            <input asp-for="ReferenceNumber" class="form-control" placeholder="Optional" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>Save Transaction</button>
+                        <a asp-action="Index" class="btn btn-light border px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function updateCategories(type) {
+            $('#categorySelect').val('');
+            if (type === 'Income') {
+                $('#incomeGroup').show(); $('#expenseGroup').hide();
+            } else {
+                $('#incomeGroup').hide(); $('#expenseGroup').show();
+            }
+        }
+        $(function() {
+            // Initialize based on default selection
+            updateCategories('Income');
+        });
+    </script>
+}

@@ -11,4 +11,6 @@ public interface IReportService
     Task<IEnumerable<SupplierDueDto>> GetSupplierDueListAsync();
     Task<IEnumerable<SalesReturnReportItemDto>> GetReturnReportAsync(DateTime from, DateTime to);
     Task<IEnumerable<PurchaseReportItemDto>> GetPurchaseReportAsync(DateTime from, DateTime to, int? supplierId = null);
+    Task<decimal> GetSalesReturnsTotalAsync(DateTime from, DateTime to);
+    Task<decimal> GetCOGSAsync(DateTime from, DateTime to);
 }

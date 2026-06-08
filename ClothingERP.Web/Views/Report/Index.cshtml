@@ -1,0 +1,43 @@
+﻿@{ ViewData["Title"] = "Reports"; }
+
+<div class="page-header">
+    <h4 class="mb-0"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Reports & Analytics</h4>
+    <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+        <li class="breadcrumb-item active">Reports</li>
+    </ol></nav>
+</div>
+
+<div class="row g-4 mt-1">
+    @foreach (var card in new[] {
+        new { Title="Sales Report",     Desc="Detailed sales by date, customer, category. Daily trends chart.", Icon="bi-graph-up-arrow",     Color="#4f7cff",Bg="#e8f0fe", Url="/Report/SalesReport" },
+        new { Title="Purchase Report",  Desc="Purchase orders, GRN history, and supplier-wise analysis.",      Icon="bi-bag-check",          Color="#43a047",Bg="#e8f5e9", Url="/Report/PurchaseReport" },
+        new { Title="Stock Report",     Desc="Current inventory levels, low stock alerts, category-wise value.",Icon="bi-archive",           Color="#f57c00",Bg="#fff3e0", Url="/Report/StockReport" },
+        new { Title="Customer Due",     Desc="Customers with outstanding balances and payment history.",       Icon="bi-person-exclamation", Color="#e53935",Bg="#fce4ec", Url="/Report/CustomerDue" },
+        new { Title="Supplier Due",     Desc="Suppliers you owe. Filter by amount and aging buckets.",        Icon="bi-truck",              Color="#8e24aa",Bg="#f3e5f5", Url="/Report/SupplierDue" },
+        new { Title="Profit & Loss",    Desc="Complete P&L statement: revenue, COGS, expenses, net profit.",  Icon="bi-cash-coin",          Color="#00897b",Bg="#e0f2f1", Url="/Report/ProfitLoss" }
+    })
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 report-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div style="width:52px;height:52px;border-radius:14px;background:@card.Bg;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">
+                            <i class="bi @card.Icon" style="color:@card.Color;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">@card.Title</h5>
+                    </div>
+                    <p class="text-muted small mb-4">@card.Desc</p>
+                    <a href="@card.Url" class="btn btn-sm w-100" style="background:@card.Color;color:#fff;">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+.report-card { transition: transform .2s, box-shadow .2s; }
+.report-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; }
+</style>
