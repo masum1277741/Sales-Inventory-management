@@ -1,0 +1,204 @@
+﻿@model IEnumerable<SupplierListDto>
+@{
+    ViewData["Title"] = "Supplier Management"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-truck me-2 text-primary"></i>Supplier Management</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Suppliers</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Add Supplier</a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f0fe;"><i class="bi bi-truck" style="color:#4f7cff;"></i></div>
+                <div><div class="text-muted small">Total</div><h4 class="mb-0 fw-bold">@items.Count</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-check-circle" style="color:#43a047;"></i></div>
+                <div><div class="text-muted small">Active</div><h4 class="mb-0 fw-bold text-success">@items.Count(s => s.IsActive)</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-wallet2" style="color:#e53935;"></i></div>
+                <div><div class="text-muted small">Total Payable</div><h4 class="mb-0 fw-bold text-danger">৳@items.Sum(s => s.CurrentBalance).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fff3e0;"><i class="bi bi-exclamation-circle" style="color:#f57c00;"></i></div>
+                <div><div class="text-muted small">With Due</div><h4 class="mb-0 fw-bold text-warning">@items.Count(s => s.CurrentBalance > 0)</h4></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="supplierTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>Company</th>
+                        <th>Contact</th>
+                        <th>Phone</th>
+                        <th class="text-end">Payable</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center" width="120">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sn = 1;
+                    }
+                    @foreach (var s in items)
+                    {
+                        <tr id="sup-@s.Id">
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td>
+                                <div class="fw-semibold small">@s.CompanyName</div>
+                                <div class="text-muted" style="font-size:.72rem;">@s.Email</div>
+                            </td>
+                            <td class="small">@s.ContactPerson</td>
+                            <td class="small">@s.PhoneNumber</td>
+                            <td class="text-end @(s.CurrentBalance > 0 ? "text-danger fw-bold" : "text-muted")">
+                                @(s.CurrentBalance > 0 ? "৳" + s.CurrentBalance.ToString("N2") : "—")
+                            </td>
+                            <td class="text-center">
+                                <span class="badge rounded-pill @(s.IsActive ? "bg-success" : "bg-danger") bg-opacity-15 @(s.IsActive ? "text-success" : "text-danger") px-2">
+                                    @(s.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown">Actions</button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@s.Id"><i class="bi bi-pencil me-2 text-primary"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" asp-action="Ledger" asp-route-id="@s.Id"><i class="bi bi-journal-text me-2 text-info"></i>Ledger</a></li>
+                                        @if (s.CurrentBalance > 0)
+                                        {
+                                            <li>
+                                                <button class="dropdown-item" onclick="openPayModal(@s.Id,'@s.CompanyName',@s.CurrentBalance)">
+                                                    <i class="bi bi-cash me-2 text-success"></i>Make Payment
+                                                </button>
+                                            </li>
+                                        }
+                                        <li><button class="dropdown-item" onclick="toggleSup(@s.Id)"><i class="bi bi-arrow-repeat me-2 text-warning"></i>Toggle Status</button></li>
+                                        <li><hr class="dropdown-divider my-1"></li>
+                                        <li><button class="dropdown-item text-danger" onclick="delSup(@s.Id,'@s.CompanyName')"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-cash me-2 text-success"></i>Make Payment to Supplier</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="rounded p-3 mb-3" style="background:#f8f9ff;">
+                    <div class="fw-semibold" id="pmSupplierName"></div>
+                    <div class="d-flex justify-content-between mt-1">
+                        <span class="text-muted small">Total Payable:</span>
+                        <span class="fw-bold text-danger" id="pmDue"></span>
+                    </div>
+                </div>
+                <input type="hidden" id="pmSupplierId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Amount <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">৳</span>
+                        <input type="number" class="form-control" id="pmAmount" step="0.01" min="0.01" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Payment Method</label>
+                    <select class="form-select" id="pmMethod">
+                        <option value="1">Cash</option>
+                        <option value="2">Bank Transfer</option>
+                        <option value="3">Cheque</option>
+                        <option value="4">Mobile Banking</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label fw-semibold">Reference</label>
+                    <input type="text" class="form-control" id="pmRef" placeholder="Cheque #, TXN # etc." />
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-success px-4" onclick="submitPay()"><i class="bi bi-check-lg me-1"></i>Pay</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        $(function() { initDataTable('#supplierTable'); });
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function openPayModal(id, name, due) {
+            $('#pmSupplierId').val(id); $('#pmSupplierName').text(name);
+            $('#pmDue').text('৳' + due.toFixed(2)); $('#pmAmount').val(due.toFixed(2));
+            new bootstrap.Modal('#payModal').show();
+        }
+
+        function submitPay() {
+            $.post('/Supplier/AddPayment', {
+                supplierId: $('#pmSupplierId').val(), amount: parseFloat($('#pmAmount').val()),
+                method: $('#pmMethod').val(), reference: $('#pmRef').val(),
+                __RequestVerificationToken: tok()
+            }, d => {
+                if (d.success) { toastr.success(d.message); bootstrap.Modal.getInstance('#payModal').hide(); setTimeout(() => location.reload(), 700); }
+                else toastr.error(d.message);
+            });
+        }
+
+        function toggleSup(id) {
+            $.post('/Supplier/ToggleStatus', { id, __RequestVerificationToken: tok() },
+                d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
+        }
+
+        function delSup(id, name) {
+            Swal.fire({ title:'Delete Supplier?', text:`Delete "${name}"?`, icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
+            .then(r => { if (r.isConfirmed) {
+                $.post('/Supplier/Delete', { id, __RequestVerificationToken: tok() },
+                    d => { if (d.success) { $(`#sup-${id}`).fadeOut(); toastr.success(d.message); } else toastr.error(d.message); });
+            }});
+        }
+    </script>
+}

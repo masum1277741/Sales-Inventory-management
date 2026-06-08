@@ -1,0 +1,226 @@
+﻿@{ ViewData["Title"] = "Create GRN"; }
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-box-arrow-in-down me-2 text-primary"></i>Create Goods Receipt Note</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a asp-action="GRN">GRN</a></li>
+            <li class="breadcrumb-item active">New GRN</li>
+        </ol></nav>
+    </div>
+    <a asp-action="GRN" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row g-4">
+    <!-- Left -->
+    <div class="col-lg-8">
+
+        <!-- PO Selection -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-bag me-2 text-primary"></i>Select Purchase Order</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Purchase Order <span class="text-danger">*</span></label>
+                        <select class="form-select select2" id="poSelect" onchange="loadPOItems(this.value)">
+                            <option value="">— Select Approved PO —</option>
+                            @foreach (var po in (IEnumerable<PurchaseOrderListDto>)ViewBag.PurchaseOrders)
+                            {
+                                @if((ViewBag.SelectedPOId as int?) == po.Id)
+                                {
+                                    <option value="@po.Id" selected>@po.PONumber — @po.SupplierName</option>
+                                }
+                                else
+                                {
+                                    <option value="@po.Id">@po.PONumber — @po.SupplierName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Delivery Challan</label>
+                        <input type="text" class="form-control" id="deliveryChallan" placeholder="Optional" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Notes</label>
+                        <textarea class="form-control" id="grnNotes" rows="2" placeholder="Optional"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Table (loaded dynamically) -->
+        <div class="card border-0 shadow-sm" id="itemsCard" style="display:none;">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between">
+                <span class="fw-semibold"><i class="bi bi-list-ul me-2 text-primary"></i>Items to Receive</span>
+                <span class="text-muted small" id="supplierInfo"></span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Product</th>
+                                <th class="text-center">Ordered</th>
+                                <th class="text-center">Already Received</th>
+                                <th class="text-center" style="min-width:120px;">Receive Now <span class="text-danger">*</span></th>
+                                <th class="text-end">Unit Cost</th>
+                                <th class="text-end pe-4">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grnItemsTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4" id="summaryCard" style="display:none;">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-calculator me-2 text-primary"></i>Summary</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Total Items</span>
+                    <span class="fw-semibold" id="sumItems">0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2 small">
+                    <span class="text-muted">Total Qty</span>
+                    <span class="fw-semibold" id="sumQty">0</span>
+                </div>
+                <hr />
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Total Value</span><span id="sumValue">৳0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm" id="submitCard" style="display:none;">
+            <div class="card-body p-4 d-grid gap-2">
+                <button type="button" class="btn btn-success" onclick="submitGRN()">
+                    <i class="bi bi-check-circle me-1"></i>Create GRN & Update Stock
+                </button>
+                <a asp-action="GRN" class="btn btn-light border">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+$(function() {
+    $('#poSelect').select2({ theme:'bootstrap-5', width:'100%' });
+    const preselected = '@ViewBag.SelectedPOId';
+    if (preselected && preselected !== '') loadPOItems(preselected);
+});
+
+const tok = () => document.querySelector('[name=__RequestVerificationToken]').value;
+let currentPO = null;
+
+async function loadPOItems(poId) {
+    if (!poId) { $('#itemsCard, #summaryCard, #submitCard').hide(); return; }
+    const data = await fetch(`/Purchase/GetPOItems/${poId}`).then(r => r.json());
+    currentPO = { id: parseInt(poId), supplierId: data.supplierId };
+
+    document.getElementById('supplierInfo').textContent = data.supplierName;
+    document.getElementById('grnItemsTbody').innerHTML = data.items.map((item, i) => `
+        <tr>
+            <td class="ps-4">
+                <div class="fw-semibold small">${item.productName}</div>
+                <div class="d-flex gap-1 mt-1">
+                    <span class="badge bg-secondary" style="font-size:.6rem;">${item.sizeName}</span>
+                    <span class="text-muted" style="font-size:.72rem;">${item.colorName}</span>
+                    <code style="font-size:.65rem;">${item.barcode}</code>
+                </div>
+                <input type="hidden" class="po-item-id" value="${item.id}" />
+                <input type="hidden" class="variant-id" value="${item.productVariantId}" />
+            </td>
+            <td class="text-center fw-semibold">${item.orderedQty}</td>
+            <td class="text-center text-muted">${item.receivedQty}</td>
+            <td class="text-center">
+                <input type="number" class="form-control form-control-sm text-center receive-qty" style="width:90px;margin:auto;"
+                       value="${item.remainingQty}" min="0" max="${item.remainingQty}" step="1"
+                       oninput="calcSummary();" />
+            </td>
+            <td class="text-end">
+                <input type="number" class="form-control form-control-sm text-end unit-cost" style="width:90px;margin-left:auto;"
+                       value="${item.unitCost}" min="0" step="0.01"
+                       oninput="calcSummary();" />
+            </td>
+            <td class="text-end fw-semibold small pe-4 row-total">৳0.00</td>
+        </tr>
+    `).join('');
+
+    $('#itemsCard, #summaryCard, #submitCard').show();
+    calcSummary();
+}
+
+function calcSummary() {
+    const rows = document.querySelectorAll('#grnItemsTbody tr');
+    let totalQty = 0, totalValue = 0, itemCount = 0;
+    rows.forEach(row => {
+        const qty  = parseFloat(row.querySelector('.receive-qty')?.value) || 0;
+        const cost = parseFloat(row.querySelector('.unit-cost')?.value)   || 0;
+        const total = qty * cost;
+        row.querySelector('.row-total').textContent = '৳' + total.toFixed(2);
+        totalQty   += qty;
+        totalValue += total;
+        if (qty > 0) itemCount++;
+    });
+    document.getElementById('sumItems').textContent = itemCount;
+    document.getElementById('sumQty').textContent   = totalQty;
+    document.getElementById('sumValue').textContent = '৳' + totalValue.toFixed(2);
+}
+
+async function submitGRN() {
+    const poId = parseInt($('#poSelect').val());
+    if (!poId) { toastr.error('Select a Purchase Order.'); return; }
+
+    const rows = document.querySelectorAll('#grnItemsTbody tr');
+    const items = [];
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('.receive-qty')?.value) || 0;
+        if (qty <= 0) return;
+        items.push({
+            purchaseOrderItemId: parseInt(row.querySelector('.po-item-id')?.value),
+            productVariantId:    parseInt(row.querySelector('.variant-id')?.value),
+            receivedQuantity:    qty,
+            unitCost:            parseFloat(row.querySelector('.unit-cost')?.value) || 0
+        });
+    });
+
+    if (!items.length) { toastr.error('Enter received quantities for at least one item.'); return; }
+
+    const dto = {
+        purchaseOrderId: poId,
+        deliveryChallan: document.getElementById('deliveryChallan').value,
+        notes:           document.getElementById('grnNotes').value,
+        items
+    };
+
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating GRN...';
+
+    try {
+        const resp = await fetch('/Purchase/CreateGRN', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+            body: JSON.stringify(dto)
+        });
+        const data = await resp.json();
+        if (data.success) {
+            Swal.fire({ title:'GRN Created!', text: `GRN: ${data.data.grnNumber}`, icon:'success', confirmButtonText:'View Details' })
+            .then(() => window.location.href = `/Purchase/GRNDetails/${data.data.grnId}`);
+        } else toastr.error(data.message);
+    } catch (e) { toastr.error('Network error.'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Create GRN & Update Stock'; }
+}
+</script>
+}

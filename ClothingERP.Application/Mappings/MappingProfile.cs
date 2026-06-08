@@ -124,6 +124,7 @@ public class MappingProfile : Profile
         CreateMap<GoodsReceiptNote, GRNListDto>()
             .ForMember(d => d.PONumber, o => o.MapFrom(s => s.PurchaseOrder.PONumber))
             .ForMember(d => d.SupplierName, o => o.MapFrom(s => s.Supplier.CompanyName))
+            .ForMember(d => d.PurchaseOrderId, o => o.MapFrom(s => s.PurchaseOrderId))
             .ForMember(d => d.TotalValue, o => o.MapFrom(s => s.Items.Sum(i => i.TotalCost)));
         CreateMap<GoodsReceiptNote, GRNDto>()
             .ForMember(d => d.PONumber, o => o.MapFrom(s => s.PurchaseOrder.PONumber))

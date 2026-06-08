@@ -72,6 +72,7 @@ public class CreatePurchaseOrderItemDto
 public class GRNListDto
 {
     public int Id { get; set; }
+    public int PurchaseOrderId { get; set; }
     public string GRNNumber { get; set; } = string.Empty;
     public string PONumber { get; set; } = string.Empty;
     public string SupplierName { get; set; } = string.Empty;

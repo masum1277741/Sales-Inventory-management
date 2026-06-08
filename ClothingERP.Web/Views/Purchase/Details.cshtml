@@ -1,0 +1,262 @@
+﻿@model PurchaseOrderDto
+@{
+    ViewData["Title"] = "PO — " + Model.PONumber;
+    var grns = (IEnumerable<GRNListDto>)ViewBag.GRNs;
+    var (sCls, sLbl) = Model.Status switch
+    {
+        "Draft" => ("bg-warning text-dark", "Draft"),
+        "Approved" => ("bg-info", "Approved"),
+        "PartiallyReceived" => ("bg-primary", "Partially Received"),
+        "FullyReceived" => ("bg-success", "Fully Received"),
+        "Cancelled" => ("bg-secondary", "Cancelled"),
+        _ => ("bg-light text-dark", Model.Status)
+    };
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-bag me-2 text-primary"></i>@Model.PONumber</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Purchase</a></li>
+                <li class="breadcrumb-item active">@Model.PONumber</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (Model.Status == "Draft")
+        {
+            <button class="btn btn-success btn-sm" onclick="approvePO(@Model.Id)">
+                <i class="bi bi-check-circle me-1"></i>Approve
+            </button>
+        }
+        @if (Model.Status is "Approved" or "PartiallyReceived")
+        {
+            <a asp-action="CreateGRN" asp-route-purchaseOrderId="@Model.Id" class="btn btn-primary btn-sm">
+                <i class="bi bi-box-arrow-in-down me-1"></i>Create GRN
+            </a>
+        }
+        @if (Model.DueAmount > 0 && Model.Status != "Cancelled")
+        {
+            <button class="btn btn-outline-success btn-sm" onclick="$('#paySection').toggle()">
+                <i class="bi bi-cash me-1"></i>Pay Supplier
+            </button>
+        }
+        <a asp-action="Index" class="btn btn-light border btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <!-- Header -->
+            <div class="card-body p-4" style="background:linear-gradient(135deg,#f8f9ff,#fff);">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted small">Purchase Order</div>
+                        <h4 class="fw-bold mb-1">@Model.PONumber</h4>
+                        <div class="text-muted small">@Model.OrderDate.ToString("dd MMMM yyyy")</div>
+                        @if (Model.ExpectedDeliveryDate.HasValue)
+                        {
+                            <div class="text-muted small">Expected: @Model.ExpectedDeliveryDate.Value.ToString("dd MMM yyyy")</div>
+                        }
+                    </div>
+                    <div class="text-end">
+                        <span class="badge @sCls rounded-pill px-3 py-2 fs-6">@sLbl</span>
+                        <div class="text-muted small mt-1">Supplier: <strong>@Model.SupplierName</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">#</th>
+                            <th>Product</th>
+                            <th class="text-center">Ordered</th>
+                            <th class="text-center">Received</th>
+                            <th class="text-end">Unit Cost</th>
+                            <th class="text-end pe-4">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int i = 1;
+                        }
+                        @foreach (var item in Model.Items)
+                        {
+                            var remaining = item.OrderedQuantity - item.ReceivedQuantity;
+                            <tr>
+                                <td class="ps-4 text-muted small">@(i++)</td>
+                                <td>
+                                    <div class="fw-semibold small">@item.ProductName</div>
+                                    <div class="d-flex gap-1 mt-1">
+                                        <span class="badge bg-secondary" style="font-size:.6rem;">@item.SizeName</span>
+                                        <span class="text-muted" style="font-size:.72rem;">@item.ColorName</span>
+                                        <code style="font-size:.65rem;">@item.Barcode</code>
+                                    </div>
+                                </td>
+                                <td class="text-center fw-semibold">@item.OrderedQuantity.ToString("N0")</td>
+                                <td class="text-center">
+                                    <span class="@(item.ReceivedQuantity >= item.OrderedQuantity ? "text-success" : remaining > 0 ? "text-warning" : "text-muted") fw-semibold">
+                                        @item.ReceivedQuantity.ToString("N0")
+                                    </span>
+                                    @if (remaining > 0)
+                                    {
+                                        <div style="font-size:.7rem;" class="text-muted">Pending: @remaining.ToString("N0")</div>
+                                    }
+                                </td>
+                                <td class="text-end small">৳@item.UnitCost.ToString("N2")</td>
+                                <td class="text-end fw-semibold small pe-4">৳@item.TotalCost.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr><td colspan="5" class="text-end pe-3 fw-semibold">Sub Total:</td><td class="text-end fw-semibold pe-4">৳@Model.SubTotal.ToString("N2")</td></tr>
+                        @if (Model.DiscountAmount > 0)
+                        {
+                            <tr><td colspan="5" class="text-end pe-3 text-warning">Discount:</td><td class="text-end text-warning pe-4">- ৳@Model.DiscountAmount.ToString("N2")</td></tr>
+                        }
+                        @if (Model.TaxAmount > 0)
+                        {
+                            <tr><td colspan="5" class="text-end pe-3">Tax:</td><td class="text-end pe-4">৳@Model.TaxAmount.ToString("N2")</td></tr>
+                        }
+                        @if (Model.ShippingCost > 0)
+                        {
+                            <tr><td colspan="5" class="text-end pe-3">Shipping:</td><td class="text-end pe-4">৳@Model.ShippingCost.ToString("N2")</td></tr>
+                        }
+                        <tr style="border-top:2px solid #dee2e6;">
+                            <td colspan="5" class="text-end pe-3 fw-bold fs-5">TOTAL:</td>
+                            <td class="text-end fw-bold fs-5 pe-4">৳@Model.TotalAmount.ToString("N2")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- GRN History -->
+        @if (grns.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <span class="fw-semibold"><i class="bi bi-box-arrow-in-down me-2 text-success"></i>GRN History</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">GRN Number</th>
+                                <th>Received Date</th>
+                                <th class="text-end">Value</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var grn in grns)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-semibold small">@grn.GRNNumber</td>
+                                    <td class="small text-muted">@grn.ReceivedDate.ToString("dd MMM yyyy")</td>
+                                    <td class="text-end fw-semibold">৳@grn.TotalValue.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <a asp-action="GRNDetails" asp-route-id="@grn.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Right Panel -->
+    <div class="col-lg-4">
+        <!-- Payment Summary -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-cash-stack me-2 text-success"></i>Payment</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Total</span><span class="fw-semibold">৳@Model.TotalAmount.ToString("N2")</span></div>
+                <div class="d-flex justify-content-between mb-2"><span class="text-muted">Paid</span><span class="text-success fw-semibold">৳@Model.PaidAmount.ToString("N2")</span></div>
+                <hr />
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">@(Model.DueAmount > 0 ? "Balance Due" : "Settled")</span>
+                    <span class="fw-bold @(Model.DueAmount > 0 ? "text-danger" : "text-success") fs-5">৳@Model.DueAmount.ToString("N2")</span>
+                </div>
+
+                <!-- Pay Supplier Section -->
+                <div id="paySection" class="mt-3" style="display:none;">
+                    <hr />
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small">Amount</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light">৳</span>
+                            <input type="number" class="form-control" id="payAmt" value="@Model.DueAmount.ToString("F2")" step="0.01" />
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small">Method</label>
+                        <select class="form-select form-select-sm" id="payMethod">
+                            <option value="1">Cash</option>
+                            <option value="2">Bank Transfer</option>
+                            <option value="3">Cheque</option>
+                            <option value="4">Mobile Banking</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small">Reference</label>
+                        <input type="text" class="form-control form-control-sm" id="payRef" placeholder="Optional" />
+                    </div>
+                    <button class="btn btn-success w-100 btn-sm" onclick="submitPayment(@Model.Id)">Save Payment</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        @if (Model.Status is "Draft" or "Approved")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3 d-grid gap-2">
+                    @if (Model.Status == "Draft")
+                    {
+                        <button class="btn btn-success btn-sm" onclick="approvePO(@Model.Id)"><i class="bi bi-check-circle me-1"></i>Approve PO</button>
+                    }
+                    <button class="btn btn-outline-danger btn-sm" onclick="cancelPO(@Model.Id,'@Model.PONumber')"><i class="bi bi-x-circle me-1"></i>Cancel PO</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function approvePO(id) {
+            Swal.fire({ title:'Approve?', icon:'question', showCancelButton:true, confirmButtonColor:'#43a047', confirmButtonText:'Approve' })
+            .then(r => { if (r.isConfirmed) { $.post('/Purchase/Approve', { id, __RequestVerificationToken: tok() }, d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); }); }});
+        }
+
+        function cancelPO(id, num) {
+            Swal.fire({ title:'Cancel PO?', text:num, icon:'warning', input:'text', inputPlaceholder:'Reason...', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Cancel' })
+            .then(r => { if (r.isConfirmed && r.value) { $.post('/Purchase/Cancel', { id, reason: r.value, __RequestVerificationToken: tok() }, d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); }); }});
+        }
+
+        function submitPayment(id) {
+            $.post('/Purchase/AddPayment', {
+                purchaseOrderId: id, amount: parseFloat($('#payAmt').val()),
+                method: $('#payMethod').val(), reference: $('#payRef').val(),
+                __RequestVerificationToken: tok()
+            }, d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
+        }
+    </script>
+}

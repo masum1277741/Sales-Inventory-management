@@ -1,0 +1,87 @@
+﻿@model UpdateSupplierDto
+@{
+    ViewData["Title"] = "Edit Supplier"; var s = (SupplierDto)ViewBag.Supplier;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit — @s.CompanyName</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Suppliers</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Ledger" asp-route-id="@s.Id" class="btn btn-outline-info btn-sm"><i class="bi bi-journal-text me-1"></i>Ledger</a>
+        <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form asp-action="Edit" asp-route-id="@s.Id" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between">
+                    <span class="fw-semibold"><i class="bi bi-building me-2 text-primary"></i>Company Information</span>
+                    @if (s.CurrentBalance > 0)
+                    {
+                        <span class="badge bg-danger bg-opacity-15 text-danger">Payable: ৳@s.CurrentBalance.ToString("N2")</span>
+                    }
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="CompanyName" class="form-label fw-semibold">Company Name <span class="text-danger">*</span></label>
+                            <input asp-for="CompanyName" class="form-control" />
+                            <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ContactPerson" class="form-label fw-semibold">Contact Person <span class="text-danger">*</span></label>
+                            <input asp-for="ContactPerson" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold">Phone <span class="text-danger">*</span></label>
+                            <input asp-for="PhoneNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-semibold">Email</label>
+                            <input asp-for="Email" class="form-control" type="email" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Address" class="form-label fw-semibold">Address</label>
+                            <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="BankName" class="form-label fw-semibold">Bank Name</label>
+                            <input asp-for="BankName" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="BankAccountNumber" class="form-label fw-semibold">Account Number</label>
+                            <input asp-for="BankAccountNumber" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsActive" class="form-check-label fw-semibold">Active Supplier</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+                <a asp-action="Index" class="btn btn-light border px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,182 @@
+﻿@model IEnumerable<PurchaseOrderListDto>
+@{
+    ViewData["Title"] = "Purchase Orders"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-bag-plus me-2 text-primary"></i>Purchase Orders</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Purchase</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="GRN" class="btn btn-outline-secondary"><i class="bi bi-box-arrow-in-down me-1"></i>GRN List</a>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>New PO</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-2">
+                <div class="icon-wrap" style="background:#e8f0fe;"><i class="bi bi-bag" style="color:#4f7cff;"></i></div>
+                <div><div class="text-muted small">Total POs</div><h4 class="mb-0 fw-bold">@ViewBag.TotalCount</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-2">
+                <div class="icon-wrap" style="background:#fff3e0;"><i class="bi bi-hourglass" style="color:#f57c00;"></i></div>
+                <div><div class="text-muted small">Draft</div><h4 class="mb-0 fw-bold text-warning">@ViewBag.DraftCount</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-2">
+                <div class="icon-wrap" style="background:#e3f2fd;"><i class="bi bi-check-circle" style="color:#1e88e5;"></i></div>
+                <div><div class="text-muted small">Approved</div><h4 class="mb-0 fw-bold text-info">@ViewBag.ApprovedCount</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-2">
+                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-check-all" style="color:#43a047;"></i></div>
+                <div><div class="text-muted small">Received</div><h4 class="mb-0 fw-bold text-success">@ViewBag.ReceivedCount</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-2">
+                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-wallet" style="color:#e53935;"></i></div>
+                <div><div class="text-muted small">Total Due</div><h4 class="mb-0 fw-bold text-danger">৳@((decimal)ViewBag.TotalDue).ToString("N0")</h4></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<form asp-action="Index" method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center">
+        <i class="bi bi-calendar-range text-muted"></i>
+        <input type="date" name="fromDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.FromDate" />
+        <span class="text-muted small">to</span>
+        <input type="date" name="toDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.ToDate" />
+        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-filter me-1"></i>Filter</button>
+        <a asp-action="Index" class="btn btn-sm btn-light border">Reset</a>
+        <span class="ms-auto text-muted small">@items.Count filtered</span>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="poTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th>PO Number</th>
+                        <th>Supplier</th>
+                        <th>Order Date</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Due</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center" width="110">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sn = 1;
+                    }
+                    @foreach (var po in items)
+                    {
+                        var (sCls, sLbl) = po.Status switch
+                        {
+                            "Draft" => ("bg-warning text-dark", "Draft"),
+                            "Approved" => ("bg-info", "Approved"),
+                            "PartiallyReceived" => ("bg-primary", "Partial"),
+                            "FullyReceived" => ("bg-success", "Received"),
+                            "Cancelled" => ("bg-secondary", "Cancelled"),
+                            _ => ("bg-light text-dark", po.Status)
+                        };
+                        <tr>
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@po.Id" class="fw-semibold text-primary text-decoration-none small">
+                                    @po.PONumber
+                                </a>
+                            </td>
+                            <td class="small fw-semibold">@po.SupplierName</td>
+                            <td class="small text-muted">@po.OrderDate.ToString("dd MMM yyyy")</td>
+                            <td class="text-end fw-semibold small">৳@po.TotalAmount.ToString("N2")</td>
+                            <td class="text-end text-success small">৳@po.PaidAmount.ToString("N2")</td>
+                            <td class="text-end small @(po.DueAmount > 0 ? "text-danger fw-bold" : "text-muted")">
+                                @(po.DueAmount > 0 ? "৳" + po.DueAmount.ToString("N2") : "—")
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @sCls rounded-pill px-2">@sLbl</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-action="Details" asp-route-id="@po.Id"><i class="bi bi-eye me-2 text-info"></i>Details</a></li>
+                                        @if (po.Status == "Draft")
+                                        {
+                                            <li><button class="dropdown-item" onclick="approvePO(@po.Id)"><i class="bi bi-check-circle me-2 text-success"></i>Approve</button></li>
+                                        }
+                                        @if (po.Status is "Approved" or "PartiallyReceived")
+                                        {
+                                            <li><a class="dropdown-item" asp-action="CreateGRN" asp-route-purchaseOrderId="@po.Id"><i class="bi bi-box-arrow-in-down me-2 text-primary"></i>Create GRN</a></li>
+                                        }
+                                        @if (po.Status is "Draft" or "Approved")
+                                        {
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li><button class="dropdown-item text-danger" onclick="cancelPO(@po.Id,'@po.PONumber')"><i class="bi bi-x-circle me-2"></i>Cancel</button></li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        $(function() { initDataTable('#poTable', { order:[[3,'desc']] }); });
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function approvePO(id) {
+            Swal.fire({ title:'Approve PO?', icon:'question', showCancelButton:true, confirmButtonColor:'#43a047', confirmButtonText:'Approve' })
+            .then(r => { if (r.isConfirmed) {
+                $.post('/Purchase/Approve', { id, __RequestVerificationToken: tok() },
+                    d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
+            }});
+        }
+
+        function cancelPO(id, num) {
+            Swal.fire({ title:'Cancel PO?', text:`Cancel ${num}?`, icon:'warning', input:'text',
+                inputPlaceholder:'Reason...', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Cancel PO' })
+            .then(r => { if (r.isConfirmed && r.value) {
+                $.post('/Purchase/Cancel', { id, reason: r.value, __RequestVerificationToken: tok() },
+                    d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
+            }});
+        }
+    </script>
+}
