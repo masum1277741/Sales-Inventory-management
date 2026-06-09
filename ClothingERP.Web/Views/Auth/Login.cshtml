@@ -5,126 +5,510 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login — Clothing ERP</title>
+    <title>Sign In — Clozey</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --black:        #0B0B0B;
+            --charcoal:     #141414;
+            --gold:         #C8A96E;
+            --gold-lt:      #D9BC87;
+            --gold-dim:     rgba(200,169,110,.12);
+            --cream:        #F7F2EA;
+            --white:        #FFFFFF;
+            --muted:        #9A8F84;
+            --border:       #EAE2D6;
+            --input-bg:     #FDFAF6;
+            --error:        #B94040;
+            --error-bg:     #FEF2F2;
+            --error-border: #FECACA;
+        }
+
+        /* ── Base ─────────────────────────────────────────────── */
+        html, body {
+            height: 100%;
+        }
         body {
-            margin: 0;
             min-height: 100vh;
+            background: var(--black);
+            font-family: 'DM Sans', system-ui, sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
         }
-        .login-wrapper { width: 100%; padding: 16px; }
-        .login-card {
-            background: #fff;
-            border-radius: 20px;
-            padding: 40px 36px;
+
+        /* ── Background Canvas ────────────────────────────────── */
+        .bg-scene {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Soft radial glow behind card */
+        .bg-scene::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(900px, 130vw);
+            height: min(900px, 130vw);
+            background: radial-gradient(ellipse, rgba(200,169,110,.07) 0%, transparent 65%);
+        }
+
+        /* Subtle horizontal lines — evokes editorial elegance */
+        .bg-scene::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 48px,
+                rgba(255,255,255,.018) 48px,
+                rgba(255,255,255,.018) 49px
+            );
+        }
+
+        /* Floating sparkles — mirrors the logo's star motifs */
+        .spark {
+            position: absolute;
+            fill: var(--gold);
+            animation: twinkle var(--d, 4s) var(--dl, 0s) ease-in-out infinite;
+            opacity: 0;
+        }
+        @@keyframes twinkle {
+            0%, 100% { opacity: 0;          transform: scale(.7)  rotate(0deg); }
+            50%       { opacity: var(--op, .4); transform: scale(1.15) rotate(18deg); }
+        }
+
+        /* Corner ornament lines */
+        .corner {
+            position: absolute;
+            width: 80px; height: 80px;
+            opacity: .18;
+        }
+        .corner--tl { top: 32px; left: 40px; border-top: 1px solid var(--gold); border-left: 1px solid var(--gold); }
+        .corner--br { bottom: 32px; right: 40px; border-bottom: 1px solid var(--gold); border-right: 1px solid var(--gold); }
+
+        /* ── Card ─────────────────────────────────────────────── */
+        .login-outer {
+            position: relative;
+            z-index: 10;
             width: 100%;
-            max-width: 420px;
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: 28px;
+            width: 100%;
+            max-width: 448px;
+            padding: 52px 48px 44px;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(200,169,110,.18),
+                0 40px 100px rgba(0,0,0,.7),
+                0 8px 24px rgba(0,0,0,.4);
+        }
+
+        /* Gold gradient line at top */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(
+                90deg,
+                transparent   0%,
+                var(--gold)   30%,
+                var(--gold-lt) 50%,
+                var(--gold)   70%,
+                transparent   100%
+            );
+        }
+
+        /* Very subtle grain on card */
+        .login-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+            pointer-events: none;
+            opacity: .5;
+            border-radius: inherit;
+        }
+
+        /* ── Logo Area ────────────────────────────────────────── */
+        .logo-zone {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .logo-zone img {
+            height: 84px;
+            width: auto;
+            object-fit: contain;
+            display: block;
             margin: 0 auto;
-            box-shadow: 0 24px 80px rgba(0,0,0,.4);
         }
-        .brand-icon {
-            width: 64px; height: 64px; background: #4f7cff;
-            border-radius: 16px; display: flex; align-items: center;
-            justify-content: center; margin: 0 auto 16px; font-size: 1.8rem; color: #fff;
+
+        /* Thin ornamental rule with italic tagline */
+        .logo-rule {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
         }
-        .brand-title  { text-align: center; font-size: 1.5rem; font-weight: 700; color: #1a1d23; margin-bottom: 4px; }
-        .brand-sub    { text-align: center; font-size: .85rem; color: #888; margin-bottom: 28px; }
-        .form-label   { font-weight: 600; font-size: .85rem; color: #444; margin-bottom: 6px; }
-        .input-group-text { background: #f7f8fc; border-right: 0; color: #888; }
-        .form-control {
-            border-left: 0;
-            background: #f7f8fc;
+        .logo-rule::before,
+        .logo-rule::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #DDD4C4, transparent);
+        }
+        .logo-rule span {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-style: italic;
+            font-size: .72rem;
+            color: #A89880;
+            letter-spacing: .1em;
+            white-space: nowrap;
+        }
+
+        /* ── Heading ──────────────────────────────────────────── */
+        .card-heading {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card-heading h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.55rem;
+            font-weight: 600;
+            color: var(--black);
+            letter-spacing: -.01em;
+            margin-bottom: 4px;
+        }
+        .card-heading p {
+            font-size: .75rem;
+            color: var(--muted);
+            letter-spacing: .09em;
+            text-transform: uppercase;
+        }
+
+        /* ── Form ─────────────────────────────────────────────── */
+        .field {
+            margin-bottom: 18px;
+        }
+        .field-label {
+            display: block;
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: #7A6E64;
+            margin-bottom: 7px;
+        }
+        .field-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .field-icon {
+            position: absolute;
+            left: 14px;
+            color: #C0B0A0;
+            font-size: .95rem;
+            pointer-events: none;
+            z-index: 2;
+            line-height: 1;
+        }
+        .field-input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .88rem;
+            color: var(--black);
+            background: var(--input-bg);
+            outline: none;
+            transition: border-color .2s, background .2s, box-shadow .2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .field-input::placeholder { color: #C8BBB0; }
+        .field-input:focus {
+            border-color: var(--gold);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(200,169,110,.1);
+        }
+
+        .pw-toggle {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #C0B0A0;
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 1rem;
+            line-height: 1;
+            transition: color .2s;
+            z-index: 2;
+        }
+        .pw-toggle:hover { color: var(--gold); }
+
+        /* Validation messages */
+        .val-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            border-radius: 8px;
             padding: 10px 14px;
-            font-size: .9rem;
+            margin-bottom: 18px;
+            font-size: .8rem;
+            color: var(--error);
+            line-height: 1.4;
         }
-        .form-control:focus { box-shadow: none; border-color: #4f7cff; background: #fff; }
-        .btn-login {
-            background: #4f7cff; color: #fff; border: none;
-            padding: 12px; font-size: .95rem; font-weight: 600;
-            border-radius: 10px; transition: background .2s;
+        .val-alert i { flex-shrink: 0; margin-top: 1px; }
+        .field-error {
+            display: block;
+            font-size: .72rem;
+            color: var(--error);
+            margin-top: 5px;
         }
-        .btn-login:hover { background: #3a6ae0; color: #fff; }
-        .toggle-pw { cursor: pointer; background: #f7f8fc; border-left: 0; border-color: #dee2e6; }
-        .footer-text { text-align: center; font-size: .75rem; color: #aaa; margin-top: 24px; }
+
+        /* ── Options Row ──────────────────────────────────────── */
+        .options-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 26px;
+        }
+        .check-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .check-wrap input[type="checkbox"] {
+            width: 16px; height: 16px;
+            border: 1.5px solid #C8BBB0;
+            border-radius: 4px;
+            appearance: none;
+            -webkit-appearance: none;
+            background: var(--white);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all .18s;
+            position: relative;
+        }
+        .check-wrap input[type="checkbox"]:checked {
+            background: var(--gold);
+            border-color: var(--gold);
+        }
+        .check-wrap input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 4.5px;
+            width: 5px; height: 8px;
+            border: 2px solid #fff;
+            border-top: 0; border-left: 0;
+            transform: rotate(45deg);
+        }
+        .check-wrap span {
+            font-size: .8rem;
+            color: var(--muted);
+        }
+
+        /* ── Submit Button ────────────────────────────────────── */
+        .btn-signin {
+            width: 100%;
+            padding: 14px;
+            background: var(--black);
+            color: var(--gold);
+            border: 1.5px solid var(--gold);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            position: relative;
+            overflow: hidden;
+            transition: color .3s;
+        }
+        .btn-signin .fill-layer {
+            position: absolute;
+            inset: 0;
+            background: var(--gold);
+            transform: translateY(102%);
+            transition: transform .32s cubic-bezier(.4,0,.2,1);
+            z-index: 0;
+        }
+        .btn-signin:hover .fill-layer { transform: translateY(0); }
+        .btn-signin:hover { color: var(--black); }
+        .btn-signin > *:not(.fill-layer) { position: relative; z-index: 1; }
+
+        /* ── Card Footer ──────────────────────────────────────── */
+        .card-footer-txt {
+            text-align: center;
+            font-size: .68rem;
+            color: #BDB3A8;
+            margin-top: 26px;
+            letter-spacing: .04em;
+        }
+        .card-footer-txt i {
+            font-size: .6rem;
+            color: var(--gold);
+            opacity: .7;
+            margin: 0 4px;
+        }
+
+        /* ── Responsive ───────────────────────────────────────── */
+        @@media (max-width: 480px) {
+            .login-card { padding: 40px 28px 36px; border-radius: 22px; }
+            .corner { display: none; }
+        }
+        @@media (max-width: 360px) {
+            .login-card { padding: 36px 22px 30px; }
+        }
     </style>
 </head>
 <body>
-<div class="login-wrapper">
-    <div class="login-card">
-        <div class="brand-icon"><i class="bi bi-bag-heart-fill"></i></div>
-        <div class="brand-title">Clothing ERP</div>
-        <div class="brand-sub">Sign in to your account</div>
 
-        <form asp-action="Login" method="post">
-            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-            @Html.AntiForgeryToken()
+    <!-- ── Background Scene ──────────────────────────────────── -->
+    <div class="bg-scene" aria-hidden="true">
+        <!-- Corner ornaments -->
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
 
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger py-2 mb-3" role="alert">
-                    <i class="bi bi-exclamation-circle me-2"></i>
-                    <span asp-validation-summary="ModelOnly"></span>
-                </div>
-            }
-
-            <div class="mb-3">
-                <label class="form-label">Username</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-person"></i></span>
-                    <input asp-for="Username" class="form-control" placeholder="Enter username" autocomplete="username" />
-                </div>
-                <span asp-validation-for="Username" class="text-danger small"></span>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <input asp-for="Password" id="passwordInput" class="form-control"
-                           placeholder="Enter password" autocomplete="current-password" />
-                    <button class="btn toggle-pw border" type="button" id="togglePw" tabindex="-1">
-                        <i class="bi bi-eye" id="eyeIcon"></i>
-                    </button>
-                </div>
-                <span asp-validation-for="Password" class="text-danger small"></span>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between mb-4">
-                <div class="form-check mb-0">
-                    <input asp-for="RememberMe" class="form-check-input" type="checkbox" />
-                    <label asp-for="RememberMe" class="form-check-label small">Remember me</label>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-login w-100">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-            </button>
-        </form>
-
+        <!-- Sparkle SVGs — echoing the logo's 4-point stars -->
+        <svg class="spark" style="top:9%;left:7%;width:18px;--d:4.2s;--dl:0s;--op:.45;"    viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="top:18%;right:9%;width:11px;--d:5.1s;--dl:1.3s;--op:.3;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="top:6%;right:22%;width:8px;--d:3.7s;--dl:2.1s;--op:.28;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="top:72%;left:5%;width:14px;--d:4.8s;--dl:0.6s;--op:.38;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="top:84%;left:18%;width:9px;--d:3.4s;--dl:1.7s;--op:.22;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="bottom:14%;right:7%;width:16px;--d:5.5s;--dl:0.3s;--op:.42;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="bottom:32%;right:19%;width:10px;--d:4s;--dl:2.4s;--op:.25;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="top:45%;left:3%;width:12px;--d:4.6s;--dl:1s;--op:.3;"    viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+        <svg class="spark" style="top:38%;right:4%;width:7px;--d:6s;--dl:0.8s;--op:.2;"    viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
     </div>
-</div>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    $('#togglePw').on('click', function () {
-        const inp  = $('#passwordInput');
-        const icon = $('#eyeIcon');
-        if (inp.attr('type') === 'password') {
-            inp.attr('type', 'text');
-            icon.removeClass('bi-eye').addClass('bi-eye-slash');
-        } else {
-            inp.attr('type', 'password');
-            icon.removeClass('bi-eye-slash').addClass('bi-eye');
-        }
-    });
-</script>
+    <!-- ── Login Card ─────────────────────────────────────────── -->
+    <div class="login-outer">
+        <div class="login-card">
+
+            <!-- Logo -->
+            <div class="logo-zone">
+                <img src="~/logo/logo.png" alt="Clozey — Attractive Beauty" />
+                <div class="logo-rule">
+                    <span>Management System</span>
+                </div>
+            </div>
+
+            <!-- Heading -->
+            <div class="card-heading">
+                <h1>Welcome Back</h1>
+                <p>Sign in to your account</p>
+            </div>
+
+            <!-- Form -->
+            <form asp-action="Login" method="post" novalidate>
+                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                @Html.AntiForgeryToken()
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="val-alert" role="alert">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span asp-validation-summary="ModelOnly"></span>
+                    </div>
+                }
+
+                <!-- Username -->
+                <div class="field">
+                    <label class="field-label" for="Username">Username</label>
+                    <div class="field-wrap">
+                        <i class="bi bi-person field-icon"></i>
+                        <input asp-for="Username" id="Username" class="field-input"
+                               placeholder="Enter your username"
+                               autocomplete="username" />
+                    </div>
+                    <span asp-validation-for="Username" class="field-error"></span>
+                </div>
+
+                <!-- Password -->
+                <div class="field">
+                    <label class="field-label" for="Password">Password</label>
+                    <div class="field-wrap">
+                        <i class="bi bi-lock field-icon"></i>
+                        <input asp-for="Password" id="passwordInput" class="field-input"
+                               placeholder="Enter your password"
+                               autocomplete="current-password" />
+                        <button class="pw-toggle" type="button" id="togglePw" tabindex="-1"
+                                aria-label="Show or hide password">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <!-- Remember Me -->
+                <div class="options-row">
+                    <label class="check-wrap">
+                        <input asp-for="RememberMe" type="checkbox" />
+                        <span>Remember me</span>
+                    </label>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-signin">
+                    <span class="fill-layer"></span>
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <p class="card-footer-txt">
+                &copy; 2025 Clozey
+                <i class="bi bi-dot"></i>
+                Attractive Beauty
+            </p>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        document.getElementById('togglePw').addEventListener('click', function () {
+            const inp  = document.getElementById('passwordInput');
+            const icon = document.getElementById('eyeIcon');
+            const isHidden = inp.type === 'password';
+            inp.type = isHidden ? 'text' : 'password';
+            icon.className = isHidden ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    </script>
 </body>
 </html>
