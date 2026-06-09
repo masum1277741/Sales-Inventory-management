@@ -2,11 +2,17 @@
 
 public interface IAuditLogService
 {
-    Task LogAsync(int userId, string action, string tableName,
-                  string? recordId = null, string? oldValues = null, string? newValues = null,
-                  string? ipAddress = null, bool isSuccess = true, string? errorMessage = null);
+    Task<IEnumerable<AuditLogDto>> GetAllAsync();
 
-    Task<IEnumerable<AuditLogDto>> GetLogsAsync(DateTime from, DateTime to, int? userId = null);
-    Task<IEnumerable<AuditLogDto>> GetFailedLoginsAsync(int count = 50);
-    Task<IEnumerable<AuditLogDto>> GetByUserAsync(int userId, int count = 50);
+    Task<IEnumerable<AuditLogDto>> GetByEntityAsync(string entityName, int entityId);
+
+ 
+    Task LogAsync(int userId,
+                  string actionType,
+                  string entityName,
+                  string? entityId = null,
+                  string? ipAddress = null,
+                  string? oldValues = null,
+                  string? newValues = null,
+                  string? description = null);
 }

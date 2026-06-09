@@ -2,17 +2,25 @@
 
 public class AuditLog : BaseEntity
 {
-    public int UserId { get; set; }
-    public string Action { get; set; } = string.Empty;      // Create, Update, Delete, Login
-    public string TableName { get; set; } = string.Empty;
-    public string? RecordId { get; set; }
-    public string? OldValues { get; set; }                  // JSON
-    public string? NewValues { get; set; }                  // JSON
+
+    public string EntityName { get; set; } = string.Empty;
+
+  
+    public int? EntityId { get; set; }
+
+
+    public string ActionType { get; set; } = string.Empty;
+
+
+    public string UserName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+
+    public string? OldValues { get; set; }
+    public string? NewValues { get; set; }
     public string? IPAddress { get; set; }
     public string? UserAgent { get; set; }
-    public DateTime ActionDate { get; set; } = DateTime.UtcNow;
-    public bool IsSuccess { get; set; } = true;
-    public string? ErrorMessage { get; set; }
+    public int UserId { get; set; }
 
-    public virtual User User { get; set; } = null!;
+    // Navigation property
+    public User? User { get; set; }
 }

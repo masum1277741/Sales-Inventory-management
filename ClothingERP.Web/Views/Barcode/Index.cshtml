@@ -1,0 +1,289 @@
+﻿@{
+    ViewData["Title"] = "Barcode Print";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-upc-scan me-2 text-primary"></i>Barcode Print</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Barcode Print</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Search Panel -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <span class="fw-semibold"><i class="bi bi-search me-2 text-primary"></i>Find Products</span>
+            </div>
+            <div class="card-body p-4">
+                <!-- Barcode scan -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Scan or Enter Barcode</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-upc-scan text-primary"></i></span>
+                        <input type="text" id="barcodeInput" class="form-control" placeholder="Scan barcode..." autocomplete="off" />
+                        <button class="btn btn-primary" onclick="lookupBarcode()">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Press Enter to search</small>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 my-3">
+                    <hr class="flex-grow-1" /><span class="text-muted small px-2">or</span><hr class="flex-grow-1" />
+                </div>
+
+                <!-- Name search -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Search by Name / SKU</label>
+                    <div class="position-relative">
+                        <input type="text" id="nameSearch" class="form-control" placeholder="Type product name..."
+                               autocomplete="off" oninput="searchByName(this.value)" />
+                        <div id="nameDropdown"
+                             class="position-absolute w-100 bg-white border rounded shadow"
+                             style="z-index:1000;max-height:280px;overflow-y:auto;display:none;top:100%;"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 rounded" style="background:#f8f9ff;">
+                    <div class="text-muted small fw-semibold mb-2">How to use:</div>
+                    <ul class="list-unstyled mb-0 small text-muted">
+                        <li class="mb-1"><i class="bi bi-1-circle me-1 text-primary"></i>Search or scan product</li>
+                        <li class="mb-1"><i class="bi bi-2-circle me-1 text-primary"></i>Add to print list</li>
+                        <li class="mb-1"><i class="bi bi-3-circle me-1 text-primary"></i>Set quantity per label</li>
+                        <li><i class="bi bi-4-circle me-1 text-primary"></i>Click Print Labels</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Selection -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="bi bi-printer me-2 text-primary"></i>Print List
+                    <span class="badge bg-primary ms-1" id="labelCount">0</span>
+                </span>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-light border" onclick="clearAll()">
+                        <i class="bi bi-trash me-1"></i>Clear
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="setAllQty(1)">Set All: 1</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="setAllQty(2)">Set All: 2</button>
+                </div>
+            </div>
+
+            <!-- Hidden form for submission -->
+            <form id="printForm" method="post" asp-action="PrintLabels">
+                @Html.AntiForgeryToken()
+                <div id="printFormFields"></div>
+
+                <!-- Table -->
+                <div class="table-responsive" id="selectionTableWrap">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Product</th>
+                                <th class="text-center" style="width:90px;">Qty</th>
+                                <th class="text-end">Price</th>
+                                <th style="width:50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="selectionBody">
+                            <tr id="emptySelectionRow">
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-upc-scan d-block fs-2 mb-2"></i>
+                                    Search and add products to print
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="card-footer bg-white border-top p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            <span id="totalLabels">0</span> label(s) will be printed
+                        </div>
+                        <button type="submit" class="btn btn-primary px-4" id="printBtn" disabled
+                                onclick="preparePrint()">
+                            <i class="bi bi-printer me-1"></i>Print Labels
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        // ── State ──────────────────────────────────────────────────────────────────
+        const selection = []; // [{id, productName, sku, sizeName, colorName, barcode, retailPrice, qty}]
+        let searchTimer;
+        let nextId = 0;
+
+        // ── Barcode Scan ───────────────────────────────────────────────────────────
+        document.getElementById('barcodeInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); lookupBarcode(); }
+        });
+
+        async function lookupBarcode() {
+            const barcode = document.getElementById('barcodeInput').value.trim();
+            if (!barcode) return;
+            const data = await fetch(`/Barcode/LookupBarcode?barcode=${encodeURIComponent(barcode)}`).then(r => r.json());
+            if (data) { addToSelection(data); document.getElementById('barcodeInput').value = ''; }
+            else toastr.error('Product not found for barcode: ' + barcode);
+        }
+
+        // ── Name Search ────────────────────────────────────────────────────────────
+        function searchByName(val) {
+            clearTimeout(searchTimer);
+            if (val.length < 2) { $('#nameDropdown').hide(); return; }
+            searchTimer = setTimeout(async () => {
+                const data = await fetch(`/Barcode/SearchVariants?keyword=${encodeURIComponent(val)}`).then(r => r.json());
+                const dd = $('#nameDropdown');
+                if (!data.length) { dd.hide(); return; }
+                dd.html(data.map(v => `
+                    <div class="p-2 border-bottom d-flex align-items-center gap-2"
+                         style="cursor:pointer;"
+                         onmousedown="event.preventDefault();addFromSearch(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small">${v.productName}</div>
+                            <div style="font-size:.72rem;color:#888;">${v.sizeName} · ${v.colorName} · ${v.barcode}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold small text-primary">৳${v.retailPrice}</div>
+                            <div style="font-size:.65rem;" class="badge ${v.stock>0?'bg-success':'bg-danger'} bg-opacity-15 ${v.stock>0?'text-success':'text-danger'}">${v.stock} in stock</div>
+                        </div>
+                    </div>
+                `).join('')).show();
+            }, 250);
+        }
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#nameSearch, #nameDropdown')) $('#nameDropdown').hide();
+        });
+
+        function addFromSearch(v) {
+            addToSelection(v);
+            document.getElementById('nameSearch').value = '';
+            $('#nameDropdown').hide();
+        }
+
+        // ── Selection Management ───────────────────────────────────────────────────
+        function addToSelection(v) {
+            const existing = selection.find(s => s.barcode === v.barcode);
+            if (existing) { existing.qty++; renderSelection(); toastr.info('Quantity increased.'); return; }
+            selection.push({
+                _id: nextId++, variantId: v.variantId, productName: v.productName,
+                sku: v.sku, sizeName: v.sizeName, colorName: v.colorName,
+                barcode: v.barcode, retailPrice: v.retailPrice, qty: 1
+            });
+            renderSelection();
+            toastr.success(`Added: ${v.productName} (${v.sizeName}/${v.colorName})`);
+        }
+
+        function removeFromSelection(id) {
+            const idx = selection.findIndex(s => s._id === id);
+            if (idx > -1) { selection.splice(idx, 1); renderSelection(); }
+        }
+
+        function setQty(id, val) {
+            const item = selection.find(s => s._id === id);
+            if (item) { item.qty = Math.max(1, Math.min(parseInt(val)||1, 50)); updateTotalCount(); }
+        }
+
+        function setAllQty(n) {
+            selection.forEach(s => s.qty = n);
+            renderSelection();
+        }
+
+        function clearAll() {
+            if (!selection.length) return;
+            Swal.fire({ title:'Clear all?', icon:'question', showCancelButton:true, confirmButtonText:'Clear' })
+            .then(r => { if (r.isConfirmed) { selection.length = 0; renderSelection(); } });
+        }
+
+        function updateTotalCount() {
+            const total = selection.reduce((s, i) => s + i.qty, 0);
+            document.getElementById('totalLabels').textContent = total;
+            document.getElementById('labelCount').textContent  = selection.length;
+            document.getElementById('printBtn').disabled       = selection.length === 0;
+        }
+
+        function renderSelection() {
+            const tbody = document.getElementById('selectionBody');
+            const empty = document.getElementById('emptySelectionRow');
+            if (!selection.length) {
+                tbody.innerHTML = '';
+                tbody.appendChild(empty);
+                empty.style.display = '';
+                updateTotalCount();
+                return;
+            }
+            empty.style.display = 'none';
+            tbody.innerHTML = selection.map(item => `
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-semibold small">${item.productName}</div>
+                        <div class="d-flex gap-1 mt-1 align-items-center">
+                            <span class="badge bg-secondary" style="font-size:.6rem;">${item.sizeName}</span>
+                            <span class="text-muted small">${item.colorName}</span>
+                            <code style="font-size:.65rem;">${item.barcode}</code>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                            <button type="button" class="btn btn-sm btn-light border px-1 py-0"
+                                    onclick="const s=selection.find(x=>x._id==${item._id});if(s&&s.qty>1){s.qty--;renderSelection();}">−</button>
+                            <input type="number" class="form-control form-control-sm text-center"
+                                   style="width:52px;" value="${item.qty}" min="1" max="50"
+                                   onchange="setQty(${item._id},this.value)" />
+                            <button type="button" class="btn btn-sm btn-light border px-1 py-0"
+                                    onclick="const s=selection.find(x=>x._id==${item._id});if(s&&s.qty<50){s.qty++;renderSelection();}">+</button>
+                        </div>
+                    </td>
+                    <td class="text-end fw-semibold small">৳${parseFloat(item.retailPrice).toFixed(2)}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFromSelection(${item._id})">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            updateTotalCount();
+        }
+
+        // ── Prepare form for submission ────────────────────────────────────────────
+        function preparePrint() {
+            if (!selection.length) { event.preventDefault(); toastr.error('Nothing to print.'); return; }
+            const container = document.getElementById('printFormFields');
+            container.innerHTML = '';
+            selection.forEach(item => {
+                const fields = {
+                    productNames: item.productName, sizeNames: item.sizeName,
+                    colorNames:   item.colorName,   barcodes:  item.barcode,
+                    retailPrices: item.retailPrice,  skus:     item.sku || '',
+                    printQtys:    item.qty
+                };
+                Object.entries(fields).forEach(([name, value]) => {
+                    const inp = document.createElement('input');
+                    inp.type = 'hidden'; inp.name = name; inp.value = value;
+                    container.appendChild(inp);
+                });
+            });
+        }
+    </script>
+}

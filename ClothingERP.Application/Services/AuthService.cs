@@ -4,33 +4,45 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
-    private readonly IAuditLogService _audit;
+    private readonly IAuditLogService _auditSvc;
 
-    public AuthService(IUnitOfWork uow, IMapper mapper, IAuditLogService audit)
-        => (_uow, _mapper, _audit) = (uow, mapper, audit);
+    public AuthService(IUnitOfWork uow, IMapper mapper, IAuditLogService auditSvc)
+        => (_uow, _mapper, _auditSvc) = (uow, mapper, auditSvc);
 
-    public async Task<ServiceResult<UserDto>> LoginAsync(LoginDto dto, string ip, string ua)
+
+    public async Task<ServiceResult<UserDto>> LoginAsync(LoginDto dto, string ipAddress, string userAgent)
     {
         var user = await _uow.Users.GetByUsernameAsync(dto.Username);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        {
+         
+            if (user != null)
+                await _auditSvc.LogAsync(user.Id, "LoginFailed", "Users",
+                    user.Id.ToString(), ipAddress: ipAddress,
+                    description: $"Failed login attempt for '{user.Username}'");
+
             return ServiceResult<UserDto>.Fail("Invalid username or password.");
+        }
 
         if (!user.IsActive)
-            return ServiceResult<UserDto>.Fail("Your account is inactive. Contact administrator.");
+            return ServiceResult<UserDto>.Fail("Account is inactive.");
 
-        user.LastLoginAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
-        _uow.Users.Update(user);
+        user.LastLoginAt = DateTime.Now;
         await _uow.SaveChangesAsync();
 
-        await _audit.LogAsync(user.Id, "Login", "Users", user.Id.ToString(), ipAddress: ip);
 
-        return ServiceResult<UserDto>.Ok(_mapper.Map<UserDto>(user), "Login successful.");
+        await _auditSvc.LogAsync(user.Id, "LoginSuccess", "Users",
+            user.Id.ToString(), ipAddress: ipAddress,
+            description: $"User '{user.Username}' logged in successfully");
+
+        return ServiceResult<UserDto>.Ok(_mapper.Map<UserDto>(user));
     }
 
-    public async Task LogoutAsync(int userId, string ip)
-        => await _audit.LogAsync(userId, "Logout", "Users", userId.ToString(), ipAddress: ip);
+    public async Task LogoutAsync(int userId, string ipAddress)
+        
+        => await _auditSvc.LogAsync(userId, "Logout", "Users",
+               userId.ToString(), ipAddress: ipAddress);
 
     public async Task<ServiceResult> ChangePasswordAsync(int userId, ChangePasswordDto dto)
     {
@@ -46,7 +58,8 @@ public class AuthService : IAuthService
         _uow.Users.Update(user);
         await _uow.SaveChangesAsync();
 
-        await _audit.LogAsync(userId, "ChangePassword", "Users", userId.ToString());
+   
+        await _auditSvc.LogAsync(userId, "ChangePassword", "Users", userId.ToString());
         return ServiceResult.Ok("Password changed successfully.");
     }
 

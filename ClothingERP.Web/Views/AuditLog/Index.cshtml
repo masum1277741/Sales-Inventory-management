@@ -1,0 +1,231 @@
+﻿@model IEnumerable<AuditLogDto>
+@{
+    ViewData["Title"] = "Audit Log"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-shield-check me-2 text-primary"></i>Audit Log</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Audit Log</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f0fe;"><i class="bi bi-list-ul" style="color:#4f7cff;"></i></div>
+                <div><div class="text-muted small">Total Logs</div><h4 class="mb-0 fw-bold">@ViewBag.TotalCount</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-calendar-check" style="color:#43a047;"></i></div>
+                <div><div class="text-muted small">Today's Activity</div><h4 class="mb-0 fw-bold text-success">@ViewBag.TodayCount</h4></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-exclamation-triangle" style="color:#e53935;"></i></div>
+                <div><div class="text-muted small">Errors / Failed</div><h4 class="mb-0 fw-bold text-danger">@ViewBag.ErrorCount</h4></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<form asp-action="Index" method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <i class="bi bi-funnel text-muted"></i>
+            <input type="date" name="fromDate" class="form-control form-control-sm"
+                   style="width:150px;" value="@ViewBag.FromDate" />
+            <span class="text-muted small">to</span>
+            <input type="date" name="toDate" class="form-control form-control-sm"
+                   style="width:150px;" value="@ViewBag.ToDate" />
+
+            <!-- ── Action Filter ── -->
+            <select name="action" class="form-select form-select-sm" style="width:150px;">
+                <option value="">All Actions</option>
+                @foreach (var a in (IEnumerable<string>)ViewBag.Actions)
+                {
+                    if ((string?)ViewBag.Action == a)
+                    {
+                        <option value="@a" selected="selected">@a</option>
+                    }
+                    else
+                    {
+                        <option value="@a">@a</option>
+                    }
+                }
+            </select>
+
+            <!-- ── Entity Filter ── -->
+            <select name="entity" class="form-select form-select-sm" style="width:160px;">
+                <option value="">All Entities</option>
+                @foreach (var e in (IEnumerable<string>)ViewBag.Entities)
+                {
+                    if ((string?)ViewBag.Entity == e)
+                    {
+                        <option value="@e" selected="selected">@e</option>
+                    }
+                    else
+                    {
+                        <option value="@e">@e</option>
+                    }
+                }
+            </select>
+
+            <!-- ── User Filter ── -->
+            <select name="userId" class="form-select form-select-sm" style="width:160px;">
+                <option value="">All Users</option>
+                @foreach (var u in (IEnumerable<UserDto>)ViewBag.Users)
+                {
+                    if ((int?)ViewBag.UserId == u.Id)
+                    {
+                        <option value="@u.Id" selected="selected">@u.FullName</option>
+                    }
+                    else
+                    {
+                        <option value="@u.Id">@u.FullName</option>
+                    }
+                }
+            </select>
+
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="bi bi-filter me-1"></i>Filter
+            </button>
+            <a asp-action="Index" class="btn btn-sm btn-light border">Reset</a>
+            <span class="ms-auto text-muted small">@items.Count results</span>
+        </div>
+    </div>
+</form>
+
+<!-- Log Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="auditTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="50">#</th>
+                        <th style="min-width:160px;">Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Entity ID</th>
+                        <th>IP Address</th>
+                        <th class="text-center" width="90">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sn = 1;
+                    }
+                    @foreach (var log in items)
+                    {
+                        var (aCls, aIcon) = log.ActionType switch
+                        {
+                            "Create" => ("success", "bi-plus-circle"),
+                            "Update" => ("primary", "bi-pencil-square"),
+                            "Delete" => ("danger", "bi-trash"),
+                            "Login" => ("info", "bi-box-arrow-in-right"),
+                            "Logout" => ("secondary", "bi-box-arrow-right"),
+                            "LoginFailed" => ("danger", "bi-x-circle"),
+                            "Error" => ("danger", "bi-exclamation-triangle"),
+                            _ => ("warning", "bi-lightning")
+                        };
+                        var hasChanges = !string.IsNullOrEmpty(log.OldValues) ||
+                                         !string.IsNullOrEmpty(log.NewValues);
+                        <tr>
+                            <td class="ps-4 text-muted small">@(sn++)</td>
+                            <td>
+                                <div class="fw-semibold small">@log.Timestamp.ToString("dd MMM yyyy")</div>
+                                <div class="text-muted" style="font-size:.72rem;">@log.Timestamp.ToString("HH:mm:ss")</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold small">@log.UserName</div>
+                                <div class="text-muted" style="font-size:.72rem;">ID: @log.UserId</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-@aCls bg-opacity-15 text-@aCls px-2 rounded-pill">
+                                    <i class="bi @aIcon me-1"></i>@log.ActionType
+                                </span>
+                            </td>
+                            <td class="small fw-semibold">@log.EntityName</td>
+                            <td class="text-muted small">
+                                @(log.EntityId.HasValue ? "#" + log.EntityId : "—")
+                            </td>
+                            <td><code class="small">@(log.IPAddress ?? "—")</code></td>
+                            <td class="text-center">
+                                @if (hasChanges)
+                                {
+                                    <button class="btn btn-sm btn-outline-info"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#detail-@log.Id"
+                                            title="View changes">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">—</span>
+                                }
+                            </td>
+                        </tr>
+
+                        @if (hasChanges)
+                        {
+                            <tr class="collapse" id="detail-@log.Id">
+                                <td colspan="8" class="p-0">
+                                    <div class="p-3 m-2 rounded"
+                                         style="background:#f8f9ff;border:1px solid #e8eaf0;">
+                                        <div class="row g-3">
+                                            @if (!string.IsNullOrEmpty(log.OldValues))
+                                            {
+                                                <div class="col-md-6">
+                                                    <div class="fw-semibold small text-danger mb-2">
+                                                        <i class="bi bi-dash-circle me-1"></i>Before
+                                                    </div>
+                                                    <pre class="bg-white border rounded p-2 mb-0"
+                                                         style="font-size:.72rem;max-height:160px;overflow-y:auto;">@log.OldValues</pre>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(log.NewValues))
+                                            {
+                                                <div class="col-md-6">
+                                                    <div class="fw-semibold small text-success mb-2">
+                                                        <i class="bi bi-plus-circle me-1"></i>After
+                                                    </div>
+                                                    <pre class="bg-white border rounded p-2 mb-0"
+                                                         style="font-size:.72rem;max-height:160px;overflow-y:auto;">@log.NewValues</pre>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () { initDataTable('#auditTable', { order: [[1, 'desc']], pageLength: 50 }); });
+    </script>
+}

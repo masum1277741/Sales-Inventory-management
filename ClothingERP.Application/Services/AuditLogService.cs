@@ -8,38 +8,55 @@ public class AuditLogService : IAuditLogService
     public AuditLogService(IUnitOfWork uow, IMapper mapper)
         => (_uow, _mapper) = (uow, mapper);
 
-    public async Task LogAsync(int userId, string action, string tableName,
-        string? recordId = null, string? oldValues = null, string? newValues = null,
-        string? ipAddress = null, bool isSuccess = true, string? errorMessage = null)
+    // ── Get All ───────────────────────────────────────────────────────────
+    public async Task<IEnumerable<AuditLogDto>> GetAllAsync()
     {
-        if (userId <= 0) return;
-        try
-        {
-            await _uow.AuditLogs.AddAsync(new AuditLog
-            {
-                UserId = userId,
-                Action = action,
-                TableName = tableName,
-                RecordId = recordId,
-                OldValues = oldValues,
-                NewValues = newValues,
-                IPAddress = ipAddress,
-                ActionDate = DateTime.UtcNow,
-                IsSuccess = isSuccess,
-                ErrorMessage = errorMessage,
-                CreatedBy = userId
-            });
-            await _uow.SaveChangesAsync();
-        }
-        catch { /* audit failure must never break main flow */ }
+        var logs = await _uow.AuditLogs.GetAllAsync();
+        return _mapper.Map<IEnumerable<AuditLogDto>>(
+            logs.OrderByDescending(l => l.CreatedAt));
     }
 
-    public async Task<IEnumerable<AuditLogDto>> GetLogsAsync(DateTime from, DateTime to, int? userId = null)
-        => _mapper.Map<IEnumerable<AuditLogDto>>(await _uow.AuditLogs.GetByDateRangeAsync(from, to, userId));
+    // ── Get By Entity ─────────────────────────────────────────────────────
+    public async Task<IEnumerable<AuditLogDto>> GetByEntityAsync(
+        string entityName, int entityId)
+    {
+        var logs = await _uow.AuditLogs.GetAllAsync();
+        return _mapper.Map<IEnumerable<AuditLogDto>>(
+            logs.Where(l => l.EntityName == entityName && l.EntityId == entityId)
+                .OrderByDescending(l => l.CreatedAt));
+    }
 
-    public async Task<IEnumerable<AuditLogDto>> GetFailedLoginsAsync(int count = 50)
-        => _mapper.Map<IEnumerable<AuditLogDto>>(await _uow.AuditLogs.GetFailedLoginsAsync());
+    // ── Log Action ────────────────────────────────────────────────────────
+    public async Task LogAsync(int userId,
+                                string actionType,
+                                string entityName,
+                                string? entityId = null,
+                                string? ipAddress = null,
+                                string? oldValues = null,
+                                string? newValues = null,
+                                string? description = null)
+    {
+       
+        var user = await _uow.Users.GetByIdAsync(userId);
+        var userName = user?.Username ?? $"User#{userId}";
 
-    public async Task<IEnumerable<AuditLogDto>> GetByUserAsync(int userId, int count = 50)
-        => _mapper.Map<IEnumerable<AuditLogDto>>((await _uow.AuditLogs.GetByUserIdAsync(userId)).Take(count));
+     
+        int? parsedEntityId = int.TryParse(entityId, out var eid) ? eid : null;
+
+        var log = new AuditLog
+        {
+            EntityName = entityName,
+            EntityId = parsedEntityId,
+            ActionType = actionType,
+            UserId = userId,
+            UserName = userName,
+            IPAddress = ipAddress,
+            OldValues = oldValues,
+            NewValues = newValues,
+            Description = description
+        };
+
+        await _uow.AuditLogs.AddAsync(log);
+        await _uow.SaveChangesAsync();
+    }
 }
