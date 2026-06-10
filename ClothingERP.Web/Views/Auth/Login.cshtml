@@ -5,510 +5,371 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign In — Clozey</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <title>Sign In — CLOZEY ERP</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --black:        #0B0B0B;
-            --charcoal:     #141414;
-            --gold:         #C8A96E;
-            --gold-lt:      #D9BC87;
-            --gold-dim:     rgba(200,169,110,.12);
-            --cream:        #F7F2EA;
-            --white:        #FFFFFF;
-            --muted:        #9A8F84;
-            --border:       #EAE2D6;
-            --input-bg:     #FDFAF6;
-            --error:        #B94040;
-            --error-bg:     #FEF2F2;
-            --error-border: #FECACA;
+            --black:       #0a0a0a;
+            --black-soft:  #141414;
+            --gold:        #c9a96e;
+            --gold-deep:   #a6845a;
+            --gold-pale:   #f0ddb8;
+            --cream:       #faf8f5;
+            --cream-mid:   #f3ede3;
+            --border:      #e8e0d0;
+            --text:        #1a1a1a;
+            --muted:       #888;
         }
 
-        /* ── Base ─────────────────────────────────────────────── */
-        html, body {
-            height: 100%;
-        }
-        body {
-            min-height: 100vh;
+        html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--cream); }
+
+        /* ── Wrapper ────────────────────────────────────────────────────── */
+        .lw { display: flex; min-height: 100vh; }
+
+        /* ── Left Dark Panel ────────────────────────────────────────────── */
+        .lp {
+            width: 44%;
             background: var(--black);
-            font-family: 'DM Sans', system-ui, sans-serif;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-        }
-
-        /* ── Background Canvas ────────────────────────────────── */
-        .bg-scene {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        /* Soft radial glow behind card */
-        .bg-scene::before {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: min(900px, 130vw);
-            height: min(900px, 130vw);
-            background: radial-gradient(ellipse, rgba(200,169,110,.07) 0%, transparent 65%);
-        }
-
-        /* Subtle horizontal lines — evokes editorial elegance */
-        .bg-scene::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 48px,
-                rgba(255,255,255,.018) 48px,
-                rgba(255,255,255,.018) 49px
-            );
-        }
-
-        /* Floating sparkles — mirrors the logo's star motifs */
-        .spark {
-            position: absolute;
-            fill: var(--gold);
-            animation: twinkle var(--d, 4s) var(--dl, 0s) ease-in-out infinite;
-            opacity: 0;
-        }
-        @@keyframes twinkle {
-            0%, 100% { opacity: 0;          transform: scale(.7)  rotate(0deg); }
-            50%       { opacity: var(--op, .4); transform: scale(1.15) rotate(18deg); }
-        }
-
-        /* Corner ornament lines */
-        .corner {
-            position: absolute;
-            width: 80px; height: 80px;
-            opacity: .18;
-        }
-        .corner--tl { top: 32px; left: 40px; border-top: 1px solid var(--gold); border-left: 1px solid var(--gold); }
-        .corner--br { bottom: 32px; right: 40px; border-bottom: 1px solid var(--gold); border-right: 1px solid var(--gold); }
-
-        /* ── Card ─────────────────────────────────────────────── */
-        .login-outer {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-            padding: 24px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-card {
-            background: var(--white);
-            border-radius: 28px;
-            width: 100%;
-            max-width: 448px;
-            padding: 52px 48px 44px;
+            padding: 48px 40px;
             position: relative;
             overflow: hidden;
-            box-shadow:
-                0 0 0 1px rgba(200,169,110,.18),
-                0 40px 100px rgba(0,0,0,.7),
-                0 8px 24px rgba(0,0,0,.4);
         }
 
-        /* Gold gradient line at top */
-        .login-card::before {
-            content: '';
+        /* Concentric arcs */
+        .arc {
             position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(
-                90deg,
-                transparent   0%,
-                var(--gold)   30%,
-                var(--gold-lt) 50%,
-                var(--gold)   70%,
-                transparent   100%
-            );
-        }
-
-        /* Very subtle grain on card */
-        .login-card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+            border-radius: 50%;
+            border: 1px solid rgba(201,169,110,.09);
             pointer-events: none;
-            opacity: .5;
-            border-radius: inherit;
+        }
+        .arc-1 { width:560px; height:560px; top:-200px; left:-180px; }
+        .arc-2 { width:380px; height:380px; bottom:-140px; right:-120px; }
+        .arc-3 { width:220px; height:220px; top:42%; right:24px; }
+        .arc-4 { width:100px; height:100px; top:14%;  left:14%; border-style:dashed; border-color:rgba(201,169,110,.06); }
+
+        
+
+        /* Brand content */
+        .lp-inner { position: relative; z-index: 1; text-align: center; }
+
+            .lp-logo {
+                width: 150px;
+                display: block;
+                margin: 0 auto 10px;
+                padding: 12px 18px;
+                background: rgba(255, 255, 255, 0.12);
+                border-radius: 10px;
+                backdrop-filter: blur(4px);
+            }
+
+        .lp-divider {
+            width: 48px; height: 1px;
+            background: var(--gold);
+            margin: 18px auto;
         }
 
-        /* ── Logo Area ────────────────────────────────────────── */
-        .logo-zone {
-            text-align: center;
-            margin-bottom: 36px;
-        }
-        .logo-zone img {
-            height: 84px;
-            width: auto;
-            object-fit: contain;
-            display: block;
-            margin: 0 auto;
+        .lp-tag {
+            font-size: .6rem;
+            font-weight: 500;
+            letter-spacing: .38em;
+            text-transform: uppercase;
+            color: var(--gold);
         }
 
-        /* Thin ornamental rule with italic tagline */
-        .logo-rule {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 16px;
-        }
-        .logo-rule::before,
-        .logo-rule::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #DDD4C4, transparent);
-        }
-        .logo-rule span {
-            font-family: 'Playfair Display', Georgia, serif;
+        .lp-quote {
+            font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: .72rem;
-            color: #A89880;
-            letter-spacing: .1em;
-            white-space: nowrap;
+            font-size: 1rem;
+            color: rgba(255,255,255,.38);
+            line-height: 1.9;
+            max-width: 220px;
+            margin: 20px auto 0;
         }
 
-        /* ── Heading ──────────────────────────────────────────── */
-        .card-heading {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .card-heading h1 {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 1.55rem;
-            font-weight: 600;
-            color: var(--black);
-            letter-spacing: -.01em;
-            margin-bottom: 4px;
-        }
-        .card-heading p {
-            font-size: .75rem;
-            color: var(--muted);
-            letter-spacing: .09em;
+        .lp-system {
+            margin-top: 36px;
+            font-size: .58rem;
+            letter-spacing: .22em;
             text-transform: uppercase;
+            color: rgba(255,255,255,.16);
         }
 
-        /* ── Form ─────────────────────────────────────────────── */
-        .field {
-            margin-bottom: 18px;
-        }
-        .field-label {
-            display: block;
-            font-size: .68rem;
-            font-weight: 600;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            color: #7A6E64;
-            margin-bottom: 7px;
-        }
-        .field-wrap {
-            position: relative;
+        /* ── Right Form Panel ───────────────────────────────────────────── */
+        .rp {
+            flex: 1;
             display: flex;
             align-items: center;
-        }
-        .field-icon {
-            position: absolute;
-            left: 14px;
-            color: #C0B0A0;
-            font-size: .95rem;
-            pointer-events: none;
-            z-index: 2;
-            line-height: 1;
-        }
-        .field-input {
-            width: 100%;
-            padding: 12px 14px 12px 42px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: .88rem;
-            color: var(--black);
-            background: var(--input-bg);
-            outline: none;
-            transition: border-color .2s, background .2s, box-shadow .2s;
-            appearance: none;
-            -webkit-appearance: none;
-        }
-        .field-input::placeholder { color: #C8BBB0; }
-        .field-input:focus {
-            border-color: var(--gold);
-            background: var(--white);
-            box-shadow: 0 0 0 4px rgba(200,169,110,.1);
+            justify-content: center;
+            padding: 48px 24px;
+            background: var(--cream);
         }
 
-        .pw-toggle {
-            position: absolute;
-            right: 12px;
-            background: none;
-            border: none;
-            color: #C0B0A0;
-            cursor: pointer;
-            padding: 4px 6px;
-            font-size: 1rem;
-            line-height: 1;
-            transition: color .2s;
-            z-index: 2;
-        }
-        .pw-toggle:hover { color: var(--gold); }
+        .fb { width: 100%; max-width: 380px; }
 
-        /* Validation messages */
-        .val-alert {
-            display: flex;
-            align-items: flex-start;
-            gap: 9px;
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-            border-radius: 8px;
-            padding: 10px 14px;
-            margin-bottom: 18px;
-            font-size: .8rem;
-            color: var(--error);
-            line-height: 1.4;
-        }
-        .val-alert i { flex-shrink: 0; margin-top: 1px; }
-        .field-error {
+        /* Small logo top of form */
+        .fb-logo {
+            width: 68px;
             display: block;
-            font-size: .72rem;
-            color: var(--error);
+            margin: 0 auto 22px;
+            opacity: .78;
+        }
+
+        .fb-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.05rem;
+            font-weight: 500;
+            color: var(--text);
+            text-align: center;
+            letter-spacing: .02em;
+        }
+
+        .fb-sub {
+            font-size: .65rem;
+            font-weight: 500;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-align: center;
             margin-top: 5px;
         }
 
-        /* ── Options Row ──────────────────────────────────────── */
-        .options-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 26px;
+        .fb-divider {
+            width: 40px; height: 1px;
+            background: var(--gold);
+            margin: 20px auto 28px;
         }
-        .check-wrap {
+
+        /* Form fields */
+        .field-group { position: relative; margin-bottom: 26px; }
+
+        .field-label {
+            display: block;
+            font-size: .6rem;
+            font-weight: 500;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .field-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1.5px solid var(--border);
+            border-radius: 0;
+            background: transparent;
+            padding: 9px 32px 9px 0;
+            font-size: .92rem;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            outline: none;
+            transition: border-color .22s;
+        }
+
+        .field-input:focus { border-bottom-color: var(--gold); }
+        .field-input::placeholder { color: #cbc4b8; }
+
+        .field-icon {
+            position: absolute;
+            right: 0; bottom: 10px;
+            color: #c8c0b4;
+            font-size: .9rem;
+            cursor: pointer;
+            transition: color .2s;
+            background: none; border: none; padding: 0;
+        }
+        .field-icon:hover { color: var(--gold); }
+
+        .field-error { font-size: .7rem; color: #c0392b; margin-top: 4px; }
+
+        /* Alert */
+        .err-alert {
+            font-size: .8rem;
+            padding: 11px 14px;
+            background: #fff5f5;
+            border-left: 2.5px solid #c0392b;
+            color: #992b2b;
+            margin-bottom: 22px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* Remember me */
+        .remember-row {
             display: flex;
             align-items: center;
             gap: 8px;
+            margin-bottom: 28px;
+        }
+
+        .remember-row input[type="checkbox"] {
+            width: 14px; height: 14px;
+            accent-color: var(--black);
+            cursor: pointer;
+        }
+
+        .remember-row label {
+            font-size: .7rem;
+            color: var(--muted);
+            letter-spacing: .04em;
             cursor: pointer;
             user-select: none;
         }
-        .check-wrap input[type="checkbox"] {
-            width: 16px; height: 16px;
-            border: 1.5px solid #C8BBB0;
-            border-radius: 4px;
-            appearance: none;
-            -webkit-appearance: none;
-            background: var(--white);
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: all .18s;
-            position: relative;
-        }
-        .check-wrap input[type="checkbox"]:checked {
-            background: var(--gold);
-            border-color: var(--gold);
-        }
-        .check-wrap input[type="checkbox"]:checked::after {
-            content: '';
-            position: absolute;
-            top: 2px; left: 4.5px;
-            width: 5px; height: 8px;
-            border: 2px solid #fff;
-            border-top: 0; border-left: 0;
-            transform: rotate(45deg);
-        }
-        .check-wrap span {
-            font-size: .8rem;
-            color: var(--muted);
-        }
 
-        /* ── Submit Button ────────────────────────────────────── */
+        /* Submit button */
         .btn-signin {
             width: 100%;
             padding: 14px;
             background: var(--black);
-            color: var(--gold);
-            border: 1.5px solid var(--gold);
-            border-radius: 10px;
+            color: #fff;
+            border: none;
+            border-radius: 0;
             font-family: 'DM Sans', sans-serif;
-            font-size: .8rem;
-            font-weight: 600;
-            letter-spacing: .15em;
+            font-size: .65rem;
+            font-weight: 500;
+            letter-spacing: .3em;
             text-transform: uppercase;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 9px;
+            transition: background .25s;
             position: relative;
             overflow: hidden;
-            transition: color .3s;
         }
-        .btn-signin .fill-layer {
+
+        .btn-signin::after {
+            content: '';
             position: absolute;
             inset: 0;
-            background: var(--gold);
-            transform: translateY(102%);
-            transition: transform .32s cubic-bezier(.4,0,.2,1);
-            z-index: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(201,169,110,.18) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform .55s ease;
         }
-        .btn-signin:hover .fill-layer { transform: translateY(0); }
-        .btn-signin:hover { color: var(--black); }
-        .btn-signin > *:not(.fill-layer) { position: relative; z-index: 1; }
 
-        /* ── Card Footer ──────────────────────────────────────── */
-        .card-footer-txt {
+        .btn-signin:hover { background: var(--gold-deep); }
+        .btn-signin:hover::after { transform: translateX(100%); }
+        .btn-signin:active { transform: scale(.99); }
+
+        /* Footer */
+        .fb-footer {
+            margin-top: 28px;
+            font-size: .64rem;
+            color: #bbb;
             text-align: center;
-            font-size: .68rem;
-            color: #BDB3A8;
-            margin-top: 26px;
-            letter-spacing: .04em;
-        }
-        .card-footer-txt i {
-            font-size: .6rem;
-            color: var(--gold);
-            opacity: .7;
-            margin: 0 4px;
+            letter-spacing: .05em;
         }
 
-        /* ── Responsive ───────────────────────────────────────── */
-        @@media (max-width: 480px) {
-            .login-card { padding: 40px 28px 36px; border-radius: 22px; }
-            .corner { display: none; }
-        }
-        @@media (max-width: 360px) {
-            .login-card { padding: 36px 22px 30px; }
+        /* Validation */
+        .field-input.is-invalid { border-bottom-color: #c0392b; }
+
+        /* ── Responsive ─────────────────────────────────────────────────── */
+        @@media (max-width: 820px) {
+            .lp { display: none; }
+            .rp { background: #fff; }
         }
     </style>
 </head>
 <body>
+<div class="lw">
 
-    <!-- ── Background Scene ──────────────────────────────────── -->
-    <div class="bg-scene" aria-hidden="true">
-        <!-- Corner ornaments -->
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
+    <!-- ══ Left Brand Panel ═══════════════════════════════════════════════ -->
+    <div class="lp">
+        <div class="arc arc-1"></div>
+        <div class="arc arc-2"></div>
+        <div class="arc arc-3"></div>
+        <div class="arc arc-4"></div>
 
-        <!-- Sparkle SVGs — echoing the logo's 4-point stars -->
-        <svg class="spark" style="top:9%;left:7%;width:18px;--d:4.2s;--dl:0s;--op:.45;"    viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="top:18%;right:9%;width:11px;--d:5.1s;--dl:1.3s;--op:.3;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="top:6%;right:22%;width:8px;--d:3.7s;--dl:2.1s;--op:.28;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="top:72%;left:5%;width:14px;--d:4.8s;--dl:0.6s;--op:.38;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="top:84%;left:18%;width:9px;--d:3.4s;--dl:1.7s;--op:.22;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="bottom:14%;right:7%;width:16px;--d:5.5s;--dl:0.3s;--op:.42;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="bottom:32%;right:19%;width:10px;--d:4s;--dl:2.4s;--op:.25;" viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="top:45%;left:3%;width:12px;--d:4.6s;--dl:1s;--op:.3;"    viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
-        <svg class="spark" style="top:38%;right:4%;width:7px;--d:6s;--dl:0.8s;--op:.2;"    viewBox="0 0 24 24"><path d="M12 2l1.5 7L20 10l-6.5 1.5L12 19l-1.5-7.5L4 10l6.5-1.5z"/></svg>
+       
+
+        <div class="lp-inner">
+            <img src="/logo/logo.png" class="lp-logo" alt="CLOZEY" />
+            <div class="lp-tag">Attractive Beauty</div>
+            <div class="lp-divider"></div>
+            <p class="lp-quote">
+                "Elegance is the only beauty<br/>that never fades."
+            </p>
+            <p class="lp-system">Business Management System</p>
+        </div>
     </div>
 
-    <!-- ── Login Card ─────────────────────────────────────────── -->
-    <div class="login-outer">
-        <div class="login-card">
+    <!-- ══ Right Form Panel ══════════════════════════════════════════════ -->
+    <div class="rp">
+        <div class="fb">
 
-            <!-- Logo -->
-            <div class="logo-zone">
-                <img src="~/logo/logo.png" alt="Clozey — Attractive Beauty" />
-                <div class="logo-rule">
-                    <span>Management System</span>
-                </div>
-            </div>
+            <img src="/logo/logo.png" class="fb-logo" alt="CLOZEY" />
+            <h1 class="fb-title">Welcome Back</h1>
+            <p class="fb-sub">Sign in to continue</p>
+            <div class="fb-divider"></div>
 
-            <!-- Heading -->
-            <div class="card-heading">
-                <h1>Welcome Back</h1>
-                <p>Sign in to your account</p>
-            </div>
-
-            <!-- Form -->
-            <form asp-action="Login" method="post" novalidate>
-                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+            <form asp-action="Login" asp-controller="Auth" method="post" novalidate>
                 @Html.AntiForgeryToken()
 
-                @if (!ViewData.ModelState.IsValid)
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
                 {
-                    <div class="val-alert" role="alert">
-                        <i class="bi bi-exclamation-circle-fill"></i>
-                        <span asp-validation-summary="ModelOnly"></span>
+                    <div class="err-alert">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        @Html.ValidationSummary(true)
+                    </div>
+                }
+
+                @if (TempData["error"] != null)
+                {
+                    <div class="err-alert">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        @TempData["error"]
                     </div>
                 }
 
                 <!-- Username -->
-                <div class="field">
-                    <label class="field-label" for="Username">Username</label>
-                    <div class="field-wrap">
-                        <i class="bi bi-person field-icon"></i>
-                        <input asp-for="Username" id="Username" class="field-input"
-                               placeholder="Enter your username"
-                               autocomplete="username" />
-                    </div>
+                <div class="field-group">
+                    <label asp-for="Username" class="field-label">Username</label>
+                    <input asp-for="Username" class="field-input"
+                           placeholder="Enter your username"
+                           autocomplete="username" autofocus />
+                    <button type="button" class="field-icon" tabindex="-1" aria-hidden="true">
+                        <i class="bi bi-person"></i>
+                    </button>
                     <span asp-validation-for="Username" class="field-error"></span>
                 </div>
 
                 <!-- Password -->
-                <div class="field">
-                    <label class="field-label" for="Password">Password</label>
-                    <div class="field-wrap">
-                        <i class="bi bi-lock field-icon"></i>
-                        <input asp-for="Password" id="passwordInput" class="field-input"
-                               placeholder="Enter your password"
-                               autocomplete="current-password" />
-                        <button class="pw-toggle" type="button" id="togglePw" tabindex="-1"
-                                aria-label="Show or hide password">
-                            <i class="bi bi-eye" id="eyeIcon"></i>
-                        </button>
-                    </div>
+                <div class="field-group">
+                    <label asp-for="Password" class="field-label">Password</label>
+                    <input asp-for="Password" id="pwdField" class="field-input"
+                           type="password" placeholder="Enter your password"
+                           autocomplete="current-password" />
+                    <button type="button" class="field-icon" onclick="togglePwd()" tabindex="-1" aria-label="Show password">
+                        <i class="bi bi-eye" id="pwdEye"></i>
+                    </button>
                     <span asp-validation-for="Password" class="field-error"></span>
                 </div>
 
-                <!-- Remember Me -->
-                <div class="options-row">
-                    <label class="check-wrap">
-                        <input asp-for="RememberMe" type="checkbox" />
-                        <span>Remember me</span>
-                    </label>
+                <!-- Remember -->
+                <div class="remember-row">
+                    <input asp-for="RememberMe" type="checkbox" id="rememberCheck" />
+                    <label for="rememberCheck">Keep me signed in</label>
                 </div>
 
-                <!-- Submit -->
-                <button type="submit" class="btn-signin">
-                    <span class="fill-layer"></span>
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span>Sign In</span>
-                </button>
+                <button type="submit" class="btn-signin">Sign In</button>
             </form>
 
-            <p class="card-footer-txt">
-                &copy; 2025 Clozey
-                <i class="bi bi-dot"></i>
-                Attractive Beauty
-            </p>
+            <p class="fb-footer">© @DateTime.Now.Year CLOZEY — Attractive Beauty</p>
         </div>
     </div>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
-    <script>
-        document.getElementById('togglePw').addEventListener('click', function () {
-            const inp  = document.getElementById('passwordInput');
-            const icon = document.getElementById('eyeIcon');
-            const isHidden = inp.type === 'password';
-            inp.type = isHidden ? 'text' : 'password';
-            icon.className = isHidden ? 'bi bi-eye-slash' : 'bi bi-eye';
-        });
-    </script>
+<script>
+function togglePwd() {
+    const f = document.getElementById('pwdField');
+    const e = document.getElementById('pwdEye');
+    f.type   = f.type === 'password' ? 'text' : 'password';
+    e.className = f.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+</script>
 </body>
 </html>

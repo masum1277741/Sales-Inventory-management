@@ -295,6 +295,14 @@
                     margin-left: 0;
                 }
             }
+            /* Logout button sidebar styling */
+            .logout-btn {
+                border: none;
+                background: transparent;
+                width: 100%;
+                text-align: left;
+                cursor: pointer;
+            }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -329,11 +337,15 @@
         }
 
         <div class="mt-auto p-3">
-            <a asp-controller="Auth" asp-action="Logout"
-                   class="nav-link text-danger" onclick="return confirm('Logout?')">
-                <i class="bi bi-box-arrow-left"></i>
-                <span>Logout</span>
-            </a>
+            <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutFormSidebar">
+                @Html.AntiForgeryToken()
+                <button type="button"
+                        class="nav-link text-danger logout-btn"
+                        onclick="doLogout('logoutFormSidebar')">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Logout</span>
+                </button>
+            </form>
         </div>
     </nav>
 
@@ -368,7 +380,16 @@
                     <li><a class="dropdown-item" asp-controller="Auth" asp-action="Profile"><i class="bi bi-person me-2"></i>My Profile</a></li>
                     <li><a class="dropdown-item" asp-controller="Auth" asp-action="ChangePassword"><i class="bi bi-key me-2"></i>Change Password</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" asp-controller="Auth" asp-action="Logout"><i class="bi bi-box-arrow-left me-2"></i>Logout</a></li>
+                    <li>
+                        <form asp-controller="Auth" asp-action="Logout" method="post" id="logoutFormTop">
+                            @Html.AntiForgeryToken()
+                            <button type="button"
+                                    class="dropdown-item text-danger"
+                                    onclick="doLogout('logoutFormTop')">
+                                <i class="bi bi-box-arrow-left me-2"></i>Logout
+                            </button>
+                        </form>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -434,11 +455,26 @@
         showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete!' })
         .then((result) => { if (result.isConfirmed) window.location.href = url; });
         }
-
+        // ── Logout Confirm ───────────────────────────────────────────────────
+        function doLogout(formId) {
+        Swal.fire({
+        title: 'Logout?',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, logout!',
+        cancelButtonText: 'Cancel'
+        }).then((result) => {
+        if (result.isConfirmed) document.getElementById(formId).submit();
+        });
+        }
         // ── Select2 Init ─────────────────────────────────────────────────────
         $(document).ready(function () {
         $('select.select2').select2({ theme: 'bootstrap-5', width: '100%' });
         });
+
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

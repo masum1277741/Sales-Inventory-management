@@ -25,6 +25,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
         options.Cookie.Name = "ClothingERP.Auth";
+        options.Cookie.SameSite = SameSiteMode.Strict;   
+        options.Cookie.MaxAge = null;
     });
 
 builder.Services.AddSession(options =>

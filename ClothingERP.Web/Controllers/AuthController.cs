@@ -79,11 +79,16 @@ public class AuthController : Controller
         return RedirectToAction("Login");
     }
 
-    // ── GET Logout (via link) ──────────────────────────────────────────────
+    // ── GET Logout (via link fallback) ────────────────────────────────────
     [HttpGet, Authorize]
     public async Task<IActionResult> LogoutGet()
     {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+
+        await _auth.LogoutAsync(userId, ip);  
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
         return RedirectToAction("Login");
     }
 
