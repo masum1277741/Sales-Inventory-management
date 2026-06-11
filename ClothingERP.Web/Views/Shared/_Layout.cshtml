@@ -4,7 +4,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — Clothing ERP</title>
+    <%-- ── PWA Meta Tags ── --%>
+        <meta name="application-name" content="CLOZEY ERP" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="CLOZEY ERP" />
+        <meta name="theme-color" content="#0a0a0a" />
+        <meta name="msapplication-TileColor" content="#0a0a0a" />
+        <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
+        <meta name="msapplication-config" content="none" />
 
+        <%-- ── PWA Manifest & Icons ── --%>
+            <link rel="manifest" href="/manifest.json" />
+            <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+            <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+            <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96.png" />
+            <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+            <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+            <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png" />
     <!-- Bootstrap 5 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
     <!-- Bootstrap Icons -->
@@ -476,7 +494,99 @@
         });
 
     </script>
+            <%-- ── PWA: Service Worker Registration ── --%>
+                <script>
+                    if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(reg => {
+                    console.log('[PWA] Service Worker registered:', reg.scope);
 
+                    // New version available?
+                    reg.addEventListener('updatefound', () => {
+                    const worker = reg.installing;
+                    worker?.addEventListener('statechange', () => {
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                    showUpdateBanner();
+                    }
+                    });
+                    });
+                    })
+                    .catch(err => console.warn('[PWA] SW registration failed:', err));
+                    });
+                    }
+
+                    // ── Update available banner ────────────────────────────────────────────
+                    function showUpdateBanner() {
+                    const banner = document.createElement('div');
+                    banner.id = 'pwa-update-banner';
+                    banner.innerHTML = `
+                    <div style="
+                    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+                    background:#0a0a0a; color:#fff; border:1px solid #c9a96e;
+                    border-radius:10px; padding:12px 20px; z-index:9999;
+                    display:flex; align-items:center; gap:14px;
+                    box-shadow:0 4px 20px rgba(0,0,0,.3); font-size:.82rem;
+                    max-width:340px; width:calc(100% - 40px);">
+                    <span style="color:#c9a96e; font-size:1.1rem;">🔄</span>
+                    <span>New version available!</span>
+                    <button onclick="updateApp()" style="
+                    background:#c9a96e; color:#000; border:none;
+                    border-radius:6px; padding:5px 14px; font-weight:600;
+                    cursor:pointer; font-size:.78rem;">Update</button>
+                    <button onclick="this.closest('#pwa-update-banner').remove()" style="
+                    background:transparent; border:none; color:rgba(255,255,255,.4);
+                    cursor:pointer; font-size:1rem;">✕</button>
+                    </div>`;
+                    document.body.appendChild(banner);
+                    }
+
+                    function updateApp() {
+                    navigator.serviceWorker.getRegistration().then(reg => {
+                    reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                    });
+                    }
+
+                    // ── PWA Install Prompt ─────────────────────────────────────────────────
+                    let deferredPrompt;
+
+                    window.addEventListener('beforeinstallprompt', e => {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    showInstallButton();
+                    });
+
+                    function showInstallButton() {
+                    // Topbar এ install button দেখাও
+                    const topbar = document.querySelector('.topbar-right');
+                    if (!topbar || document.getElementById('pwa-install-btn')) return;
+
+                    const btn = document.createElement('button');
+                    btn.id    = 'pwa-install-btn';
+                    btn.title = 'Install CLOZEY ERP App';
+                    btn.className = 'topbar-icon-btn';
+                    btn.innerHTML = '<i class="bi bi-download" style="font-size:.95rem;"></i>';
+                    btn.style.cssText = 'border-color:#c9a96e; color:#c9a96e;';
+                    btn.onclick = installApp;
+                    topbar.insertBefore(btn, topbar.firstChild);
+                    }
+
+                    async function installApp() {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('[PWA] Install outcome:', outcome);
+                    deferredPrompt = null;
+                    document.getElementById('pwa-install-btn')?.remove();
+                    }
+
+                    window.addEventListener('appinstalled', () => {
+                    console.log('[PWA] App installed!');
+                    document.getElementById('pwa-install-btn')?.remove();
+                    deferredPrompt = null;
+                    });
+                </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

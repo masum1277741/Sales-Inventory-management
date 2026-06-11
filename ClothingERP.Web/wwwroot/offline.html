@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline — CLOZEY ERP</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            text-align: center;
+            max-width: 360px;
+            width: 100%;
+        }
+
+        .logo {
+            width: 100px;
+            filter: brightness(0) invert(1);
+            opacity: .85;
+            margin-bottom: 24px;
+        }
+
+        .icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(220, 38, 38, .12);
+            border: 1px solid rgba(220, 38, 38, .25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+        }
+
+        h2 {
+            color: #c9a96e;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: rgba(255, 255, 255, .45);
+            font-size: .88rem;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+
+        .divider {
+            width: 48px;
+            height: 1px;
+            background: #c9a96e;
+            margin: 20px auto;
+        }
+
+        .btn-retry {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: #c9a96e;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s;
+        }
+
+            .btn-retry:hover {
+                background: #b8934e;
+            }
+
+        .status {
+            margin-top: 20px;
+            font-size: .72rem;
+            color: rgba(255,255,255,.2);
+        }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc2626;
+            margin-right: 6px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="/logo/logo.png" class="logo" alt="CLOZEY ERP" />
+
+        <div class="icon-wrap">📡</div>
+
+        <h2>You're Offline</h2>
+        <div class="divider"></div>
+
+        <p>
+            ইন্টারনেট সংযোগ নেই।<br />
+            নেটওয়ার্ক চেক করে আবার চেষ্টা করুন।
+        </p>
+
+        <button class="btn-retry" onclick="retryConnection()">
+            🔄 Try Again
+        </button>
+
+        <p class="status">
+            <span class="dot"></span>
+            CLOZEY ERP — Offline Mode
+        </p>
+    </div>
+
+    <script>
+    async function retryConnection() {
+        const btn = document.querySelector('.btn-retry');
+        btn.textContent = 'Checking...';
+        btn.disabled = true;
+        try {
+            await fetch('/manifest.json', { cache: 'no-store' });
+            window.location.href = '/';
+        } catch {
+            btn.textContent = '🔄 Try Again';
+            btn.disabled = false;
+        }
+    }
+
+    // Auto retry every 10 seconds
+    setInterval(async () => {
+        try {
+            await fetch('/manifest.json', { cache: 'no-store' });
+            window.location.href = '/';
+        } catch { /* still offline */ }
+    }, 10000);
+    </script>
+</body>
+</html>
