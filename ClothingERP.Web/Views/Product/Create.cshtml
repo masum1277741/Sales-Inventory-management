@@ -44,8 +44,7 @@
                         </div>
                         <div class="col-md-4">
                             <label asp-for="CategoryId" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                            <select asp-for="CategoryId" class="form-select select2" id="catSelect"
-                                    onchange="loadSubCats(this.value)">
+                            <select asp-for="CategoryId" class="form-select select2" id="catSelect">
                                 <option value="">— Select —</option>
                                 @foreach (var c in categories)
                                 {
@@ -264,19 +263,62 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        $(function() {
-            $('.select2, #catSelect, #subCatSelect').select2({ theme:'bootstrap-5', width:'100%' });
-            $('.select2-mini').select2({ theme:'bootstrap-5', width:'100%' });
+        $(function () {
+            // ── Select2 Initialize ────────────────────────────────────────────────
+            $('#catSelect').select2({ theme: 'bootstrap-5', width: '100%' });
+            $('#subCatSelect').select2({ theme: 'bootstrap-5', width: '100%' });
+            $('[name="BrandId"]').select2({ theme: 'bootstrap-5', width: '100%' });
+            $('.select2-mini').select2({ theme: 'bootstrap-5', width: '100%' });
+
+       
+            $('#catSelect').on('change', function () {
+                loadSubCats($(this).val());
+            });
         });
 
         // ── Sub-category dynamic load ─────────────────────────────────────────────
         async function loadSubCats(catId) {
-            $('#subCatSelect').empty().append('<option>Loading...</option>');
-            if (!catId) { $('#subCatSelect').empty().append('<option value="">— Select Category First —</option>'); return; }
-            const data = await fetch(`/Product/GetSubCategories/${catId}`).then(r => r.json());
-            const opts = '<option value="">— Select Sub-Category —</option>' +
-                data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-            $('#subCatSelect').html(opts).trigger('change');
+            const $sub = $('#subCatSelect');
+
+          
+            $sub.empty().append('<option value="">Loading...</option>').trigger('change');
+
+            if (!catId) {
+                $sub.empty()
+                    .append('<option value="">— Select Category First —</option>')
+                    .trigger('change');
+                return;
+            }
+
+            try {
+           
+                const res  = await fetch(`/Product/GetSubCategories?categoryId=${encodeURIComponent(catId)}`);
+
+                if (!res.ok) throw new Error('Network error: ' + res.status);
+
+                const data = await res.json();
+
+          
+                $sub.empty().append('<option value="">— Select Sub-Category —</option>');
+
+                if (data.length === 0) {
+                    $sub.append('<option value="" disabled>No sub-categories found</option>');
+                } else {
+                    data.forEach(s => {
+                     
+                        $sub.append(new Option(s.name, s.id));
+                    });
+                }
+
+                $sub.trigger('change');
+
+            } catch (err) {
+                console.error('SubCategory load error:', err);
+                $sub.empty()
+                    .append('<option value="">— Error loading sub-categories —</option>')
+                    .trigger('change');
+                toastr.error('Failed to load sub-categories');
+            }
         }
 
         // ── Image Preview ─────────────────────────────────────────────────────────
@@ -302,17 +344,21 @@
             const sizeName  = sizeEl.options[sizeEl.selectedIndex]?.getAttribute('data-name');
             const colorName = colorEl.options[colorEl.selectedIndex]?.getAttribute('data-name');
             const colorHex  = colorEl.options[colorEl.selectedIndex]?.getAttribute('data-hex');
-            const cost      = parseFloat($('#varCost').val()) || null;
+            const cost      = parseFloat($('#varCost').val())   || null;
             const retail    = parseFloat($('#varRetail').val()) || null;
 
             if (!sizeId || !colorId) { toastr.warning('Select both Size and Color.'); return; }
+
             if (variants.some(v => v.sizeId === sizeId && v.colorId === colorId)) {
                 toastr.error('This Size + Color combination already added.');
                 return;
             }
 
-            variants.push({ sizeId, colorId, sizeName, colorName, colorHex,
-                            costPriceOverride: cost, retailPriceOverride: retail });
+            variants.push({
+                sizeId, colorId, sizeName, colorName, colorHex,
+                costPriceOverride:   cost,
+                retailPriceOverride: retail
+            });
             renderVariants();
             $('#varCost, #varRetail').val('');
         }
@@ -325,32 +371,50 @@
         function renderVariants() {
             const tbody = $('#variantsTbody');
             tbody.empty();
+
             variants.forEach((v, i) => {
-                tbody.append(`<tr>
-                    <td><span class="badge bg-secondary">${v.sizeName}</span></td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div style="width:16px;height:16px;border-radius:4px;background:${v.colorHex || '#ccc'};border:1px solid #dee2e6;"></div>
-                            ${v.colorName}
-                        </div>
-                    </td>
-                    <td class="text-end small">${v.costPriceOverride ? '৳' + v.costPriceOverride : '<span class="text-muted">Default</span>'}</td>
-                    <td class="text-end small">${v.retailPriceOverride ? '৳' + v.retailPriceOverride : '<span class="text-muted">Default</span>'}</td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeVariant(${i})">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </td>
-                </tr>`);
+                tbody.append(`
+                    <tr>
+                        <td><span class="badge bg-secondary">${v.sizeName}</span></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:16px;height:16px;border-radius:4px;
+                                            background:${v.colorHex || '#ccc'};
+                                            border:1px solid #dee2e6;"></div>
+                                ${v.colorName}
+                            </div>
+                        </td>
+                        <td class="text-end small">
+                            ${v.costPriceOverride
+                                ? '৳' + v.costPriceOverride
+                                : '<span class="text-muted">Default</span>'}
+                        </td>
+                        <td class="text-end small">
+                            ${v.retailPriceOverride
+                                ? '৳' + v.retailPriceOverride
+                                : '<span class="text-muted">Default</span>'}
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="removeVariant(${i})">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </td>
+                    </tr>`);
             });
 
             $('#varCount').text(variants.length);
             $('#variantsSection').toggle(variants.length > 0);
-            $('#variantsJson').val(JSON.stringify(variants.map(v => ({
-                sizeId: v.sizeId, colorId: v.colorId,
-                costPriceOverride: v.costPriceOverride,
-                retailPriceOverride: v.retailPriceOverride
-            }))));
+
+            // Hidden field update 
+            $('#variantsJson').val(JSON.stringify(
+                variants.map(v => ({
+                    sizeId:              v.sizeId,
+                    colorId:             v.colorId,
+                    costPriceOverride:   v.costPriceOverride,
+                    retailPriceOverride: v.retailPriceOverride
+                }))
+            ));
         }
     </script>
 }

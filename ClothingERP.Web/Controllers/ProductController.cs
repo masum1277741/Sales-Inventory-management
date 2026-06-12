@@ -147,9 +147,17 @@ public class ProductController : BaseController
         return r.Success ? JsonSuccess(message: r.Message!) : JsonError(r.Message!);
     }
 
+    //[HttpGet]
+    //public async Task<IActionResult> GetSubCategories(int categoryId)
+    //    => Json((await _cats.GetSubCategoriesAsync(categoryId)).Select(s => new { s.Id, s.Name }));
+
     [HttpGet]
     public async Task<IActionResult> GetSubCategories(int categoryId)
-        => Json((await _cats.GetSubCategoriesAsync(categoryId)).Select(s => new { s.Id, s.Name }));
+    {
+        var subs = await _cats.GetSubCategoriesAsync(categoryId);
+       
+        return Json(subs.Select(s => new { id = s.Id, name = s.Name }));
+    }
 
     [HttpGet]
     public async Task<IActionResult> SearchByBarcode(string barcode)
