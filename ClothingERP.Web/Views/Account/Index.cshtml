@@ -1,11 +1,21 @@
-﻿@model IEnumerable<AccountTransactionDto>
-@{ ViewData["Title"] = "Account Transactions"; var items = Model.ToList(); }
+﻿@model IEnumerable<ClothingERP.Application.DTOs.AccountTransactionListDto>
+@{
+    ViewData["Title"] = "Account Transactions";
+    var items = Model.ToList();
+    var totalIncome  = (decimal)(ViewBag.TotalIncome  ?? 0m);
+    var totalExpense = (decimal)(ViewBag.TotalExpense ?? 0m);
+    var netBalance   = (decimal)(ViewBag.NetBalance   ?? 0m);
+}
 
 <div class="page-header d-flex justify-content-between align-items-center">
     <div>
-        <h4 class="mb-0"><i class="bi bi-journal-bookmark me-2 text-primary"></i>Account Transactions</h4>
+        <h4 class="mb-0">
+            <i class="bi bi-journal-bookmark me-2 text-primary"></i>Account Transactions
+        </h4>
         <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
-            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item">
+                <a asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            </li>
             <li class="breadcrumb-item active">Accounts</li>
         </ol></nav>
     </div>
@@ -19,10 +29,17 @@
     <div class="col-sm-4">
         <div class="stat-card border-start border-3 border-success">
             <div class="d-flex align-items-center gap-3">
-                <div class="icon-wrap" style="background:#e8f5e9;"><i class="bi bi-arrow-down-circle" style="color:#43a047;"></i></div>
+                <div class="icon-wrap" style="background:#d1fae5;">
+                    <i class="bi bi-arrow-down-circle" style="color:#065f46;"></i>
+                </div>
                 <div>
                     <div class="text-muted small">Total Income</div>
-                    <h4 class="mb-0 fw-bold text-success">৳@((decimal)ViewBag.TotalIncome).ToString("N2")</h4>
+                    <h4 class="mb-0 fw-bold" style="color:#065f46;">
+                        $@totalIncome.ToString("N2")
+                    </h4>
+                    <div class="text-muted" style="font-size:.72rem;">
+                        ৳@((totalIncome * (decimal)(ViewBag.RateBDT ?? 110m)).ToString("N0"))
+                    </div>
                 </div>
             </div>
         </div>
@@ -30,25 +47,35 @@
     <div class="col-sm-4">
         <div class="stat-card border-start border-3 border-danger">
             <div class="d-flex align-items-center gap-3">
-                <div class="icon-wrap" style="background:#fce4ec;"><i class="bi bi-arrow-up-circle" style="color:#e53935;"></i></div>
+                <div class="icon-wrap" style="background:#fee2e2;">
+                    <i class="bi bi-arrow-up-circle" style="color:#7f1d1d;"></i>
+                </div>
                 <div>
                     <div class="text-muted small">Total Expense</div>
-                    <h4 class="mb-0 fw-bold text-danger">৳@((decimal)ViewBag.TotalExpense).ToString("N2")</h4>
+                    <h4 class="mb-0 fw-bold" style="color:#7f1d1d;">
+                        $@totalExpense.ToString("N2")
+                    </h4>
+                    <div class="text-muted" style="font-size:.72rem;">
+                        ৳@((totalExpense * (decimal)(ViewBag.RateBDT ?? 110m)).ToString("N0"))
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-sm-4">
-        @{
-            var net = (decimal)ViewBag.NetBalance;
-            var netCls = net >= 0 ? "success" : "danger";
-        }
-        <div class="stat-card border-start border-3 border-@netCls">
+        <div class="stat-card border-start border-3 @(netBalance >= 0 ? "border-success" : "border-danger")">
             <div class="d-flex align-items-center gap-3">
-                <div class="icon-wrap" style="background:#@(net>=0?"e8f5e9":"fce4ec");"><i class="bi bi-wallet2" style="color:@(net>=0?"#43a047":"#e53935");"></i></div>
+                <div class="icon-wrap" style="background:@(netBalance>=0?"#d1fae5":"#fee2e2");">
+                    <i class="bi bi-wallet2" style="color:@(netBalance>=0?"#065f46":"#7f1d1d");"></i>
+                </div>
                 <div>
                     <div class="text-muted small">Net Balance</div>
-                    <h4 class="mb-0 fw-bold text-@netCls">@(net < 0 ? "-" : "")৳@Math.Abs(net).ToString("N2")</h4>
+                    <h4 class="mb-0 fw-bold" style="color:@(netBalance>=0?"#065f46":"#7f1d1d");">
+                        @(netBalance < 0 ? "-" : "")$@Math.Abs(netBalance).ToString("N2")
+                    </h4>
+                    <div class="text-muted" style="font-size:.72rem;">
+                        ৳@((Math.Abs(netBalance) * (decimal)(ViewBag.RateBDT ?? 110m)).ToString("N0"))
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,29 +86,25 @@
 <form asp-action="Index" method="get" class="card border-0 shadow-sm mb-3">
     <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap">
         <i class="bi bi-funnel text-muted"></i>
-        <input type="date" name="fromDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.FromDate" />
+        <input type="date" name="fromDate" class="form-control form-control-sm"
+               style="width:150px;" value="@ViewBag.FromDate" />
         <span class="text-muted small">to</span>
-        <input type="date" name="toDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.ToDate" />
+        <input type="date" name="toDate" class="form-control form-control-sm"
+               style="width:150px;" value="@ViewBag.ToDate" />
         <select name="type" class="form-select form-select-sm" style="width:140px;">
             <option value="">All Types</option>
-            @if(ViewBag.FilterType=="Income")
-            {
-                <option value="Income" selected>Income</option>
-            }
+            @if ((string?)ViewBag.FilterType == "Income")
+            { <option value="Income" selected="selected">Income</option> }
             else
-            {
-                <option value="Income">Income</option>
-            }
-            @if(ViewBag.FilterType=="Expense")
-            {
-                <option value="Expense" selected>Expense</option>
-            }
+            { <option value="Income">Income</option> }
+            @if ((string?)ViewBag.FilterType == "Expense")
+            { <option value="Expense" selected="selected">Expense</option> }
             else
-            {
-                <option value="Expense">Expense</option>
-            }
+            { <option value="Expense">Expense</option> }
         </select>
-        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-filter me-1"></i>Filter</button>
+        <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-filter me-1"></i>Filter
+        </button>
         <a asp-action="Index" class="btn btn-sm btn-light border">Reset</a>
         <span class="ms-auto text-muted small">@items.Count records</span>
     </div>
@@ -100,41 +123,81 @@
                         <th>Category</th>
                         <th>Description</th>
                         <th>Reference</th>
-                        <th class="text-end">Amount</th>
-                        <th class="text-center" width="80">Actions</th>
+                        <th class="text-end">USD</th>
+                        <th class="text-end">BDT</th>
+                        <th class="text-center" width="80">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @{ int sn = 1; }
+                    @{ int sn = 1; decimal rateBDT = (decimal)(ViewBag.RateBDT ?? 110m); }
                     @foreach (var t in items)
                     {
                         var isIncome = t.TransactionType == "Income";
                         <tr id="txn-@t.Id">
                             <td class="ps-4 text-muted small">@(sn++)</td>
                             <td class="small">
-                                @t.TransactionDate.ToString("dd MMM yyyy")
-                                <div class="text-muted" style="font-size:.7rem;">@t.TransactionDate.ToString("HH:mm")</div>
+                                <div class="fw-semibold">
+                                    @t.TransactionDate.ToString("dd MMM yyyy")
+                                </div>
                             </td>
                             <td>
-                                <span class="badge @(isIncome ? "bg-success" : "bg-danger") bg-opacity-15 @(isIncome ? "text-success" : "text-danger") rounded-pill px-2">
-                                    <i class="bi @(isIncome ? "bi-arrow-down-circle" : "bi-arrow-up-circle") me-1"></i>
-                                    @t.TransactionType
-                                </span>
+                                @if (isIncome)
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-arrow-down-circle me-1"></i>Income
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-arrow-up-circle me-1"></i>Expense
+                                    </span>
+                                }
                             </td>
                             <td class="small fw-semibold">@t.Category</td>
                             <td class="small text-muted">@(t.Description ?? "—")</td>
                             <td><code class="small">@(t.ReferenceNumber ?? "—")</code></td>
                             <td class="text-end fw-bold @(isIncome ? "text-success" : "text-danger")">
-                                @(isIncome ? "+" : "-")৳@t.Amount.ToString("N2")
+                                @(isIncome ? "+" : "-")$@t.Amount.ToString("N2")
+                            </td>
+                            <td class="text-end text-muted small">
+                                ৳@((t.Amount * rateBDT).ToString("N0"))
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-danger" onclick="delTxn(@t.Id)">
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="delTxn(@t.Id)"
+                                        title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>
                         </tr>
                     }
+
+                    @if (!items.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-journal-x d-block mb-2 fs-2"></i>
+                                No transactions found for this period.
+                            </td>
+                        </tr>
+                    }
                 </tbody>
+                @if (items.Any())
+                {
+                     <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="6" class="ps-4">Total</td>
+                        <td class="text-end text-success">
+                            +$@items.Where(t => t.TransactionType == "Income").Sum(t => t.Amount).ToString("N2")
+                        </td>
+                        <td class="text-end text-danger">
+                            -$@items.Where(t => t.TransactionType == "Expense").Sum(t => t.Amount).ToString("N2")
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+                }
             </table>
         </div>
     </div>
@@ -144,16 +207,30 @@
 
 @section Scripts {
 <script>
-$(function() { initDataTable('#accountTable', { order:[[1,'desc']] }); });
+$(function () {
+    initDataTable('#accountTable', { order: [[1,'desc']], pageLength: 25, footerCallback: null  });
+});
+
 const tok = () => $('[name=__RequestVerificationToken]').val();
 
 function delTxn(id) {
-    Swal.fire({ title:'Delete?', text:'Remove this transaction?', icon:'warning',
-        showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
-    .then(r => { if (r.isConfirmed) {
-        $.post('/Account/Delete', { id, __RequestVerificationToken: tok() },
-            d => { if (d.success) { $(`#txn-${id}`).fadeOut(); toastr.success(d.message); } else toastr.error(d.message); });
-    }});
+    Swal.fire({
+        title: 'Delete Transaction?',
+        text:  'This cannot be undone.',
+        icon:  'warning',
+        showCancelButton:   true,
+        confirmButtonColor: '#0a0a0a',
+        confirmButtonText:  'Delete'
+    }).then(r => {
+        if (r.isConfirmed) {
+            $.post('/Account/Delete', { id, __RequestVerificationToken: tok() }, d => {
+                if (d.success) {
+                    $(`#txn-${id}`).fadeOut();
+                    toastr.success(d.message);
+                } else toastr.error(d.message);
+            });
+        }
+    });
 }
 </script>
 }

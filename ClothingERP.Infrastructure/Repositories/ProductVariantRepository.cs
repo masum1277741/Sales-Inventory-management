@@ -11,7 +11,17 @@ public class ProductVariantRepository : GenericRepository<ProductVariant>, IProd
             .Include(v => v.Color)
             .Include(v => v.Stock)
             .FirstOrDefaultAsync(v => v.Barcode == barcode && v.IsActive);
-
+    public async Task<IEnumerable<ProductVariant>> GetAllWithDetailsAsync()
+    {
+        return await _context.ProductVariants
+            .Include(v => v.Product)
+                .ThenInclude(p => p.Category)
+            .Include(v => v.Size)
+            .Include(v => v.Color)
+            .Include(v => v.Stock)  
+            .Where(v => !v.IsDeleted && !v.Product.IsDeleted)
+            .ToListAsync();
+    }
     public async Task<ProductVariant?> GetWithFullDetailsAsync(int variantId)
         => await _dbSet
             .Include(v => v.Product).ThenInclude(p => p.Brand)

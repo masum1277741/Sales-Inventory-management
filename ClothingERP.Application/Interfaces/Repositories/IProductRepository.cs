@@ -7,4 +7,6 @@ public interface IProductRepository : IRepository<Product>
     Task<bool> IsSkuExistsAsync(string sku, int? excludeId = null);
     Task<IEnumerable<Product>> SearchAsync(string keyword);
     Task<int> GetNextSkuSequenceAsync();
+    Task<IEnumerable<Product>> GetAllWithDetailsAsync();
+    Task<Product?> GetByIdWithDetailsAsync(int id);
 }

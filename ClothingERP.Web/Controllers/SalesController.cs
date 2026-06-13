@@ -5,15 +5,42 @@ public class SalesController : BaseController
     private readonly ISalesService _salesSvc;
     private readonly ICustomerService _customerSvc;
     private readonly IProductService _productSvc;
+    private readonly IConfiguration _config;      
 
-    public SalesController(ISalesService salesSvc, ICustomerService customerSvc, IProductService productSvc)
-        => (_salesSvc, _customerSvc, _productSvc) = (salesSvc, customerSvc, productSvc);
-
-    // ── POS ───────────────────────────────────────────────────────────────
+    public SalesController(ISalesService salesSvc, ICustomerService customerSvc,
+        IProductService productSvc, IConfiguration config)
+    {
+        _salesSvc = salesSvc;
+        _customerSvc = customerSvc;
+        _productSvc = productSvc;
+        _config = config;                        
+    }
+    // ── All Products for POS Grid ─────────────────────────────────────────
+    [HttpGet]
+    public async Task<IActionResult> GetAllProducts()
+    {
+        var variants = await _productSvc.GetAllActiveVariantsAsync();
+        return Json(variants.Select(v => new
+        {
+            variantId = v.Id,
+            productName = v.ProductName,
+            sku = v.ProductSKU,
+            sizeName = v.SizeName,
+            colorName = v.ColorName,
+            colorHex = v.ColorHex,
+            barcode = v.Barcode,
+            retailPrice = v.EffectiveRetailPrice,
+            costPrice = v.EffectiveCostPrice,
+            stock = v.StockQuantity
+        }));
+    }
     [HttpGet]
     public IActionResult POS()
     {
         ViewData["Title"] = "Point of Sale";
+      
+        ViewBag.RateBDT = _config.GetValue<decimal>("ExchangeRates:USD_TO_BDT", 110m);
+        ViewBag.RateMVR = _config.GetValue<decimal>("ExchangeRates:USD_TO_MVR", 15.42m);
         return View();
     }
 
@@ -69,10 +96,13 @@ public class SalesController : BaseController
                 invoiceId = result.Data!.Id,
                 invoiceNumber = result.Data.InvoiceNumber,
                 totalAmount = result.Data.TotalAmount,
+                totalBDT = result.Data.TotalAmountBDT,
+                totalMVR = result.Data.TotalAmountMVR,
                 dueAmount = result.Data.DueAmount
             }, result.Message!)
             : JsonError(result.Message!);
     }
+
 
     // ── AJAX: Cancel ──────────────────────────────────────────────────────
     [HttpPost, ValidateAntiForgeryToken]
@@ -164,15 +194,41 @@ public class SalesController : BaseController
 
     // ── AJAX: Search Customers ────────────────────────────────────────────
     [HttpGet]
-    public async Task<IActionResult> SearchCustomers(string keyword)
+    public async Task<IActionResult> SearchCustomers(string? keyword)
     {
-        if (string.IsNullOrWhiteSpace(keyword)) return Json(Array.Empty<object>());
-        var list = (await _customerSvc.GetAllAsync())
-            .Where(c => c.IsActive &&
-                       (c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                        (c.PhoneNumber?.Contains(keyword) == true)))
-            .Take(10)
-            .Select(c => new { c.Id, c.Name, c.PhoneNumber, c.CurrentBalance, c.GroupName, c.LoyaltyPoints });
-        return Json(list);
+        var all = (await _customerSvc.GetAllAsync())
+            .Where(c => c.IsActive)
+            .ToList();
+
+       
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            return Json(all
+                .Take(50)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    name = c.Name ?? "",
+                    phoneNumber = c.PhoneNumber ?? "",
+                    currentBalance = c.CurrentBalance,
+                    groupName = c.GroupName ?? "",
+                    loyaltyPoints = c.LoyaltyPoints
+                }));
+        }
+
+        return Json(all
+            .Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                        (c.PhoneNumber != null &&
+                         c.PhoneNumber.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+            .Take(20)
+            .Select(c => new
+            {
+                id = c.Id,
+                name = c.Name ?? "",
+                phoneNumber = c.PhoneNumber ?? "",
+                currentBalance = c.CurrentBalance,
+                groupName = c.GroupName ?? "",
+                loyaltyPoints = c.LoyaltyPoints
+            }));
     }
 }

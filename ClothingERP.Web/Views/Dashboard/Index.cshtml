@@ -22,7 +22,7 @@
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <p class="text-muted small mb-1">Today's Sales</p>
-                    <h4 class="fw-bold mb-0">৳@Model.TodaySales.ToString("N0")</h4>
+                    <h4 class="fw-bold mb-0">৳@Model.TodaySales</h4>
                     <small class="text-muted">@Model.TodayInvoiceCount invoices</small>
                 </div>
                 <div class="icon-wrap" style="background:#e8f0fe;">
@@ -37,7 +37,7 @@
                 <div>
                     <p class="text-muted small mb-1">Today's Profit</p>
                     <h4 class="fw-bold mb-0 @(Model.TodayProfit >= 0 ? "text-success" : "text-danger")">
-                        ৳@Model.TodayProfit.ToString("N0")
+                        ৳@Model.TodayProfit
                     </h4>
                     <small class="text-muted">Net earning</small>
                 </div>
@@ -52,7 +52,7 @@
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <p class="text-muted small mb-1">Stock Value</p>
-                    <h4 class="fw-bold mb-0">৳@Model.TotalStockValue.ToString("N0")</h4>
+                    <h4 class="fw-bold mb-0">৳@Model.TotalStockValue</h4>
                     <small class="text-muted">Total inventory</small>
                 </div>
                 <div class="icon-wrap" style="background:#fff3e0;">
@@ -117,7 +117,7 @@
                         <i class="bi bi-person-lines-fill" style="color:#1e88e5;"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0 text-info">৳@Model.TotalCustomerDue.ToString("N0")</h5>
+                        <h5 class="fw-bold mb-0 text-info">৳@Model.TotalCustomerDue</h5>
                         <small class="text-muted">Customer Due</small>
                     </div>
                 </div>
@@ -132,7 +132,7 @@
                         <i class="bi bi-truck" style="color:#546e7a;"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0 text-secondary">৳@Model.TotalSupplierDue.ToString("N0")</h5>
+                        <h5 class="fw-bold mb-0 text-secondary">৳@Model.TotalSupplierDue</h5>
                         <small class="text-muted">Supplier Due</small>
                     </div>
                 </div>
@@ -175,7 +175,7 @@
                                         <small class="text-muted">@product.QuantitySold.ToString("N0") sold</small>
                                     </div>
                                     <div class="text-end">
-                                        <div class="fw-bold small text-success">৳@product.TotalRevenue.ToString("N0")</div>
+                                        <div class="fw-bold small text-success">৳@product.TotalRevenue</div>
                                     </div>
                                 </div>
                             </div>
@@ -231,10 +231,10 @@
                                             <span class="fw-semibold small">@inv.CustomerName</span>
                                         </td>
                                         <td>
-                                            <div class="fw-bold">৳@inv.TotalAmount.ToString("N0")</div>
+                                            <div class="fw-bold">৳@inv.TotalAmount</div>
                                             @if (inv.DueAmount > 0)
                                             {
-                                                <small class="text-danger">Due: ৳@inv.DueAmount.ToString("N0")</small>
+                                                <small class="text-danger">Due: ৳@inv.DueAmount</small>
                                             }
                                         </td>
                                         <td>
@@ -289,7 +289,7 @@
                                     </div>
                                     <div class="text-end">
                                         <span class="badge @(item.Quantity <= 0 ? "bg-danger" : "bg-warning text-dark") rounded-pill fs-6 px-3">
-                                            @item.Quantity.ToString("N0")
+                                            @item.Quantity
                                         </span>
                                         <br /><small class="text-muted">pcs left</small>
                                     </div>

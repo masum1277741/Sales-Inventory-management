@@ -14,6 +14,10 @@ public class SalesInvoice : BaseEntity
     public bool IsCredit { get; set; }
     public bool IsHold { get; set; }
     public string? Notes { get; set; }
+    public decimal? TotalAmountBDT { get; set; }
+    public decimal? TotalAmountMVR { get; set; }
+    public decimal? ExchangeRateBDT { get; set; }
+    public decimal? ExchangeRateMVR { get; set; }
 
     [NotMapped]
     public decimal DueAmount => TotalAmount - PaidAmount;

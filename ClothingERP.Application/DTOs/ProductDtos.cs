@@ -178,7 +178,9 @@ public class ProductVariantDto
     public decimal? RetailPriceOverride { get; set; }
     public decimal EffectiveCostPrice { get; set; }
     public decimal EffectiveRetailPrice { get; set; }
+
     public decimal StockQuantity { get; set; }
+
     public bool IsActive { get; set; }
 }
 

@@ -21,7 +21,7 @@
     <div class="col-sm col-6"><div class="stat-card"><div class="text-muted small">In Stock</div><h4 class="fw-bold text-success mb-0">@ViewBag.InStock</h4></div></div>
     <div class="col-sm col-6"><div class="stat-card"><div class="text-muted small">Low Stock</div><h4 class="fw-bold text-warning mb-0">@ViewBag.LowStock</h4></div></div>
     <div class="col-sm col-6"><div class="stat-card"><div class="text-muted small">Out of Stock</div><h4 class="fw-bold text-danger mb-0">@ViewBag.OutOfStock</h4></div></div>
-    <div class="col-sm col-6"><div class="stat-card"><div class="text-muted small">Total Value</div><h4 class="fw-bold text-primary mb-0">৳@((decimal)ViewBag.TotalValue).ToString("N0")</h4></div></div>
+    <div class="col-sm col-6"><div class="stat-card"><div class="text-muted small">Total Value</div><h4 class="fw-bold text-primary mb-0">৳@((decimal)ViewBag.TotalValue)</h4></div></div>
 </div>
 
 <div class="row g-4 mb-4">
@@ -54,7 +54,7 @@
                             <tr>
                                 <td class="ps-4 fw-semibold small">@cat.Category</td>
                                 <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary">@cat.Count</span></td>
-                                <td class="text-end fw-semibold pe-4">৳@((decimal)cat.Value).ToString("N2")</td>
+                                <td class="text-end fw-semibold pe-4">৳@((decimal)cat.Value)</td>
                             </tr>
                         }
                     </tbody>

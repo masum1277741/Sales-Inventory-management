@@ -145,12 +145,42 @@ public class CustomerController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Search(string keyword)
-        => Json((await _customerSvc.GetAllAsync())
-            .Where(c => c.IsActive && (c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                                       (c.PhoneNumber?.Contains(keyword) == true)))
-            .Take(10)
-            .Select(c => new { c.Id, c.Name, c.PhoneNumber, c.CurrentBalance, c.GroupName }));
+    public async Task<IActionResult> Search(string? keyword)
+    {
+        var all = (await _customerSvc.GetAllAsync())
+            .Where(c => c.IsActive)
+            .ToList();
+
+   
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            return Json(all
+                .Take(50)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    name = c.Name ?? "",
+                    phoneNumber = c.PhoneNumber ?? "",
+                    currentBalance = c.CurrentBalance,
+                    groupName = c.GroupName ?? ""
+                }));
+        }
+
+      
+        return Json(all
+            .Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                        (c.PhoneNumber != null &&
+                         c.PhoneNumber.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+            .Take(20)
+            .Select(c => new
+            {
+                id = c.Id,
+                name = c.Name ?? "",
+                phoneNumber = c.PhoneNumber ?? "",
+                currentBalance = c.CurrentBalance,
+                groupName = c.GroupName ?? ""
+            }));
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetById(int id)

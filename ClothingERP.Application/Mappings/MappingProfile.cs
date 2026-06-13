@@ -59,15 +59,24 @@ public class MappingProfile : Profile
             .ForMember(d => d.Variants, o => o.Ignore());
 
         // ── ProductVariant ────────────────────────────────────────────────
+    
         CreateMap<ProductVariant, ProductVariantDto>()
-            .ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product.Name))
-            .ForMember(d => d.ProductSKU, o => o.MapFrom(s => s.Product.SKU))
-            .ForMember(d => d.SizeName, o => o.MapFrom(s => s.Size.Name))
-            .ForMember(d => d.ColorName, o => o.MapFrom(s => s.Color.Name))
-            .ForMember(d => d.ColorHex, o => o.MapFrom(s => s.Color.HexCode))
-            .ForMember(d => d.StockQuantity, o => o.MapFrom(s => s.Stock != null ? s.Stock.Quantity : 0))
-            .ForMember(d => d.EffectiveCostPrice, o => o.MapFrom(s => s.CostPriceOverride ?? s.Product.CostPrice))
-            .ForMember(d => d.EffectiveRetailPrice, o => o.MapFrom(s => s.RetailPriceOverride ?? s.Product.RetailPrice));
+            .ForMember(d => d.ProductName,
+                o => o.MapFrom(s => s.Product != null ? s.Product.Name : string.Empty))
+            .ForMember(d => d.ProductSKU,
+                o => o.MapFrom(s => s.Product != null ? s.Product.SKU : string.Empty))
+            .ForMember(d => d.SizeName,
+                o => o.MapFrom(s => s.Size != null ? s.Size.Name : string.Empty))
+            .ForMember(d => d.ColorName,
+                o => o.MapFrom(s => s.Color != null ? s.Color.Name : string.Empty))
+            .ForMember(d => d.ColorHex,
+                o => o.MapFrom(s => s.Color != null ? s.Color.HexCode : string.Empty))
+            .ForMember(d => d.EffectiveCostPrice,
+                o => o.MapFrom(s => s.CostPriceOverride ?? (s.Product != null ? s.Product.CostPrice : 0)))
+            .ForMember(d => d.EffectiveRetailPrice,
+                o => o.MapFrom(s => s.RetailPriceOverride ?? (s.Product != null ? s.Product.RetailPrice : 0)))
+            .ForMember(d => d.StockQuantity,
+                o => o.MapFrom(s => s.Stock != null ? s.Stock.Quantity : 0));
 
         // ── Stock ─────────────────────────────────────────────────────────
         CreateMap<Stock, StockListDto>()

@@ -9,10 +9,13 @@ public class ProductController : BaseController
     private readonly IBrandService _brands;
     private readonly IProductAttributeService _attrs;
     private readonly IWebHostEnvironment _env;
-
+    private readonly IConfiguration _config;
     public ProductController(IProductService products, ICategoryService cats,
-        IBrandService brands, IProductAttributeService attrs, IWebHostEnvironment env)
-    { _products = products; _cats = cats; _brands = brands; _attrs = attrs; _env = env; }
+        IBrandService brands, IProductAttributeService attrs, IWebHostEnvironment env, IConfiguration config)
+    {
+        _products = products; _cats = cats; _brands = brands; _attrs = attrs; _env = env;
+        _config = config;
+    }
 
     // ── Index ─────────────────────────────────────────────────────────────
     public async Task<IActionResult> Index()
@@ -177,6 +180,10 @@ public class ProductController : BaseController
         ViewBag.Brands = await _brands.GetAllAsync();
         ViewBag.Sizes = await _attrs.GetSizesAsync();
         ViewBag.Colors = await _attrs.GetColorsAsync();
+
+      
+        ViewBag.RateBDT = _config.GetValue<decimal>("ExchangeRates:USD_TO_BDT", 110m);
+        ViewBag.RateMVR = _config.GetValue<decimal>("ExchangeRates:USD_TO_MVR", 15.42m);
     }
 
     private async Task<string> SaveFile(IFormFile file, string folder)

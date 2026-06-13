@@ -115,7 +115,7 @@
                                     <td class="text-end small fw-semibold">৳@v.EffectiveRetailPrice.ToString("N2")</td>
                                     <td class="text-center">
                                         <span class="badge rounded-pill @(v.StockQuantity <= 0 ? "bg-danger" : v.StockQuantity <= Model.ReorderPoint ? "bg-warning text-dark" : "bg-success") bg-opacity-15 @(v.StockQuantity <= 0 ? "text-danger" : v.StockQuantity <= Model.ReorderPoint ? "text-warning" : "text-success")">
-                                            @v.StockQuantity.ToString("N0")
+                                            @v.StockQuantity
                                         </span>
                                     </td>
                                     <td class="text-center">

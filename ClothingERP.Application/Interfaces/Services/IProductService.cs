@@ -10,6 +10,7 @@ public interface IProductService
     Task<ServiceResult> ToggleStatusAsync(int id, int userId);
 
     // Variant operations
+    Task<IEnumerable<ProductVariantDto>> GetAllActiveVariantsAsync();
     Task<ProductVariantDto?> GetVariantByBarcodeAsync(string barcode);
     Task<IEnumerable<ProductVariantDto>> SearchVariantsAsync(string keyword);
     Task<ServiceResult<ProductVariantDto>> AddVariantAsync(int productId, CreateProductVariantDto dto, int userId);

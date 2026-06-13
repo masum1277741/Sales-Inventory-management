@@ -29,9 +29,9 @@
 
 <div class="row g-3 mb-4">
     <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Total Orders</div><h4 class="fw-bold mb-0">@ViewBag.OrderCount</h4></div></div>
-    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Total Amount</div><h4 class="fw-bold text-primary mb-0">৳@((decimal)ViewBag.TotalAmount).ToString("N0")</h4></div></div>
-    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Amount Paid</div><h4 class="fw-bold text-success mb-0">৳@((decimal)ViewBag.TotalPaid).ToString("N0")</h4></div></div>
-    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Outstanding Due</div><h4 class="fw-bold text-danger mb-0">৳@((decimal)ViewBag.TotalDue).ToString("N0")</h4></div></div>
+    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Total Amount</div><h4 class="fw-bold text-primary mb-0">৳@((decimal)ViewBag.TotalAmount)</h4></div></div>
+    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Amount Paid</div><h4 class="fw-bold text-success mb-0">৳@((decimal)ViewBag.TotalPaid)</h4></div></div>
+    <div class="col-sm-3"><div class="stat-card"><div class="text-muted small">Outstanding Due</div><h4 class="fw-bold text-danger mb-0">৳@((decimal)ViewBag.TotalDue)</h4></div></div>
 </div>
 
 <div class="card border-0 shadow-sm">
@@ -70,18 +70,18 @@
                             <td class="small">@po.SupplierName</td>
                             <td class="small text-muted">@po.OrderDate.ToString("dd MMM yyyy")</td>
                             <td class="text-center"><span class="badge @sCls rounded-pill px-2">@sLbl</span></td>
-                            <td class="text-end fw-semibold">৳@po.TotalAmount.ToString("N2")</td>
-                            <td class="text-end text-success">৳@po.PaidAmount.ToString("N2")</td>
-                            <td class="text-end @(po.DueAmount > 0 ? "text-danger fw-bold" : "text-muted")">@(po.DueAmount > 0 ? "৳" + po.DueAmount.ToString("N2") : "—")</td>
+                            <td class="text-end fw-semibold">৳@po.TotalAmount</td>
+                            <td class="text-end text-success">৳@po.PaidAmount</td>
+                            <td class="text-end @(po.DueAmount > 0 ? "text-danger fw-bold" : "text-muted")">@(po.DueAmount > 0 ? "৳" + po.DueAmount : "—")</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot class="table-light fw-bold">
                     <tr>
                         <td colspan="5" class="ps-4">Total</td>
-                        <td class="text-end">৳@items.Sum(p => p.TotalAmount).ToString("N2")</td>
-                        <td class="text-end text-success">৳@items.Sum(p => p.PaidAmount).ToString("N2")</td>
-                        <td class="text-end text-danger">৳@items.Sum(p => p.DueAmount).ToString("N2")</td>
+                        <td class="text-end">৳@items.Sum(p => p.TotalAmount)</td>
+                        <td class="text-end text-success">৳@items.Sum(p => p.PaidAmount)</td>
+                        <td class="text-end text-danger">৳@items.Sum(p => p.DueAmount)</td>
                     </tr>
                 </tfoot>
             </table>

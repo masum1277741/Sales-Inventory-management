@@ -32,7 +32,39 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
         if (excludeId.HasValue) q = q.Where(p => p.Id != excludeId.Value);
         return await q.AnyAsync();
     }
+    public async Task<IEnumerable<Product>> GetAllWithDetailsAsync()
+    {
+        return await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.SubCategory)
+            .Include(p => p.Brand)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Size)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Color)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Stock)
+            .Where(p => !p.IsDeleted)
+            .AsNoTracking()
+            .ToListAsync();
+    }
 
+    public async Task<Product?> GetByIdWithDetailsAsync(int id)
+    {
+        return await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.SubCategory)
+            .Include(p => p.Brand)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Size)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Color)
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+                .ThenInclude(v => v.Stock)
+            .Where(p => !p.IsDeleted && p.Id == id)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+    }
     public async Task<IEnumerable<Product>> SearchAsync(string keyword)
         => await _dbSet
             .Include(p => p.Category)

@@ -23,6 +23,8 @@ public class SalesInvoiceDto : SalesInvoiceListDto
     public string? Notes { get; set; }
     public List<SalesInvoiceItemDto> Items { get; set; } = new();
     public List<SalesPaymentDto> Payments { get; set; } = new();
+    public object TotalAmountBDT { get; set; }
+    public object TotalAmountMVR { get; set; }
 }
 
 public class SalesInvoiceItemDto
@@ -53,6 +55,8 @@ public class CreateSalesInvoiceDto
     [Required, MinLength(1, ErrorMessage = "At least one item is required")]
     public List<CreateSalesInvoiceItemDto> Items { get; set; } = new();
     public List<CreateSalesPaymentDto> Payments { get; set; } = new();
+    public decimal ExchangeRateBDT { get; set; } = 110m;
+    public decimal ExchangeRateMVR { get; set; } = 15.42m;
 }
 
 public class CreateSalesInvoiceItemDto

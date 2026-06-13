@@ -91,23 +91,42 @@
                 <div class="card-body p-4">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label asp-for="CostPrice" class="form-label fw-semibold">Cost Price <span class="text-danger">*</span></label>
+                            <label asp-for="CostPrice" class="form-label fw-semibold">
+                                Cost Price <span class="text-danger">*</span>
+                                <span class="text-muted small ms-1">(USD)</span>
+                            </label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light">৳</span>
-                                <input asp-for="CostPrice" class="form-control" type="number" step="0.01" placeholder="0.00" />
+                                <span class="input-group-text bg-light fw-bold text-success">$</span>
+                                <input asp-for="CostPrice" class="form-control" type="number"
+                                       step="0.01" placeholder="0.00" id="CostPrice"
+                                       oninput="convertFrom('CostPrice','USD')" />
                             </div>
+                            <small id="currency-preview-CostPrice"
+                                   class="text-muted d-none"
+                                   style="font-size:.72rem;display:none;"></small>
                             <span asp-validation-for="CostPrice" class="text-danger small"></span>
                         </div>
                         <div class="col-md-4">
-                            <label asp-for="RetailPrice" class="form-label fw-semibold">Retail Price <span class="text-danger">*</span></label>
+                            <label asp-for="RetailPrice" class="form-label fw-semibold">
+                                Retail Price <span class="text-danger">*</span>
+                                <span class="text-muted small ms-1">(USD)</span>
+                            </label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light">৳</span>
-                                <input asp-for="RetailPrice" class="form-control" type="number" step="0.01" placeholder="0.00" />
+                                <span class="input-group-text bg-light fw-bold text-primary">$</span>
+                                <input asp-for="RetailPrice" class="form-control" type="number"
+                                       step="0.01" placeholder="0.00" id="RetailPrice"
+                                       oninput="convertFrom('RetailPrice','USD')" />
                             </div>
+                            <small id="currency-preview-RetailPrice"
+                                   class="text-muted"
+                                   style="font-size:.72rem;display:none;"></small>
                             <span asp-validation-for="RetailPrice" class="text-danger small"></span>
                         </div>
                         <div class="col-md-4">
-                            <label asp-for="WholesalePrice" class="form-label fw-semibold">Wholesale Price</label>
+                            <label asp-for="WholesalePrice" class="form-label fw-semibold">Wholesale Price
+                                <span class="text-danger">*</span>
+                                <span class="text-muted small ms-1">(USD)</span>
+                            </label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">৳</span>
                                 <input asp-for="WholesalePrice" class="form-control" type="number" step="0.01" placeholder="0.00" />
@@ -415,6 +434,39 @@
                     retailPriceOverride: v.retailPriceOverride
                 }))
             ));
+        }
+    
+        const RATE_BDT = @(ViewBag.RateBDT ?? 110m);
+        const RATE_MVR = @(ViewBag.RateMVR ?? 15.42m);
+
+        // ══ Converters ════════════════════════════════════════════════════
+        function convertFrom(sourceField, sourceCurrency) {
+            const val = parseFloat(document.getElementById(sourceField).value) || 0;
+
+            let usd, bdt, mvr;
+            if (sourceCurrency === 'USD') {
+                usd = val;
+                bdt = val * RATE_BDT;
+                mvr = val * RATE_MVR;
+            } else if (sourceCurrency === 'BDT') {
+                usd = val / RATE_BDT;
+                bdt = val;
+                mvr = usd * RATE_MVR;
+            } else { // MVR
+                usd = val / RATE_MVR;
+                bdt = usd * RATE_BDT;
+                mvr = val;
+            }
+
+            const display = document.getElementById('currency-preview-' + sourceField);
+            if (display) {
+                const others = [];
+                if (sourceCurrency !== 'USD') others.push(`$${usd.toFixed(2)}`);
+                if (sourceCurrency !== 'BDT') others.push(`৳${bdt.toFixed(0)}`);
+                if (sourceCurrency !== 'MVR') others.push(`Rf${mvr.toFixed(2)}`);
+                display.textContent = others.join(' / ');
+                display.style.display = val > 0 ? 'block' : 'none';
+            }
         }
     </script>
 }
