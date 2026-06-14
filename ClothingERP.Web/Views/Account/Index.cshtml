@@ -1,10 +1,10 @@
 ﻿@model IEnumerable<ClothingERP.Application.DTOs.AccountTransactionListDto>
 @{
     ViewData["Title"] = "Account Transactions";
-    var items = Model.ToList();
-    var totalIncome  = (decimal)(ViewBag.TotalIncome  ?? 0m);
-    var totalExpense = (decimal)(ViewBag.TotalExpense ?? 0m);
-    var netBalance   = (decimal)(ViewBag.NetBalance   ?? 0m);
+    var items        = Model.ToList();
+    var totalIncome  = items.Where(t => t.TransactionType == "Income").Sum(t => t.Amount);
+    var totalExpense = items.Where(t => t.TransactionType == "Expense").Sum(t => t.Amount);
+    var netBalance   = totalIncome - totalExpense;
 }
 
 <div class="page-header d-flex justify-content-between align-items-center">
@@ -185,18 +185,22 @@
                 </tbody>
                 @if (items.Any())
                 {
-                     <tfoot class="table-light fw-bold">
-                    <tr>
-                        <td colspan="6" class="ps-4">Total</td>
-                        <td class="text-end text-success">
-                            +$@items.Where(t => t.TransactionType == "Income").Sum(t => t.Amount).ToString("N2")
-                        </td>
-                        <td class="text-end text-danger">
-                            -$@items.Where(t => t.TransactionType == "Expense").Sum(t => t.Amount).ToString("N2")
-                        </td>
-                        <td></td>
-                    </tr>
-                </tfoot>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td class="ps-4" colspan="2">Totals</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-end" style="color:#065f46;">
+                                +$@totalIncome.ToString("N2")
+                            </td>
+                            <td class="text-end" style="color:#7f1d1d;">
+                                ৳@((totalIncome * rateBDT).ToString("N0"))
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 }
             </table>
         </div>
@@ -208,16 +212,19 @@
 @section Scripts {
 <script>
 $(function () {
-    initDataTable('#accountTable', { order: [[1,'desc']], pageLength: 25, footerCallback: null  });
+    initDataTable('#accountTable', {
+        order:      [[1, 'desc']],
+        pageLength: 25
+    });
 });
 
 const tok = () => $('[name=__RequestVerificationToken]').val();
 
 function delTxn(id) {
     Swal.fire({
-        title: 'Delete Transaction?',
-        text:  'This cannot be undone.',
-        icon:  'warning',
+        title:              'Delete Transaction?',
+        text:               'This cannot be undone.',
+        icon:               'warning',
         showCancelButton:   true,
         confirmButtonColor: '#0a0a0a',
         confirmButtonText:  'Delete'
@@ -227,10 +234,13 @@ function delTxn(id) {
                 if (d.success) {
                     $(`#txn-${id}`).fadeOut();
                     toastr.success(d.message);
-                } else toastr.error(d.message);
+                } else {
+                    toastr.error(d.message);
+                }
             });
         }
     });
 }
 </script>
+}
 }

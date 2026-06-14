@@ -189,11 +189,14 @@ public class MappingProfile : Profile
             .ForMember(d => d.ProductName, o => o.MapFrom(s => s.ProductVariant.Product.Name))
             .ForMember(d => d.SizeName, o => o.MapFrom(s => s.ProductVariant.Size.Name));
 
-        // ── AccountTransaction ────────────────────────────────────────────
+        // AccountTransaction → AccountTransactionListDto
         CreateMap<AccountTransaction, AccountTransactionListDto>()
-            .ForMember(d => d.TransactionType, o => o.MapFrom(s => s.TransactionType.ToString()))
-            .ForMember(d => d.Category, o => o.MapFrom(s => s.Category.ToString()))
-            .ForMember(d => d.PaymentMethod, o => o.MapFrom(s => s.PaymentMethod.ToString()));
+            .ForMember(d => d.TransactionType,
+                o => o.MapFrom(s => s.TransactionType.ToString()))
+            .ForMember(d => d.Category,
+                o => o.MapFrom(s => s.Category.ToString()))
+            .ForMember(d => d.PaymentMethod,
+                o => o.MapFrom(s => s.PaymentMethod.ToString()));
         CreateMap<AccountTransaction, AccountTransactionDto>()
             .ForMember(d => d.TransactionType, o => o.MapFrom(s => s.TransactionType.ToString()))
             .ForMember(d => d.Category, o => o.MapFrom(s => s.Category.ToString()))

@@ -15,7 +15,6 @@ public class AccountTransactionListDto
 
 public class AccountTransactionDto : AccountTransactionListDto
 {
-    public string? ReferenceNumber { get; set; }
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
 }
