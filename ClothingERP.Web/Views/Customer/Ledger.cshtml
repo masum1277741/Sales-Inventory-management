@@ -3,6 +3,9 @@
     ViewData["Title"] = "Customer Ledger";
     var customer = (CustomerDto)ViewBag.Customer;
     var items = Model.ToList();
+    decimal totalDebit = (decimal)(ViewBag.TotalDebit ?? 0m);
+    decimal totalCredit = (decimal)(ViewBag.TotalCredit ?? 0m);
+    decimal balance = (decimal)(ViewBag.Balance ?? 0m);
 }
 
 <div class="page-header d-flex justify-content-between align-items-center">
@@ -19,46 +22,39 @@
         <button class="btn btn-success btn-sm" onclick="openPaymentModal()">
             <i class="bi bi-cash me-1"></i>Receive Payment
         </button>
-        <a asp-action="Edit" asp-route-id="@customer.Id" class="btn btn-light border btn-sm">
-            <i class="bi bi-pencil me-1"></i>Edit
-        </a>
         <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
     </div>
 </div>
 
-<!-- Customer Summary -->
+<!-- Summary -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card border-0 shadow-sm text-center p-3">
-            <div class="mx-auto mb-2" style="width:56px;height:56px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#4f7cff;">
+            <div class="mx-auto mb-2" style="width:56px;height:56px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:#4c1d95;">
                 @customer.Name[0].ToString().ToUpper()
             </div>
             <h6 class="fw-bold mb-0">@customer.Name</h6>
             <small class="text-muted">@(customer.PhoneNumber ?? "—")</small>
-            <span class="badge bg-primary bg-opacity-10 text-primary mt-1">@customer.GroupName</span>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card h-100">
-            <div class="text-muted small mb-1">Total Debit (Receivable)</div>
-            <h4 class="fw-bold text-danger mb-0">৳@((decimal)ViewBag.TotalDebit).ToString("N2")</h4>
+            <div class="text-muted small mb-1">Total Debit (Sales)</div>
+            <h4 class="fw-bold mb-0" style="color:#7f1d1d;">$@totalDebit.ToString("N2")</h4>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card h-100">
             <div class="text-muted small mb-1">Total Credit (Received)</div>
-            <h4 class="fw-bold text-success mb-0">৳@((decimal)ViewBag.TotalCredit).ToString("N2")</h4>
+            <h4 class="fw-bold mb-0" style="color:#065f46;">$@totalCredit.ToString("N2")</h4>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card h-100 border-start border-3 @((decimal)ViewBag.Balance > 0 ? "border-danger" : "border-success")">
-            <div class="text-muted small mb-1">Current Balance</div>
-            <h4 class="fw-bold @((decimal)ViewBag.Balance > 0 ? "text-danger" : "text-success") mb-0">
-                ৳@((decimal)ViewBag.Balance).ToString("N2")
+        <div class="stat-card h-100 border-start border-3 @(balance > 0 ? "border-danger" : "border-success")">
+            <div class="text-muted small mb-1">Current Due</div>
+            <h4 class="fw-bold mb-0" style="color:@(balance > 0 ? "#7f1d1d" : "#065f46");">
+                $@balance.ToString("N2")
             </h4>
-            <small class="@((decimal)ViewBag.Balance > 0 ? "text-danger" : "text-muted")">
-                @((decimal)ViewBag.Balance > 0 ? "Customer owes you" : "Clear")
-            </small>
         </div>
     </div>
 </div>
@@ -99,42 +95,39 @@
                     }
                     @foreach (var entry in items)
                     {
+                        var (cls, lbl) = entry.EntryType switch
+                        {
+                            "Invoice" => ("bg-danger", "Invoice"),
+                            "Payment" => ("bg-success", "Payment"),
+                            "Return" => ("bg-info", "Return"),
+                            _ => ("bg-secondary", "—")
+                        };
                         <tr>
                             <td class="ps-4 text-muted small">@(sn++)</td>
-                            <td class="small">@entry.EntryDate.ToString("dd MMM yyyy")<br /><span class="text-muted" style="font-size:.7rem;">@entry.EntryDate.ToString("HH:mm")</span></td>
-                            <td>
-                                @{
-                                    var (cls, lbl) = entry.EntryType switch
-                                    {
-                                        "Invoice" => ("bg-danger", "Invoice"),
-                                        "Payment" => ("bg-success", "Payment"),
-                                        "Return" => ("bg-info", "Return"),
-                                        "Adjustment" => ("bg-warning text-dark", "Adjustment"),
-                                        _ => ("bg-secondary", "—")
-                                    };
-                                }
-                                <span class="badge @cls bg-opacity-15 text-@(cls.Split(' ')[0].Replace("bg-", "")) px-2">@lbl</span>
+                            <td class="small">
+                                @entry.EntryDate.ToString("dd MMM yyyy")
+                                <div class="text-muted" style="font-size:.7rem;">@entry.EntryDate.ToString("HH:mm")</div>
                             </td>
+                            <td><span class="badge @cls px-2">@lbl</span></td>
                             <td class="small">@(entry.Description ?? "—")</td>
                             <td><code class="small">@(entry.ReferenceNumber ?? "—")</code></td>
-                            <td class="text-end text-danger fw-semibold">@(entry.Debit > 0 ? "৳" + entry.Debit.ToString("N2") : "—")</td>
-                            <td class="text-end text-success fw-semibold">@(entry.Credit > 0 ? "৳" + entry.Credit.ToString("N2") : "—")</td>
-                            <td class="text-end fw-bold pe-4 @(entry.Balance > 0 ? "text-danger" : "text-success")">
-                                ৳@entry.Balance.ToString("N2")
+                            <td class="text-end fw-semibold" style="color:#7f1d1d;">@(entry.Debit > 0 ? "$" + entry.Debit.ToString("N2") : "—")</td>
+                            <td class="text-end fw-semibold" style="color:#065f46;">@(entry.Credit > 0 ? "$" + entry.Credit.ToString("N2") : "—")</td>
+                            <td class="text-end fw-bold pe-4" style="color:@(entry.Balance > 0 ? "#7f1d1d" : "#065f46");">
+                                $@entry.Balance.ToString("N2")
+                            </td>
+                        </tr>
+                    }
+
+                    @if (!items.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-journal-x d-block mb-2 fs-2"></i>No ledger entries found.
                             </td>
                         </tr>
                     }
                 </tbody>
-                <tfoot class="table-light">
-                    <tr>
-                        <td colspan="5" class="ps-4 fw-bold">Total</td>
-                        <td class="text-end fw-bold text-danger">৳@((decimal)ViewBag.TotalDebit).ToString("N2")</td>
-                        <td class="text-end fw-bold text-success">৳@((decimal)ViewBag.TotalCredit).ToString("N2")</td>
-                        <td class="text-end fw-bold pe-4 @((decimal)ViewBag.Balance > 0 ? "text-danger" : "text-success")">
-                            ৳@((decimal)ViewBag.Balance).ToString("N2")
-                        </td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
     </div>
@@ -145,17 +138,16 @@
     <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
         <div class="modal-content border-0 shadow">
             <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold"><i class="bi bi-cash me-2 text-success"></i>Receive Payment from @customer.Name</h6>
+                <h6 class="modal-title fw-bold"><i class="bi bi-cash me-2 text-success"></i>Receive Payment</h6>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Amount <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <span class="input-group-text bg-light">৳</span>
-                        <input type="number" class="form-control" id="pmAmt" value="@((decimal)ViewBag.Balance).ToString(" F2")" min="0.01" step="0.01" />
+                        <span class="input-group-text bg-light">$</span>
+                        <input type="number" class="form-control" id="pmAmt" value="@balance.ToString("F2")" min="0.01" step="0.01" />
                     </div>
-                    <small class="text-muted">Outstanding: ৳@((decimal)ViewBag.Balance).ToString("N2")</small>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Description</label>
@@ -178,17 +170,15 @@
 
 @section Scripts {
     <script>
-        $(function() { initDataTable('#ledgerTable', { order:[[1,'desc']], pageLength:50 }); });
+        $(function () { initDataTable('#ledgerTable', { order: [[1,'desc']], pageLength: 50 }); });
         const tok = () => $('[name=__RequestVerificationToken]').val();
 
         function openPaymentModal() { new bootstrap.Modal('#payModal').show(); }
 
         function submitPay() {
             $.post('/Customer/AddPayment', {
-                customerId:  @customer.Id,
-                amount:      parseFloat($('#pmAmt').val()),
-                description: $('#pmDesc').val(),
-                reference:   $('#pmRef').val(),
+                customerId: @customer.Id, amount: parseFloat($('#pmAmt').val()),
+                description: $('#pmDesc').val(), reference: $('#pmRef').val(),
                 __RequestVerificationToken: tok()
             }, d => {
                 if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); }

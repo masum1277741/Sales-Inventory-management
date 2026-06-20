@@ -68,24 +68,26 @@
                             </label>
                             <select asp-for="Category" class="form-select" id="categorySelect">
                                 <option value="">— Select Category —</option>
+
                                 <optgroup label="Income" id="incomeGroup">
-                                    <option>Sales Revenue</option>
-                                    <option>Other Income</option>
-                                    <option>Interest Income</option>
-                                    <option>Discount Received</option>
-                                    <option>Commission Income</option>
+                                    <option value="SalesRevenue">Sales Revenue</option>
+                                    <option value="OtherIncome">Other Income</option>
+                                    <option value="InterestIncome">Interest Income</option>
+                                    <option value="DiscountReceived">Discount Received</option>
+                                    <option value="CommissionIncome">Commission Income</option>
                                 </optgroup>
+
                                 <optgroup label="Expense" id="expenseGroup" style="display:none;">
-                                    <option>Rent</option>
-                                    <option>Salary & Wages</option>
-                                    <option>Utilities</option>
-                                    <option>Marketing & Advertising</option>
-                                    <option>Transport & Delivery</option>
-                                    <option>Office Supplies</option>
-                                    <option>Bank Charges</option>
-                                    <option>Repairs & Maintenance</option>
-                                    <option>Insurance</option>
-                                    <option>Other Expense</option>
+                                    <option value="Rent">Rent</option>
+                                    <option value="Salary">Salary</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="OfficeSupplies">Office Supplies</option>
+                                    <option value="BankCharges">Bank Charges</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Insurance">Insurance</option>
+                                    <option value="OtherExpense">Other Expense</option>
                                 </optgroup>
                             </select>
                             <span asp-validation-for="Category" class="text-danger small"></span>

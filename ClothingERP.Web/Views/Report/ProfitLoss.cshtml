@@ -1,30 +1,31 @@
 ﻿@{
     ViewData["Title"] = "Profit & Loss";
-    decimal grossRevenue   = ViewBag.GrossRevenue;
-    decimal salesReturns   = ViewBag.SalesReturns;
-    decimal netRevenue     = ViewBag.NetRevenue;
-    decimal cogs           = ViewBag.COGS;
-    decimal grossProfit    = ViewBag.GrossProfit;
-    decimal gpMargin       = ViewBag.GrossProfitMargin;
-    decimal totalExpenses  = ViewBag.TotalExpenses;
-    decimal totalOtherInc  = ViewBag.TotalOtherIncome;
-    decimal netProfit      = ViewBag.NetProfit;
-    decimal npMargin       = ViewBag.NetProfitMargin;
-    bool    isProfit       = netProfit >= 0;
+    decimal grossRevenue = (decimal)(ViewBag.GrossRevenue ?? 0m);
+    decimal salesReturns = (decimal)(ViewBag.SalesReturns ?? 0m);
+    decimal netRevenue = (decimal)(ViewBag.NetRevenue ?? 0m);
+    decimal cogs = (decimal)(ViewBag.COGS ?? 0m);
+    decimal grossProfit = (decimal)(ViewBag.GrossProfit ?? 0m);
+    decimal gpMargin = (decimal)(ViewBag.GrossProfitMargin ?? 0m);
+    decimal totalExpenses = (decimal)(ViewBag.TotalExpenses ?? 0m);
+    decimal totalOtherInc = (decimal)(ViewBag.TotalOtherIncome ?? 0m);
+    decimal netProfit = (decimal)(ViewBag.NetProfit ?? 0m);
+    decimal npMargin = (decimal)(ViewBag.NetProfitMargin ?? 0m);
+    bool isProfit = netProfit >= 0;
 }
 
 <div class="page-header d-flex justify-content-between align-items-center">
     <div>
         <h4 class="mb-0"><i class="bi bi-cash-coin me-2 text-primary"></i>Profit & Loss Statement</h4>
-        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
-            <li class="breadcrumb-item"><a asp-action="Index">Reports</a></li>
-            <li class="breadcrumb-item active">Profit & Loss</li>
-        </ol></nav>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Reports</a></li>
+                <li class="breadcrumb-item active">Profit & Loss</li>
+            </ol>
+        </nav>
     </div>
     <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer me-1"></i>Print</button>
 </div>
 
-<!-- Date Filter -->
 <form asp-action="ProfitLoss" method="get" class="card border-0 shadow-sm mb-4">
     <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap">
         <i class="bi bi-calendar-range text-muted"></i>
@@ -33,148 +34,103 @@
         <input type="date" name="toDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.ToDate" />
         <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-calculator me-1"></i>Calculate</button>
         <a asp-action="ProfitLoss" class="btn btn-sm btn-light border">Reset</a>
-        <span class="ms-auto text-muted small">Period: @ViewBag.FromDate — @ViewBag.ToDate</span>
     </div>
 </form>
 
-<!-- Summary KPIs -->
+<!-- KPIs -->
 <div class="row g-3 mb-4">
     <div class="col-sm-3">
         <div class="stat-card text-center">
             <div class="text-muted small mb-1">Net Revenue</div>
-            <h4 class="fw-bold text-primary mb-0">৳@netRevenue.ToString("N0")</h4>
-            <small class="text-muted">@(ViewBag.InvoiceCount) invoices</small>
+            <h4 class="fw-bold text-primary mb-0">$@netRevenue.ToString("N0")</h4>
+            <small class="text-muted">@ViewBag.InvoiceCount invoices</small>
         </div>
     </div>
     <div class="col-sm-3">
         <div class="stat-card text-center">
             <div class="text-muted small mb-1">Gross Profit</div>
-            <h4 class="fw-bold @(grossProfit>=0?"text-success":"text-danger") mb-0">৳@grossProfit.ToString("N0")</h4>
-            <small class="@(grossProfit>=0?"text-success":"text-danger")">@gpMargin.ToString("F1")% margin</small>
+            <h4 class="fw-bold mb-0" style="color:@(grossProfit >= 0 ? "#065f46" : "#7f1d1d");">$@grossProfit.ToString("N0")</h4>
+            <small style="color:@(grossProfit >= 0 ? "#065f46" : "#7f1d1d");">@gpMargin.ToString("F1")% margin</small>
         </div>
     </div>
     <div class="col-sm-3">
         <div class="stat-card text-center">
             <div class="text-muted small mb-1">Operating Expenses</div>
-            <h4 class="fw-bold text-danger mb-0">৳@totalExpenses.ToString("N0")</h4>
+            <h4 class="fw-bold mb-0" style="color:#7f1d1d;">$@totalExpenses.ToString("N0")</h4>
         </div>
     </div>
     <div class="col-sm-3">
-        <div class="stat-card text-center border-start border-3 @(isProfit?"border-success":"border-danger")">
-            <div class="text-muted small mb-1">Net @(isProfit?"Profit":"Loss")</div>
-            <h4 class="fw-bold @(isProfit?"text-success":"text-danger") mb-0">
-                @(netProfit<0?"-":"")৳@Math.Abs(netProfit).ToString("N0")
+        <div class="stat-card text-center border-start border-3 @(isProfit ? "border-success" : "border-danger")">
+            <div class="text-muted small mb-1">Net @(isProfit ? "Profit" : "Loss")</div>
+            <h4 class="fw-bold mb-0" style="color:@(isProfit ? "#065f46" : "#7f1d1d");">
+                @(netProfit < 0 ? "-" : "")$@Math.Abs(netProfit).ToString("N0")
             </h4>
-            <small class="@(isProfit?"text-success":"text-danger")">@npMargin.ToString("F1")% margin</small>
+            <small style="color:@(isProfit ? "#065f46" : "#7f1d1d");">@npMargin.ToString("F1")% margin</small>
         </div>
     </div>
 </div>
 
-<!-- P&L Statement -->
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
-                <span class="fw-semibold"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Profit & Loss Statement</span>
+                <span class="fw-semibold"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Statement</span>
             </div>
             <div class="card-body p-4">
-
-                <!-- Revenue Section -->
                 <div class="pl-section mb-4">
                     <div class="pl-section-header">REVENUE</div>
-                    <div class="pl-row"><span>Gross Sales Revenue</span><span class="fw-semibold">৳@grossRevenue.ToString("N2")</span></div>
+                    <div class="pl-row"><span>Gross Sales Revenue</span><span class="fw-semibold">$@grossRevenue.ToString("N2")</span></div>
                     @if (salesReturns > 0)
                     {
-                        <div class="pl-row text-danger"><span>Less: Sales Returns</span><span>(৳@salesReturns.ToString("N2"))</span></div>
+                        <div class="pl-row" style="color:#7f1d1d;"><span>Less: Sales Returns</span><span>($@salesReturns.ToString("N2"))</span></div>
                     }
-                    <div class="pl-row pl-subtotal"><span>Net Sales Revenue</span><span>৳@netRevenue.ToString("N2")</span></div>
+                    <div class="pl-row pl-subtotal"><span>Net Sales Revenue</span><span>$@netRevenue.ToString("N2")</span></div>
                 </div>
 
-                <!-- COGS Section -->
                 <div class="pl-section mb-4">
                     <div class="pl-section-header">COST OF GOODS SOLD</div>
-                    <div class="pl-row"><span>Cost of Products Sold</span><span class="fw-semibold text-danger">৳@cogs.ToString("N2")</span></div>
-                    <div class="pl-row pl-subtotal"><span>Total COGS</span><span class="text-danger">৳@cogs.ToString("N2")</span></div>
+                    <div class="pl-row"><span>Cost of Products Sold</span><span class="fw-semibold" style="color:#7f1d1d;">$@cogs.ToString("N2")</span></div>
+                    <div class="pl-row pl-subtotal" style="color:#7f1d1d;"><span>Total COGS</span><span>$@cogs.ToString("N2")</span></div>
                 </div>
 
-                <!-- Gross Profit -->
-                <div class="pl-highlight @(grossProfit>=0?"pl-positive":"pl-negative") mb-4">
+                <div class="pl-highlight @(grossProfit >= 0 ? "pl-positive" : "pl-negative") mb-4">
                     <span>GROSS PROFIT</span>
-                    <span>
-                        @(grossProfit<0?"-":"")৳@Math.Abs(grossProfit).ToString("N2")
-                        <small class="ms-2 opacity-75">(@gpMargin.ToString("F1")%)</small>
-                    </span>
+                    <span>@(grossProfit < 0 ? "-" : "")$@Math.Abs(grossProfit).ToString("N2") <small class="ms-2 opacity-75">(@gpMargin.ToString("F1")%)</small></span>
                 </div>
 
-                <!-- Operating Expenses -->
                 @if (totalExpenses > 0)
                 {
                     <div class="pl-section mb-4">
                         <div class="pl-section-header">OPERATING EXPENSES</div>
                         @foreach (var exp in (dynamic)ViewBag.ExpenseGroups)
                         {
-                            <div class="pl-row">
-                                <span>@exp.Category</span>
-                                <span class="text-danger">৳@((decimal)exp.Total).ToString("N2")</span>
-                            </div>
+                            <div class="pl-row"><span>@exp.Category</span><span style="color:#7f1d1d;">$@((decimal)exp.Total).ToString("N2")</span></div>
                         }
-                        <div class="pl-row pl-subtotal text-danger">
-                            <span>Total Operating Expenses</span>
-                            <span>৳@totalExpenses.ToString("N2")</span>
-                        </div>
+                        <div class="pl-row pl-subtotal" style="color:#7f1d1d;"><span>Total Operating Expenses</span><span>$@totalExpenses.ToString("N2")</span></div>
                     </div>
                 }
 
-                <!-- Other Income -->
                 @if (totalOtherInc > 0)
                 {
                     <div class="pl-section mb-4">
                         <div class="pl-section-header">OTHER INCOME</div>
-                        @foreach (var inc in (IEnumerable<AccountTransactionDto>)ViewBag.OtherIncome)
+                        @foreach (var inc in (IEnumerable<AccountTransactionListDto>)ViewBag.OtherIncome)
                         {
-                            <div class="pl-row"><span>@inc.Category — @(inc.Description ?? "")</span><span class="text-success">৳@inc.Amount.ToString("N2")</span></div>
+                            <div class="pl-row"><span>@inc.Category — @(inc.Description ?? "")</span><span style="color:#065f46;">$@inc.Amount.ToString("N2")</span></div>
                         }
-                        <div class="pl-row pl-subtotal text-success"><span>Total Other Income</span><span>৳@totalOtherInc.ToString("N2")</span></div>
+                        <div class="pl-row pl-subtotal" style="color:#065f46;"><span>Total Other Income</span><span>$@totalOtherInc.ToString("N2")</span></div>
                     </div>
                 }
 
-                <!-- Net Profit -->
-                <div class="pl-highlight @(isProfit?"pl-positive":"pl-negative") mt-2">
-                    <span>NET @(isProfit?"PROFIT":"LOSS")</span>
-                    <span>
-                        @(netProfit<0?"-":"")৳@Math.Abs(netProfit).ToString("N2")
-                        <small class="ms-2 opacity-75">(@npMargin.ToString("F1")%)</small>
-                    </span>
+                <div class="pl-highlight @(isProfit ? "pl-positive" : "pl-negative") mt-2">
+                    <span>NET @(isProfit ? "PROFIT" : "LOSS")</span>
+                    <span>@(netProfit < 0 ? "-" : "")$@Math.Abs(netProfit).ToString("N2") <small class="ms-2 opacity-75">(@npMargin.ToString("F1")%)</small></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Summary Sidebar -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <span class="fw-semibold"><i class="bi bi-pie-chart me-2 text-primary"></i>Cost Breakdown</span>
-            </div>
-            <div class="card-body">
-                <canvas id="plChart" style="max-height:220px;"></canvas>
-                <div class="mt-3">
-                    <div class="d-flex justify-content-between small mb-2">
-                        <span class="d-flex align-items-center gap-1"><span style="width:12px;height:12px;background:#4f7cff;border-radius:2px;display:inline-block;"></span>COGS</span>
-                        <span class="fw-semibold">@(netRevenue>0?(cogs/netRevenue*100).ToString("F1"):"0")%</span>
-                    </div>
-                    <div class="d-flex justify-content-between small mb-2">
-                        <span class="d-flex align-items-center gap-1"><span style="width:12px;height:12px;background:#e53935;border-radius:2px;display:inline-block;"></span>Expenses</span>
-                        <span class="fw-semibold">@(netRevenue>0?(totalExpenses/netRevenue*100).ToString("F1"):"0")%</span>
-                    </div>
-                    <div class="d-flex justify-content-between small">
-                        <span class="d-flex align-items-center gap-1"><span style="width:12px;height:12px;background:@(isProfit?"#43a047":"#ff7043");border-radius:2px;display:inline-block;"></span>@(isProfit?"Net Profit":"Net Loss")</span>
-                        <span class="fw-semibold">@npMargin.ToString("F1")%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
                 <span class="fw-semibold"><i class="bi bi-clipboard-data me-2 text-primary"></i>Quick Stats</span>
@@ -182,14 +138,14 @@
             <div class="card-body p-0">
                 <table class="table table-sm mb-0">
                     <tbody>
-                        <tr><td class="ps-3 text-muted small">Gross Revenue</td><td class="fw-semibold small text-end pe-3">৳@grossRevenue.ToString("N0")</td></tr>
-                        <tr><td class="ps-3 text-muted small">COGS</td><td class="small text-danger text-end pe-3">৳@cogs.ToString("N0")</td></tr>
-                        <tr><td class="ps-3 text-muted small">Gross Profit</td><td class="fw-semibold small text-end pe-3">৳@grossProfit.ToString("N0")</td></tr>
-                        <tr><td class="ps-3 text-muted small">Total Expenses</td><td class="small text-danger text-end pe-3">৳@totalExpenses.ToString("N0")</td></tr>
-                        <tr><td class="ps-3 text-muted small">Other Income</td><td class="small text-success text-end pe-3">৳@totalOtherInc.ToString("N0")</td></tr>
-                        <tr style="background:#f8f9ff;">
-                            <td class="ps-3 fw-bold">Net @(isProfit?"Profit":"Loss")</td>
-                            <td class="fw-bold text-end pe-3 @(isProfit?"text-success":"text-danger")">@(netProfit<0?"-":"")৳@Math.Abs(netProfit).ToString("N0")</td>
+                        <tr><td class="ps-3 text-muted small">Gross Revenue</td><td class="fw-semibold small text-end pe-3">$@grossRevenue.ToString("N0")</td></tr>
+                        <tr><td class="ps-3 text-muted small">COGS</td><td class="small text-end pe-3" style="color:#7f1d1d;">$@cogs.ToString("N0")</td></tr>
+                        <tr><td class="ps-3 text-muted small">Gross Profit</td><td class="fw-semibold small text-end pe-3">$@grossProfit.ToString("N0")</td></tr>
+                        <tr><td class="ps-3 text-muted small">Total Expenses</td><td class="small text-end pe-3" style="color:#7f1d1d;">$@totalExpenses.ToString("N0")</td></tr>
+                        <tr><td class="ps-3 text-muted small">Other Income</td><td class="small text-end pe-3" style="color:#065f46;">$@totalOtherInc.ToString("N0")</td></tr>
+                        <tr style="background:#faf8f5;">
+                            <td class="ps-3 fw-bold">Net @(isProfit ? "Profit" : "Loss")</td>
+                            <td class="fw-bold text-end pe-3" style="color:@(isProfit ? "#065f46" : "#7f1d1d");">@(netProfit < 0 ? "-" : "")$@Math.Abs(netProfit).ToString("N0")</td>
                         </tr>
                     </tbody>
                 </table>
@@ -198,33 +154,58 @@
     </div>
 </div>
 
-@section Scripts {
-<script>
-new Chart(document.getElementById('plChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['COGS', 'Expenses', '@(isProfit?"Net Profit":"Net Loss")'],
-        datasets: [{
-            data: [@cogs, @totalExpenses, @Math.Abs(netProfit)],
-            backgroundColor: ['#4f7cff','#e53935','@(isProfit?"#43a047":"#ff7043")'],
-            borderWidth: 2, borderColor: '#fff'
-        }]
-    },
-    options: { responsive:true, plugins: { legend: { display:false } }, cutout:'60%' }
-});
-</script>
-}
-
 <style>
-.pl-section-header { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#999; padding:6px 0 4px; border-bottom:1px solid #f0f2f5; margin-bottom:6px; }
-.pl-row { display:flex; justify-content:space-between; padding:5px 0; font-size:.9rem; border-bottom:1px solid #f8f9fa; }
-.pl-subtotal { font-weight:700; border-top:2px solid #e0e0e0 !important; border-bottom:none !important; padding-top:8px; margin-top:4px; }
-.pl-highlight { display:flex; justify-content:space-between; padding:14px 16px; border-radius:10px; font-size:1rem; font-weight:700; }
-.pl-positive { background:linear-gradient(135deg,#e8f5e9,#f1f8e9); color:#2e7d32; border:1px solid #a5d6a7; }
-.pl-negative { background:linear-gradient(135deg,#ffebee,#fce4ec); color:#c62828; border:1px solid #ef9a9a; }
+    .pl-section-header {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #999;
+        padding: 6px 0 4px;
+        border-bottom: 1px solid #f0f2f5;
+        margin-bottom: 6px;
+    }
 
-@@media print {
-    .page-header nav, form[method="get"], .no-print { display:none !important; }
-    .card { box-shadow:none !important; border:1px solid #ddd !important; }
-}
+    .pl-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        font-size: .9rem;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .pl-subtotal {
+        font-weight: 700;
+        border-top: 2px solid #e0e0e0 !important;
+        border-bottom: none !important;
+        padding-top: 8px;
+        margin-top: 4px;
+    }
+
+    .pl-highlight {
+        display: flex;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .pl-positive {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+    }
+
+    .pl-negative {
+        background: #fee2e2;
+        color: #7f1d1d;
+        border: 1px solid #fca5a5;
+    }
+
+    @@media print {
+        .page-header nav, form[method="get"] {
+            display: none !important;
+        }
+    }
 </style>

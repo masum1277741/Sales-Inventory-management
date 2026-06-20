@@ -34,7 +34,21 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-
+public class CustomerPaymentConfiguration : IEntityTypeConfiguration<CustomerPayment>
+{
+    public void Configure(EntityTypeBuilder<CustomerPayment> builder)
+    {
+        builder.ToTable("CustomerPayments");
+        builder.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.Description).HasMaxLength(500);
+        builder.Property(x => x.ReferenceNumber).HasMaxLength(100);
+        builder.HasQueryFilter(x => !x.IsDeleted);
+        builder.HasOne(x => x.Customer)
+            .WithMany()
+            .HasForeignKey(x => x.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
 public class CustomerLedgerConfiguration : IEntityTypeConfiguration<CustomerLedger>
 {
     public void Configure(EntityTypeBuilder<CustomerLedger> builder)

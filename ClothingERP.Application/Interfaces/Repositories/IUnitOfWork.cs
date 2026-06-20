@@ -25,6 +25,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<CustomerGroup> CustomerGroups { get; }
     ICustomerRepository Customers { get; }
     ICustomerLedgerRepository CustomerLedgers { get; }
+    IRepository<CustomerPayment> CustomerPayments { get; }
 
     // --- Suppliers ---
     ISupplierRepository Suppliers { get; }

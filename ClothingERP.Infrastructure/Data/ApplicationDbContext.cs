@@ -27,7 +27,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<CustomerGroup> CustomerGroups => Set<CustomerGroup>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<CustomerLedger> CustomerLedgers => Set<CustomerLedger>();
-
+    public DbSet<CustomerPayment> CustomerPayments => Set<CustomerPayment>();
     // ── Supplier ────────────────────────────────────────────────────
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<SupplierLedger> SupplierLedgers => Set<SupplierLedger>();

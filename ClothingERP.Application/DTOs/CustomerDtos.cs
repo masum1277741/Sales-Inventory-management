@@ -59,18 +59,18 @@ public class CreateCustomerGroupDto
     public decimal DiscountPercentage { get; set; }
 }
 
+
 public class CustomerLedgerDto
 {
     public int Id { get; set; }
-    public string EntryType { get; set; } = string.Empty;
-    public decimal Debit { get; set; }
-    public decimal Credit { get; set; }
-    public decimal Balance { get; set; }
-    public string? ReferenceNumber { get; set; }
-    public string? Description { get; set; }
     public DateTime EntryDate { get; set; }
+    public string EntryType { get; set; } = string.Empty; // Invoice, Payment, Return
+    public string? Description { get; set; }
+    public string? ReferenceNumber { get; set; }
+    public decimal Debit { get; set; } // customer owes (invoice)
+    public decimal Credit { get; set; } // customer paid / refunded
+    public decimal Balance { get; set; } // running balance
 }
-
 public class CustomerDueDto
 {
     public int CustomerId { get; set; }

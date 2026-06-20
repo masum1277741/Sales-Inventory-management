@@ -45,7 +45,7 @@ public static class DbSeeder
                 new() { Name = "Sales & POS",         Icon = "bi-cart3",            Controller = "Sales",      Action = "POS",         SortOrder = 8  },
                 new() { Name = "Sales History",       Icon = "bi-receipt",          Controller = "Sales",      Action = "Index",       SortOrder = 9  },
                 new() { Name = "Customers",           Icon = "bi-people",           Controller = "Customer",   Action = "Index",       SortOrder = 10 },
-                new() { Name = "Customer Ledger",     Icon = "bi-journal-text",     Controller = "Customer",   Action = "Ledger",      SortOrder = 11 },
+                
                 new() { Name = "Suppliers",           Icon = "bi-truck",            Controller = "Supplier",   Action = "Index",       SortOrder = 12 },
                 new() { Name = "Purchase Orders",     Icon = "bi-bag-plus",         Controller = "Purchase",   Action = "Index",       SortOrder = 13 },
                 new() { Name = "Goods Receipt (GRN)", Icon = "bi-box-arrow-in-down",Controller = "Purchase",   Action = "GRN",         SortOrder = 14 },

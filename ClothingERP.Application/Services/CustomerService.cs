@@ -33,6 +33,80 @@ public class CustomerService : ICustomerService
         await _uow.Customers.AddAsync(entity); await _uow.SaveChangesAsync();
         return ServiceResult<CustomerDto>.Ok(_mapper.Map<CustomerDto>(entity), "Customer created.");
     }
+    // ── Get Ledger (Invoice + Payment combined timeline) ────────────────────
+    public async Task<IEnumerable<CustomerLedgerDto>> GetLedgerAsync(
+        int customerId, DateTime from, DateTime to)
+    {
+        // ── Debit entries: Sales Invoices ────────────────────────────────────
+        var invoices = await _uow.SalesInvoices.GetQueryable()
+            .Where(i => !i.IsDeleted &&
+                        i.CustomerId == customerId &&
+                        i.Status != InvoiceStatus.Cancelled &&
+                        !i.IsHold &&
+                        i.InvoiceDate >= from && i.InvoiceDate <= to)
+            .ToListAsync();
+
+        // ── Credit entries: Standalone Customer Payments ─────────────────────
+        var payments = await _uow.CustomerPayments.GetQueryable()
+            .Where(p => !p.IsDeleted &&
+                        p.CustomerId == customerId &&
+                        p.PaymentDate >= from && p.PaymentDate <= to)
+            .ToListAsync();
+
+        // ── Credit entries: Sales-Invoice Payments (POS এ paid amount) ────────
+        var invoicePayments = await _uow.SalesPayments.GetQueryable()
+            .Where(p => !p.IsDeleted &&
+                        p.SalesInvoice.CustomerId == customerId &&
+                        p.PaymentDate >= from && p.PaymentDate <= to)
+            .Include(p => p.SalesInvoice)
+            .ToListAsync();
+
+        var entries = new List<CustomerLedgerDto>();
+
+        entries.AddRange(invoices.Select(i => new CustomerLedgerDto
+        {
+            Id = i.Id,
+            EntryDate = i.InvoiceDate,
+            EntryType = "Invoice",
+            Description = $"Sale — {i.InvoiceNumber}",
+            ReferenceNumber = i.InvoiceNumber,
+            Debit = i.TotalAmount,
+            Credit = 0
+        }));
+
+        entries.AddRange(payments.Select(p => new CustomerLedgerDto
+        {
+            Id = p.Id,
+            EntryDate = p.PaymentDate,
+            EntryType = "Payment",
+            Description = p.Description,
+            ReferenceNumber = p.ReferenceNumber,
+            Debit = 0,
+            Credit = p.Amount
+        }));
+
+        entries.AddRange(invoicePayments.Select(p => new CustomerLedgerDto
+        {
+            Id = p.Id,
+            EntryDate = p.PaymentDate,
+            EntryType = "Payment",
+            Description = $"Invoice Payment — {p.SalesInvoice.InvoiceNumber}",
+            ReferenceNumber = p.ReferenceNumber,
+            Debit = 0,
+            Credit = p.Amount
+        }));
+
+        var sorted = entries.OrderBy(e => e.EntryDate).ToList();
+        decimal running = 0;
+        foreach (var e in sorted)
+        {
+            running += e.Debit - e.Credit;
+            e.Balance = running;
+        }
+
+        return sorted;
+    }
+
 
     public async Task<ServiceResult<CustomerDto>> UpdateAsync(int id, UpdateCustomerDto dto, int userId)
     {
@@ -72,31 +146,33 @@ public class CustomerService : ICustomerService
     public async Task<decimal> GetBalanceAsync(int customerId)
         => await _uow.CustomerLedgers.GetCurrentBalanceAsync(customerId);
 
-    public async Task<ServiceResult> AddPaymentAsync(int customerId, decimal amount, string description, string? reference, int userId)
+    public async Task<ServiceResult> AddPaymentAsync(
+     int customerId, decimal amount, string description,
+     string? reference, int userId)
     {
         var customer = await _uow.Customers.GetByIdAsync(customerId);
         if (customer == null) return ServiceResult.Fail("Customer not found.");
 
-        var currentBal = await _uow.CustomerLedgers.GetCurrentBalanceAsync(customerId);
-        var newBal = currentBal - amount;
 
-        await _uow.CustomerLedgers.AddAsync(new CustomerLedger
+        var payment = new CustomerPayment
         {
             CustomerId = customerId,
-            EntryType = LedgerEntryType.Payment,
-            Debit = 0,
-            Credit = amount,
-            Balance = newBal,
-            ReferenceNumber = reference,
+            Amount = amount,
             Description = description,
-            EntryDate = DateTime.UtcNow,
+            ReferenceNumber = reference,
+            PaymentDate = DateTime.UtcNow,
             CreatedBy = userId
-        });
+        };
+        await _uow.CustomerPayments.AddAsync(payment);
 
-        customer.CurrentBalance = newBal; customer.UpdatedBy = userId;
+     
+        customer.CurrentBalance = Math.Max(0, customer.CurrentBalance - amount);
+        customer.UpdatedBy = userId;
+        customer.UpdatedAt = DateTime.UtcNow;
         _uow.Customers.Update(customer);
+
         await _uow.SaveChangesAsync();
-        return ServiceResult.Ok("Payment recorded.");
+        return ServiceResult.Ok("Payment recorded successfully.");
     }
 
     public async Task<IEnumerable<CustomerGroupDto>> GetGroupsAsync()

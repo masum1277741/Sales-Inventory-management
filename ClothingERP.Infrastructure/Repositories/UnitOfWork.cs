@@ -28,7 +28,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<CustomerGroup>? _customerGroups;
     private ICustomerRepository? _customers;
     private ICustomerLedgerRepository? _customerLedgers;
-
+    private IRepository<CustomerPayment>? _customerPayments;
     // ── Supplier ─────────────────────────────────────────────────────
     private ISupplierRepository? _suppliers;
     private ISupplierLedgerRepository? _supplierLedgers;
@@ -65,7 +65,8 @@ public class UnitOfWork : IUnitOfWork
 
     public IStockRepository Stocks => _stocks ??= new StockRepository(_context);
     public IRepository<StockMovement> StockMovements => _stockMovements ??= new GenericRepository<StockMovement>(_context);
-
+    public IRepository<CustomerPayment> CustomerPayments
+    => _customerPayments ??= new GenericRepository<CustomerPayment>(_context);
     public IRepository<CustomerGroup> CustomerGroups => _customerGroups ??= new GenericRepository<CustomerGroup>(_context);
     public ICustomerRepository Customers => _customers ??= new CustomerRepository(_context);
     public ICustomerLedgerRepository CustomerLedgers => _customerLedgers ??= new CustomerLedgerRepository(_context);

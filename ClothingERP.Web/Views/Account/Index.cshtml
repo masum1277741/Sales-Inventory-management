@@ -187,7 +187,8 @@
                 {
                     <tfoot class="table-light fw-bold">
                         <tr>
-                            <td class="ps-4" colspan="2">Totals</td>
+                            <td class="ps-4"></td>
+                            <td>Totals</td>
                             <td></td>
                             <td></td>
                             <td></td>
@@ -210,37 +211,44 @@
 @Html.AntiForgeryToken()
 
 @section Scripts {
-<script>
-$(function () {
-    initDataTable('#accountTable', {
-        order:      [[1, 'desc']],
-        pageLength: 25
-    });
-});
+    <script>
+                $(function () {
+            if ($.fn.DataTable.isDataTable('#accountTable')) {
+                $('#accountTable').DataTable().destroy();
+            }
 
-const tok = () => $('[name=__RequestVerificationToken]').val();
+          
+            $('#accountTable').DataTable({
+                order:      [[1, 'desc']],
+                pageLength: 25,
+                columnDefs: [
+                    { orderable: false, targets: [8] }  
+                ]
+            });
+        });
 
-function delTxn(id) {
-    Swal.fire({
-        title:              'Delete Transaction?',
-        text:               'This cannot be undone.',
-        icon:               'warning',
-        showCancelButton:   true,
-        confirmButtonColor: '#0a0a0a',
-        confirmButtonText:  'Delete'
-    }).then(r => {
-        if (r.isConfirmed) {
-            $.post('/Account/Delete', { id, __RequestVerificationToken: tok() }, d => {
-                if (d.success) {
-                    $(`#txn-${id}`).fadeOut();
-                    toastr.success(d.message);
-                } else {
-                    toastr.error(d.message);
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function delTxn(id) {
+            Swal.fire({
+                title:              'Delete Transaction?',
+                text:               'This cannot be undone.',
+                icon:               'warning',
+                showCancelButton:   true,
+                confirmButtonColor: '#0a0a0a',
+                confirmButtonText:  'Delete'
+            }).then(r => {
+                if (r.isConfirmed) {
+                    $.post('/Account/Delete', { id, __RequestVerificationToken: tok() }, d => {
+                        if (d.success) {
+                            $(`#txn-${id}`).fadeOut();
+                            toastr.success(d.message);
+                        } else {
+                            toastr.error(d.message);
+                        }
+                    });
                 }
             });
         }
-    });
-}
-</script>
-}
+    </script>
 }

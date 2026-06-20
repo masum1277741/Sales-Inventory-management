@@ -15,6 +15,7 @@ public interface ICustomerService
     Task<decimal> GetBalanceAsync(int customerId);
     Task<ServiceResult> AddPaymentAsync(int customerId, decimal amount, string description,
                                         string? reference, int userId);
+    Task<IEnumerable<CustomerLedgerDto>> GetLedgerAsync(int customerId, DateTime from, DateTime to);
 
     // Groups
     Task<IEnumerable<CustomerGroupDto>> GetGroupsAsync();
