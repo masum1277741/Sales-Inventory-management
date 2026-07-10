@@ -305,6 +305,20 @@ function submitAdjust() {
             setTimeout(() => location.reload(), 800);
         } else toastr.error(d.message);
     });
+            document.addEventListener('rt:stockUpdated', e => {
+            const { variantId, quantity } = e.detail;
+            const row = document.querySelector(`#stock-row-${variantId}`);
+            if (!row) return;  
+
+            const qtyCell = row.querySelector('.qty-cell');
+            if (qtyCell) {
+                qtyCell.textContent = quantity;
+               
+                row.style.transition = 'background-color .3s';
+                row.style.backgroundColor = '#fef3c7';
+                setTimeout(() => row.style.backgroundColor = '', 1200);
+            }
+        });
 }
 </script>
 }

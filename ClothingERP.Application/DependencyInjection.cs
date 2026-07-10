@@ -28,7 +28,13 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IDashboardService, DashboardService>();
-
+        services.AddScoped<ILoyaltyService, LoyaltyService>();
+        services.AddScoped<IBundleService, BundleService>();
+        services.AddScoped<IGiftCardService, GiftCardService>();
+        services.AddScoped<ICommissionService, CommissionService>();
+        services.AddScoped<ISearchService, SearchService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IDashboardLayoutService, DashboardLayoutService>();
         return services;
     }
 }

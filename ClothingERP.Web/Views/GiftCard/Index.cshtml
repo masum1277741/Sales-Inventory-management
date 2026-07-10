@@ -1,0 +1,119 @@
+﻿@model IEnumerable<GiftCardListDto>
+@{
+    ViewData["Title"] = "Gift Cards & Store Credit"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-credit-card-2-front me-2 text-primary"></i>Gift Cards & Store Credit</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Gift Cards</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="IssueStoreCredit" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-return-left me-1"></i>Issue Store Credit
+        </a>
+        <a asp-action="Issue" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Sell Gift Card
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="text-muted small">Active Cards</div>
+            <h4 class="fw-bold mb-0">@ViewBag.TotalActive</h4>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card border-start border-3 border-warning">
+            <div class="text-muted small">Outstanding Liability</div>
+            <h4 class="fw-bold mb-0" style="color:#78350f;">$@((decimal)ViewBag.TotalOutstanding).ToString("N2")</h4>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="text-muted small">Purchased Gift Cards</div>
+            <h4 class="fw-bold mb-0">@ViewBag.TotalGiftCards</h4>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="text-muted small">Store Credits Issued</div>
+            <h4 class="fw-bold mb-0">@ViewBag.TotalStoreCredits</h4>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="giftCardTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Code</th>
+                        <th>Type</th>
+                        <th>Customer / Recipient</th>
+                        <th>Issued</th>
+                        <th>Expiry</th>
+                        <th class="text-end">Initial</th>
+                        <th class="text-end">Balance</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center" width="90">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in items)
+                    {
+                        <tr id="gc-@c.Id">
+                            <td class="ps-4"><code class="fw-bold">@c.CardCode</code></td>
+                            <td>
+                                @if (c.IsStoreCredit)
+                                {
+                                    <span class="badge bg-info">Store Credit</span>
+                                }
+                                else
+                                {
+
+                                    <span class="badge bg-primary">Gift Card</span>
+                                }
+                            </td>
+                            <td class="small">@(c.CustomerName ?? c.RecipientName ?? "—")</td>
+                            <td class="small text-muted">@c.IssuedDate.ToString("dd MMM yyyy")</td>
+                            <td class="small text-muted">@(c.ExpiryDate?.ToString("dd MMM yyyy") ?? "Never")</td>
+                            <td class="text-end small">$@c.InitialValue.ToString("N2")</td>
+                            <td class="text-end fw-bold">$@c.CurrentBalance.ToString("N2")</td>
+                            <td class="text-center">
+                                @{
+                                    var cls = c.Status switch
+                                    {
+                                        "Active" => "bg-success",
+                                        "Depleted" => "bg-secondary",
+                                        "Expired" => "bg-warning text-dark",
+                                        _ => "bg-danger"
+                                    };
+                                }
+                                <span class="badge @cls">@c.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(function () { initDataTable('#giftCardTable', { order: [[3,'desc']] }); });</script>
+}

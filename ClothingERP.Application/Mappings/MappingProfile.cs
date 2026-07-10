@@ -58,8 +58,9 @@ public class MappingProfile : Profile
             .ForMember(d => d.ImagePath, o => o.Ignore())
             .ForMember(d => d.Variants, o => o.Ignore());
 
+        CreateMap<LoyaltySettings, LoyaltySettingsDto>();
         // ── ProductVariant ────────────────────────────────────────────────
-    
+
         CreateMap<ProductVariant, ProductVariantDto>()
             .ForMember(d => d.ProductName,
                 o => o.MapFrom(s => s.Product != null ? s.Product.Name : string.Empty))
@@ -203,7 +204,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.PaymentMethod, o => o.MapFrom(s => s.PaymentMethod.ToString()));
         CreateMap<CreateAccountTransactionDto, AccountTransaction>()
             .ForMember(d => d.TransactionNumber, o => o.Ignore());
-
+        CreateMap<CommissionSettings, CommissionSettingsDto>();
         // ── AuditLog ──────────────────────────────────────────────────────
         CreateMap<AuditLog, AuditLogDto>()
             .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.FullName));

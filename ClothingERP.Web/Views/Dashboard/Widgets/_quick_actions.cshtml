@@ -1,0 +1,20 @@
+﻿@model ClothingERP.Application.DTOs.DashboardDto
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom py-3">
+        <span class="fw-semibold"><i class="bi bi-lightning-charge me-2 text-primary"></i>Quick Actions</span>
+    </div>
+    <div class="card-body d-flex flex-wrap gap-2">
+        <a asp-controller="Sales" asp-action="POS" class="btn btn-primary btn-sm">
+            <i class="bi bi-cart-plus me-1"></i>New Sale
+        </a>
+        <a asp-controller="Purchase" asp-action="CreateOrder" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-bag-plus me-1"></i>New Purchase Order
+        </a>
+        <a asp-controller="Customer" asp-action="Create" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-person-plus me-1"></i>New Customer
+        </a>
+        <a asp-controller="Stock" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-archive me-1"></i>View Stock
+        </a>
+    </div>
+</div>

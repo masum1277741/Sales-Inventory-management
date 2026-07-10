@@ -55,25 +55,46 @@
     </div>
 </div>
 
-<!-- Filter Row -->
+<!-- Filter Row + Bulk Action Toolbar -->
 <div class="card border-0 shadow-sm mb-3">
-    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap">
-        <i class="bi bi-funnel text-muted"></i>
-        <select id="filterCategory" class="form-select form-select-sm" style="width:180px;">
-            <option value="">All Categories</option>
-            @foreach (var c in categories)
-            {
-                <option value="@c.Name">@c.Name</option>
-            }
-        </select>
-        <select id="filterStatus" class="form-select form-select-sm" style="width:130px;">
-            <option value="">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-        </select>
-        <button class="btn btn-sm btn-light border" onclick="clearFilters()">
-            <i class="bi bi-x-circle me-1"></i>Clear
-        </button>
+    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap justify-content-between">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <i class="bi bi-funnel text-muted"></i>
+            <select id="filterCategory" class="form-select form-select-sm" style="width:180px;">
+                <option value="">All Categories</option>
+                @foreach (var c in categories)
+                {
+                    <option value="@c.Name">@c.Name</option>
+                }
+            </select>
+            <select id="filterStatus" class="form-select form-select-sm" style="width:130px;">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+            <button class="btn btn-sm btn-light border" onclick="clearFilters()">
+                <i class="bi bi-x-circle me-1"></i>Clear
+            </button>
+        </div>
+
+      
+        <div id="bulkActionToolbar" class="d-flex gap-2 align-items-center d-none">
+            <span class="small text-muted">Selected: <strong id="bulkSelectedCount">0</strong></span>
+            <div id="bulkActionButtons" class="d-flex gap-2">
+                <button class="bt-btn" onclick="openBulkPriceModal()">
+                    <i class="bi bi-currency-dollar"></i> Update Price
+                </button>
+                <button class="bt-btn" onclick="bulkToggleProductStatus(true)">
+                    <i class="bi bi-check-circle"></i> Activate
+                </button>
+                <button class="bt-btn" onclick="bulkToggleProductStatus(false)">
+                    <i class="bi bi-slash-circle"></i> Deactivate
+                </button>
+                <button class="bt-btn danger" onclick="bulkDeleteProducts()">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -84,6 +105,9 @@
             <table id="productTable" class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th style="width:42px; text-align:center; vertical-align:middle;">
+                            <input type="checkbox" id="selectAllCheckbox" onclick="bulkSelectAll(this)" />
+                        </th>
                         <th class="ps-4" width="50">#</th>
                         <th>Product</th>
                         <th>SKU</th>
@@ -103,6 +127,10 @@
                     @foreach (var p in Model)
                     {
                         <tr id="prod-@p.Id">
+                            <td style="width:42px; text-align:center; vertical-align:middle;">
+                                <input type="checkbox" class="bulkCheck" value="@p.Id"
+                                       data-label="@p.Name" onclick="bulkCheckboxChanged(this)" />
+                            </td>
                             <td class="ps-4 text-muted small">@(sn++)</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
@@ -175,17 +203,78 @@
     </div>
 </div>
 
+<!-- Bulk Price Update Modal -->
+<div class="modal fade" id="bulkPriceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold">
+                    <i class="bi bi-currency-dollar me-2 text-primary"></i>
+                    Bulk Price Update — <span id="bulkPriceCount">0</span> products
+                </h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">কোন price পরিবর্তন করবেন?</label>
+                    <select id="bp_field" class="form-select">
+                        <option value="RetailPrice">Retail Price</option>
+                        <option value="CostPrice">Cost Price</option>
+                        <option value="Both">Both (Retail + Cost)</option>
+                    </select>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">পরিবর্তনের ধরন</label>
+                        <select id="bp_mode" class="form-select">
+                            <option value="Percent">Percentage (%)</option>
+                            <option value="Fixed">Fixed Amount ($)</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">দিক</label>
+                        <select id="bp_direction" class="form-select">
+                            <option value="Increase">Increase ▲</option>
+                            <option value="Decrease">Decrease ▼</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">মান</label>
+                        <input type="number" id="bp_value" class="form-control" step="0.01" placeholder="যেমন: 10" />
+                        <small class="text-muted">Percentage হলে 10 মানে 10%, Fixed হলে 10 মানে $10.00</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">বাতিল</button>
+                <button class="btn btn-primary px-4" onclick="submitBulkPriceUpdate()">
+                    <i class="bi bi-check-lg me-1"></i>Apply to All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @Html.AntiForgeryToken()
 
 @section Scripts {
     <script>
         let dt;
-        $(function() {
-            dt = $('#productTable').DataTable({ responsive:true, pageLength:25,
-                language: { search:'', searchPlaceholder:'Search products...' } });
 
-            $('#filterCategory').on('change', function() { dt.column(3).search($(this).val()).draw(); });
-            $('#filterStatus').on('change', function() { dt.column(8).search($(this).val()).draw(); });
+        $(function () {
+            dt = $('#productTable').DataTable({
+                responsive: true,
+                pageLength: 25,
+                order: [[2, 'asc']], 
+                language: { search: '', searchPlaceholder: 'Search products...' },
+                columnDefs: [
+                    { orderable: false, targets: 0 } 
+                ]
+            });
+
+            
+            $('#filterCategory').on('change', function () { dt.column(4).search($(this).val()).draw(); });
+            $('#filterStatus').on('change', function () { dt.column(9).search($(this).val()).draw(); });
         });
 
         function clearFilters() {
@@ -195,18 +284,129 @@
 
         const tok = () => $('[name=__RequestVerificationToken]').val();
 
+        // ══════════════════════════════════════════════════════════════════
+        // Bulk Selection Logic
+        // ══════════════════════════════════════════════════════════════════
+
+        function getSelectedIds() {
+            return $('.bulkCheck:checked').map(function () { return parseInt(this.value); }).get();
+        }
+
+        function bulkSelectAll(source) {
+            
+            $('#productTable tbody tr:visible .bulkCheck').prop('checked', source.checked);
+            refreshBulkToolbar();
+        }
+
+        function bulkCheckboxChanged(checkbox) {
+            if (!checkbox.checked) {
+                $('#selectAllCheckbox').prop('checked', false);
+            } else {
+                const totalVisible = $('#productTable tbody tr:visible .bulkCheck').length;
+                const totalChecked = $('#productTable tbody tr:visible .bulkCheck:checked').length;
+                $('#selectAllCheckbox').prop('checked', totalVisible === totalChecked);
+            }
+            refreshBulkToolbar();
+        }
+
+        function refreshBulkToolbar() {
+            const count = getSelectedIds().length;
+            $('#bulkSelectedCount').text(count);
+            $('#bulkActionToolbar').toggleClass('d-none', count === 0);
+        }
+
+        // ── Single Row Actions ──────────────────────────────────────────────
         function toggleProduct(id) {
             $.post('/Product/ToggleStatus', { id, __RequestVerificationToken: tok() },
                 d => { if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); } else toastr.error(d.message); });
         }
 
         function deleteProduct(id, name) {
-            Swal.fire({ title:'Delete Product?', text:`Delete "${name}" and all its variants?`, icon:'warning',
-                showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete' })
-            .then(r => { if (r.isConfirmed) {
-                $.post('/Product/Delete', { id, __RequestVerificationToken: tok() },
-                    d => { if (d.success) { toastr.success(d.message); $(`#prod-${id}`).fadeOut(); } else toastr.error(d.message); });
-            }});
+            Swal.fire({
+                title: 'Delete Product?', text: `Delete "${name}" and all its variants?`, icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Delete'
+            }).then(r => {
+                if (r.isConfirmed) {
+                    $.post('/Product/Delete', { id, __RequestVerificationToken: tok() },
+                        d => { if (d.success) { toastr.success(d.message); $(`#prod-${id}`).fadeOut(); } else toastr.error(d.message); });
+                }
+            });
+        }
+
+        // ── Bulk Price Update Modal ─────────────────────────────────────────
+        function openBulkPriceModal() {
+            const ids = getSelectedIds();
+            if (!ids.length) return;
+            document.getElementById('bulkPriceCount').textContent = ids.length;
+            new bootstrap.Modal('#bulkPriceModal').show();
+        }
+
+        function submitBulkPriceUpdate() {
+            const dto = {
+                productIds: getSelectedIds(),
+                priceField: document.getElementById('bp_field').value,
+                mode: document.getElementById('bp_mode').value,
+                direction: document.getElementById('bp_direction').value,
+                value: parseFloat(document.getElementById('bp_value').value) || 0
+            };
+
+            if (dto.value <= 0) { toastr.error('একটা মূল্য লিখুন।'); return; }
+
+            fetch('/Product/BulkUpdatePrice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+                body: JSON.stringify(dto)
+            }).then(r => r.json()).then(d => {
+                if (d.success) {
+                    toastr.success(d.message);
+                    bootstrap.Modal.getInstance('#bulkPriceModal').hide();
+                    setTimeout(() => location.reload(), 700);
+                } else toastr.error(d.message);
+            });
+        }
+
+        // ── Bulk Status Toggle ────────────────────────────────────────────────
+        function bulkToggleProductStatus(isActive) {
+            const ids = getSelectedIds();
+            if (!ids.length) return;
+
+            Swal.fire({
+                title: `${ids.length} টা product ${isActive ? 'activate' : 'deactivate'} করবেন?`,
+                icon: 'question', showCancelButton: true, confirmButtonText: 'হ্যাঁ, করুন'
+            }).then(r => {
+                if (!r.isConfirmed) return;
+                fetch('/Product/BulkToggleStatus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+                    body: JSON.stringify({ ids, isActive })
+                }).then(r => r.json()).then(d => {
+                    if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); }
+                    else toastr.error(d.message);
+                });
+            });
+        }
+
+        // ── Bulk Delete ───────────────────────────────────────────────────────
+        function bulkDeleteProducts() {
+            const ids = getSelectedIds();
+            if (!ids.length) return;
+
+            Swal.fire({
+                title: `${ids.length} টা product ডিলিট করবেন?`,
+                text: 'এই কাজ পরে undo করা যাবে না (soft delete হলেও list থেকে সরে যাবে)।',
+                icon: 'warning', showCancelButton: true,
+                confirmButtonColor: '#dc2626', confirmButtonText: 'হ্যাঁ, ডিলিট করুন'
+            }).then(r => {
+                if (!r.isConfirmed) return;
+                fetch('/Product/BulkDelete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+                    body: JSON.stringify({ ids })
+                }).then(r => r.json()).then(d => {
+                    if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 700); }
+                    else toastr.error(d.message);
+                });
+            });
         }
     </script>
 }

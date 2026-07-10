@@ -7,5 +7,7 @@ public interface IStockRepository : IRepository<Stock>
     Task<IEnumerable<Stock>> GetWithDetailsAsync();
     Task<IEnumerable<Stock>> GetLowStockAsync();
     Task<IEnumerable<Stock>> GetOutOfStockAsync();
+    Task<bool> TryDecrementAsync(int variantId, int quantity);
+    Task<bool> IncrementAsync(int variantId, int quantity);
     Task<decimal> GetTotalStockValueAsync();
 }

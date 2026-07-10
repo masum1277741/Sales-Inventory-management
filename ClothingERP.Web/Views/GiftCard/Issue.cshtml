@@ -1,0 +1,127 @@
+﻿@model IssueGiftCardDto
+@{
+    ViewData["Title"] = "Sell Gift Card";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-gift me-2 text-primary"></i>Sell Gift Card</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Gift Cards</a></li>
+                <li class="breadcrumb-item active">Sell</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form asp-action="Issue" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Amount (USD) <span class="text-danger">*</span></label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light fw-bold">$</span>
+                            <input asp-for="Amount" class="form-control" type="number" step="0.01" placeholder="50.00" />
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            @foreach (var amt in new[] { 25, 50, 100, 200 })
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        onclick="document.querySelector('[name=Amount]').value=@amt">
+                                    $@amt
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Link to Existing Customer (optional)</label>
+                        <div class="position-relative">
+                            <input type="text" id="custSearch" class="form-control" placeholder="Search customer..." autocomplete="off" />
+                            <div id="custDropdown" class="position-absolute w-100 bg-white border rounded shadow"
+                                 style="z-index:999;display:none;top:100%;max-height:200px;overflow-y:auto;"></div>
+                        </div>
+                        <input type="hidden" asp-for="CustomerId" />
+                        <div id="selectedCustomer" class="mt-2"></div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Recipient Name</label>
+                            <input asp-for="RecipientName" class="form-control" placeholder="যদি customer link না করেন" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Recipient Phone</label>
+                            <input asp-for="RecipientPhone" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Expiry Date (optional)</label>
+                            <input asp-for="ExpiryDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Payment Method</label>
+                            <select asp-for="PaymentMethod" class="form-select">
+                                <option value="Cash">Cash</option>
+                                <option value="Card">Card</option>
+                                <option value="Mobile Banking">Mobile Banking</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Notes</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i>Issue Gift Card
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let searchTimer;
+        document.getElementById('custSearch').addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            const val = this.value.trim();
+            if (val.length < 2) { $('#custDropdown').hide(); return; }
+            searchTimer = setTimeout(async () => {
+                const data = await fetch(`/GiftCard/SearchCustomers?keyword=${encodeURIComponent(val)}`).then(r => r.json());
+                const dd = $('#custDropdown');
+                if (!data.length) { dd.hide(); return; }
+                dd.html(data.map(c => `
+                    <div class="p-2 border-bottom" style="cursor:pointer;"
+                         onmousedown="event.preventDefault();selectCustomer(${c.id},'${c.name}')">
+                        <div class="small fw-semibold">${c.name}</div>
+                        <div class="text-muted" style="font-size:.72rem;">${c.phoneNumber || ''}</div>
+                    </div>`).join('')).show();
+            }, 250);
+        });
+
+        function selectCustomer(id, name) {
+            document.querySelector('[name=CustomerId]').value = id;
+            document.getElementById('selectedCustomer').innerHTML =
+                `<span class="badge bg-success">${name} <i class="bi bi-x ms-1" style="cursor:pointer;" onclick="clearCustomer()"></i></span>`;
+            document.getElementById('custSearch').value = '';
+            $('#custDropdown').hide();
+        }
+        function clearCustomer() {
+            document.querySelector('[name=CustomerId]').value = '';
+            document.getElementById('selectedCustomer').innerHTML = '';
+        }
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#custSearch, #custDropdown')) $('#custDropdown').hide();
+        });
+    </script>
+}

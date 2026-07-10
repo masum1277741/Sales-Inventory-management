@@ -1,0 +1,11 @@
+﻿@model ClothingERP.Application.DTOs.DashboardDto
+<div class="stat-card h-100">
+    <div class="d-flex align-items-center gap-3">
+        <div class="icon-wrap" style="background:#d1fae5;"><i class="bi bi-person-badge" style="color:#065f46;"></i></div>
+        <div>
+            <div class="text-muted small">My Pending Commission</div>
+            <h4 class="mb-0 fw-bold text-success">৳@(((decimal)ViewBag.MyPendingCommission).ToString("N2"))</h4>
+            <small class="text-muted">This month</small>
+        </div>
+    </div>
+</div>

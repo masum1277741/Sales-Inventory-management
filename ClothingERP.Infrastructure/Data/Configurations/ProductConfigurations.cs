@@ -110,3 +110,34 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
             .WithMany().HasForeignKey(x => x.ColorId).OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+public class ProductBundleConfiguration : IEntityTypeConfiguration<ProductBundle>
+{
+    public void Configure(EntityTypeBuilder<ProductBundle> builder)
+    {
+        builder.ToTable("ProductBundles");
+        builder.Property(x => x.Name).IsRequired().HasMaxLength(200);
+        builder.Property(x => x.Description).HasMaxLength(2000);
+        builder.Property(x => x.BundlePrice).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.ImagePath).HasMaxLength(500);
+        builder.HasQueryFilter(x => !x.IsDeleted);
+    }
+}
+
+public class ProductBundleItemConfiguration : IEntityTypeConfiguration<ProductBundleItem>
+{
+    public void Configure(EntityTypeBuilder<ProductBundleItem> builder)
+    {
+        builder.ToTable("ProductBundleItems");
+        builder.HasIndex(x => new { x.ProductBundleId, x.ProductVariantId }).IsUnique();
+        builder.HasQueryFilter(x => !x.IsDeleted);
+        builder.HasOne(x => x.ProductBundle)
+            .WithMany(x => x.Items)
+            .HasForeignKey(x => x.ProductBundleId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.ProductVariant)
+            .WithMany()
+            .HasForeignKey(x => x.ProductVariantId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}

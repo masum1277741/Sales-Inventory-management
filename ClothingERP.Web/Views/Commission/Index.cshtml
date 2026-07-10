@@ -1,0 +1,103 @@
+﻿@model IEnumerable<StaffCommissionSummaryDto>
+@{
+    ViewData["Title"] = "Staff Commission"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-person-badge me-2 text-primary"></i>Staff Commission</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Commission</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Settings" class="btn btn-outline-primary">
+        <i class="bi bi-sliders me-1"></i>Rate Settings
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="stat-card"><div class="text-muted small">Total Sales</div><h4 class="fw-bold mb-0">$@((decimal)ViewBag.TotalSalesAmount).ToString("N2")</h4></div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card border-start border-3 border-success">
+            <div class="text-muted small">Total Commission</div>
+            <h4 class="fw-bold mb-0" style="color:#065f46;">$@((decimal)ViewBag.TotalCommission).ToString("N2")</h4>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card border-start border-3 border-warning">
+            <div class="text-muted small">Pending Payout</div>
+            <h4 class="fw-bold mb-0" style="color:#78350f;">$@((decimal)ViewBag.TotalPending).ToString("N2")</h4>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card"><div class="text-muted small">Already Paid</div><h4 class="fw-bold mb-0">$@((decimal)ViewBag.TotalPaid).ToString("N2")</h4></div>
+    </div>
+</div>
+
+<!-- Filter -->
+<form asp-action="Index" method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2 px-3 d-flex gap-2 align-items-center flex-wrap">
+        <i class="bi bi-calendar-range text-muted"></i>
+        <input type="date" name="fromDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.FromDate" />
+        <span class="text-muted small">to</span>
+        <input type="date" name="toDate" class="form-control form-control-sm" style="width:150px;" value="@ViewBag.ToDate" />
+        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-filter me-1"></i>Filter</button>
+        <a asp-action="Index" class="btn btn-sm btn-light border">This Month</a>
+    </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="commTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Staff</th>
+                        <th>Role</th>
+                        <th class="text-center">Rate</th>
+                        <th class="text-center">Sales Count</th>
+                        <th class="text-end">Sales Amount</th>
+                        <th class="text-end">Total Commission</th>
+                        <th class="text-end">Pending</th>
+                        <th class="text-end pe-4">Paid</th>
+                        <th class="text-center" width="80">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in items)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-semibold">@s.UserName</td>
+                            <td><span class="badge bg-primary">@s.RoleName</span></td>
+                            <td class="text-center">@s.EffectiveRate.ToString("N1")%</td>
+                            <td class="text-center">@s.TotalSalesCount</td>
+                            <td class="text-end">$@s.TotalSalesAmount.ToString("N2")</td>
+                            <td class="text-end fw-bold">$@s.TotalCommission.ToString("N2")</td>
+                            <td class="text-end" style="color:#78350f;">$@s.PendingCommission.ToString("N2")</td>
+                            <td class="text-end pe-4" style="color:#065f46;">$@s.PaidCommission.ToString("N2")</td>
+                            <td class="text-center">
+                                <a asp-action="StaffDetails" asp-route-userId="@s.UserId" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!items.Any())
+                    {
+                        <tr><td colspan="9" class="text-center py-5 text-muted">এই সময়ে কোনো commission record নেই।</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(function () { initDataTable('#commTable', { order: [[5,'desc']] }); });</script>
+}

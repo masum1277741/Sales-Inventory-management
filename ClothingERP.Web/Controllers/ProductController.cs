@@ -10,11 +10,13 @@ public class ProductController : BaseController
     private readonly IProductAttributeService _attrs;
     private readonly IWebHostEnvironment _env;
     private readonly IConfiguration _config;
+    private readonly IProductService _productSvc;
     public ProductController(IProductService products, ICategoryService cats,
-        IBrandService brands, IProductAttributeService attrs, IWebHostEnvironment env, IConfiguration config)
+        IBrandService brands, IProductAttributeService attrs, IWebHostEnvironment env, IConfiguration config, IProductService productSvc)
     {
         _products = products; _cats = cats; _brands = brands; _attrs = attrs; _env = env;
         _config = config;
+        _productSvc = productSvc;
     }
 
     // ── Index ─────────────────────────────────────────────────────────────
@@ -54,7 +56,41 @@ public class ProductController : BaseController
         SetSuccess(result.Message!);
         return RedirectToAction(nameof(Details), new { id = result.Data?.Id });
     }
+    // ── AJAX: Bulk Price Update ──────────────────────────────────────────────
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkUpdatePrice([FromBody] BulkPriceUpdateDto dto)
+    {
+        if (!dto.ProductIds.Any()) return JsonError("কোনো product সিলেক্ট করা হয়নি।");
+        var result = await _productSvc.BulkUpdatePriceAsync(dto, CurrentUserId);
+        return result.Success ? JsonSuccess(result, result.Message) : JsonError(result.Message);
+    }
 
+    // ── AJAX: Bulk Status Toggle ─────────────────────────────────────────────
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkToggleStatus([FromBody] BulkStatusUpdateDto dto)
+    {
+        if (!dto.Ids.Any()) return JsonError("কোনো product সিলেক্ট করা হয়নি।");
+        var result = await _productSvc.BulkToggleStatusAsync(dto, CurrentUserId);
+        return result.Success ? JsonSuccess(result, result.Message) : JsonError(result.Message);
+    }
+
+    // ── AJAX: Bulk Delete ─────────────────────────────────────────────────────
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkDelete([FromBody] BulkDeleteDto dto)
+    {
+        if (!dto.Ids.Any()) return JsonError("কোনো product সিলেক্ট করা হয়নি।");
+        var result = await _productSvc.BulkDeleteAsync(dto);
+        return result.Success ? JsonSuccess(result, result.Message) : JsonError(result.Message);
+    }
+
+    // ── AJAX: Bulk Category Reassign ─────────────────────────────────────────
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkUpdateCategory([FromBody] BulkCategoryUpdateDto dto)
+    {
+        if (!dto.ProductIds.Any()) return JsonError("কোনো product সিলেক্ট করা হয়নি।");
+        var result = await _productSvc.BulkUpdateCategoryAsync(dto, CurrentUserId);
+        return result.Success ? JsonSuccess(result, result.Message) : JsonError(result.Message);
+    }
     // ── Edit ──────────────────────────────────────────────────────────────
     [HttpGet]
     public async Task<IActionResult> Edit(int id)

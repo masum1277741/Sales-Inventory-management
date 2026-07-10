@@ -4,8 +4,9 @@ public class StockService : IStockService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly IRealtimeNotifier _realtime;
 
-    public StockService(IUnitOfWork uow, IMapper mapper) => (_uow, _mapper) = (uow, mapper);
+    public StockService(IUnitOfWork uow, IMapper mapper, IRealtimeNotifier realtime) => (_uow, _mapper,_realtime) = (uow, mapper,realtime);
 
     public async Task<IEnumerable<StockListDto>> GetAllAsync()
         => _mapper.Map<IEnumerable<StockListDto>>(await _uow.Stocks.GetWithDetailsAsync());
@@ -48,7 +49,11 @@ public class StockService : IStockService
         });
 
         await _uow.SaveChangesAsync();
-        return ServiceResult.Ok("Stock adjusted.");
+        var variant = await _uow.ProductVariants.GetByIdAsync(dto.ProductVariantId);
+        await _realtime.NotifyStockUpdatedAsync(
+            dto.ProductVariantId, variant?.Barcode ?? "", (int)dto.NewQuantity, variant?.Product?.Name ?? "");
+
+        return ServiceResult.Ok("Stock adjusted successfully.");
     }
 
     public async Task UpdateStockAsync(int variantId, decimal quantity, StockMovementType type,

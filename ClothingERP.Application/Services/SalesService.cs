@@ -1,13 +1,23 @@
-﻿namespace ClothingERP.Application.Services;
+﻿using ClothingERP.Application.Interfaces.Services;   
+
+namespace ClothingERP.Application.Services;
 
 public class SalesService : ISalesService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly ILoyaltyService _loyaltySvc;
     private readonly IStockService _stock;
+    private readonly IGiftCardService _giftCardSvc;
+    private readonly ICommissionService _commissionSvc;
+    private readonly INotificationService _notificationSvc;
+    private readonly IRealtimeNotifier _realtime;
 
-    public SalesService(IUnitOfWork uow, IMapper mapper, IStockService stock)
-        => (_uow, _mapper, _stock) = (uow, mapper, stock);
+    public SalesService(IUnitOfWork uow, IMapper mapper, ILoyaltyService loyaltySvc, IStockService stock,
+        IGiftCardService giftCardService, ICommissionService commissionSvc, INotificationService notificationSvc,
+        IRealtimeNotifier realtime)
+        => (_uow, _mapper, _loyaltySvc, _stock, _giftCardSvc, _commissionSvc, _notificationSvc, _realtime)
+            = (uow, mapper, loyaltySvc, stock, giftCardService, commissionSvc, notificationSvc, realtime);
 
     public async Task<IEnumerable<SalesInvoiceListDto>> GetAllAsync()
     {
@@ -39,14 +49,33 @@ public class SalesService : ISalesService
                 }
             }
 
-            // 2. Build invoice
+            decimal loyaltyDiscount = 0;
+
+            // 2. Loyalty Points Redeem
+            if (dto.CustomerId.HasValue && dto.LoyaltyPointsRedeemed > 0)
+            {
+                var redeemResult = await _loyaltySvc.RedeemPointsAsync(
+                    dto.CustomerId.Value, dto.LoyaltyPointsRedeemed, null, userId);
+
+                if (!redeemResult.Success)
+                {
+                    await _uow.RollbackTransactionAsync();
+                    return ServiceResult<SalesInvoiceDto>.Fail(redeemResult.Message!);
+                }
+
+                loyaltyDiscount = redeemResult.Data;
+            }
+
+            // 3. Build invoice
+            var totalDiscount = dto.DiscountAmount + loyaltyDiscount;
+
             var invoice = new SalesInvoice
             {
                 InvoiceNumber = await _uow.SalesInvoices.GenerateInvoiceNumberAsync(),
                 CustomerId = dto.CustomerId,
                 InvoiceDate = DateTime.UtcNow,
                 Status = InvoiceStatus.Confirmed,
-                DiscountAmount = dto.DiscountAmount,
+                DiscountAmount = totalDiscount,
                 TaxAmount = dto.TaxAmount,
                 IsCredit = dto.IsCredit,
                 Notes = dto.Notes,
@@ -60,6 +89,8 @@ public class SalesService : ISalesService
                 invoice.Items.Add(new SalesInvoiceItem
                 {
                     ProductVariantId = itemDto.ProductVariantId,
+                    ProductBundleId = itemDto.ProductBundleId,
+                    BundleName = itemDto.BundleName,
                     Quantity = itemDto.Quantity,
                     UnitPrice = itemDto.UnitPrice,
                     DiscountAmount = itemDto.DiscountAmount,
@@ -70,15 +101,46 @@ public class SalesService : ISalesService
                 subTotal += itemDto.Quantity * itemDto.UnitPrice - itemDto.DiscountAmount;
             }
             invoice.SubTotal = subTotal;
-            invoice.TotalAmount = subTotal + dto.TaxAmount;
+            invoice.TotalAmount = subTotal - totalDiscount + dto.TaxAmount;
 
             await _uow.SalesInvoices.AddAsync(invoice);
             await _uow.SaveChangesAsync();
+            if (invoice.TotalAmount >= 200 && !invoice.IsHold)
+            {
+                await _notificationSvc.CreateAsync(new CreateNotificationDto
+                {
+                    UserId = null,
+                    Title = "Big Sale! 🎉",
+                    Message = $"Invoice {invoice.InvoiceNumber} — ${invoice.TotalAmount:N2} বিক্রি হয়েছে।",
+                    Type = "BigSale",
+                    Severity = "success",
+                    Icon = "bi-graph-up-arrow",
+                    ActionUrl = $"/Sales/Details/{invoice.Id}"
+                });
+            }
+         
+            if (!invoice.IsHold && invoice.Status != InvoiceStatus.Cancelled)
+            {
+                await _commissionSvc.CalculateAndRecordCommissionAsync(
+                    userId, invoice.Id, invoice.TotalAmount, userId);
+            }
 
             // 3. Payments
             decimal totalPaid = 0;
             foreach (var payDto in dto.Payments)
             {
+                if (!string.IsNullOrEmpty(payDto.GiftCardCode))
+                {
+                    var redeemResult = await _giftCardSvc.RedeemAsync(
+                        payDto.GiftCardCode, payDto.Amount, invoice.Id, userId);
+
+                    if (!redeemResult.Success)
+                    {
+                        await _uow.RollbackTransactionAsync();
+                        return ServiceResult<SalesInvoiceDto>.Fail($"Gift card error: {redeemResult.Message}");
+                    }
+                }
+
                 await _uow.SalesPayments.AddAsync(new SalesPayment
                 {
                     SalesInvoiceId = invoice.Id,
@@ -99,10 +161,28 @@ public class SalesService : ISalesService
             _uow.SalesInvoices.Update(invoice);
             await _uow.SaveChangesAsync();
 
-            // 4. Reduce stock
+            // 4. Reduce stock + realtime broadcast
             foreach (var item in invoice.Items)
+            {
                 await _stock.UpdateStockAsync(item.ProductVariantId, -item.Quantity,
                     StockMovementType.Sale, invoice.InvoiceNumber, userId);
+
+                var updatedStock = await _uow.Stocks.GetByVariantIdAsync(item.ProductVariantId);
+                var variant = await _uow.ProductVariants.GetByIdAsync(item.ProductVariantId);
+
+                await _realtime.NotifyStockUpdatedAsync(
+                    item.ProductVariantId,
+                    variant?.Barcode ?? "",
+                    (int)(updatedStock?.Quantity ?? 0),
+                    variant?.Product?.Name ?? "Product"
+                );
+
+                if (updatedStock != null && variant != null && updatedStock.Quantity <= variant.Product.ReorderPoint)
+                {
+                    await _realtime.NotifyLowStockAsync(
+                        item.ProductVariantId, variant.Product.Name, (int)updatedStock.Quantity);
+                }
+            }
 
             // 5. Customer ledger if credit sale
             if (dto.IsCredit && dto.CustomerId.HasValue)
@@ -113,21 +193,27 @@ public class SalesService : ISalesService
                     $"Invoice {invoice.InvoiceNumber}", userId);
             }
 
-            // 6. Update customer total purchase
+            // 6. Update customer total purchase and award loyalty points
             if (dto.CustomerId.HasValue)
             {
                 var customer = await _uow.Customers.GetByIdAsync(dto.CustomerId.Value);
                 if (customer != null)
                 {
                     customer.TotalPurchaseAmount += invoice.TotalAmount;
-                    customer.LoyaltyPoints += Math.Floor(invoice.TotalAmount / 100); // 1 pt per 100
                     customer.UpdatedBy = userId;
+                    customer.UpdatedAt = DateTime.UtcNow;
                     _uow.Customers.Update(customer);
-                    await _uow.SaveChangesAsync();
                 }
+
+                await _loyaltySvc.AwardPointsAsync(
+                    dto.CustomerId.Value, invoice.TotalAmount, invoice.Id, userId);
             }
 
+            await _uow.SaveChangesAsync();
             await _uow.CommitTransactionAsync();
+
+            // ── সেল সম্পন্ন হওয়ার broadcast (commit এর পরে) ────────────────
+            await _realtime.NotifySaleCompletedAsync(invoice.TotalAmount, invoice.InvoiceNumber);
 
             var result = await _uow.SalesInvoices.GetWithDetailsAsync(invoice.Id);
             return ServiceResult<SalesInvoiceDto>.Ok(_mapper.Map<SalesInvoiceDto>(result!), "Invoice created.");
@@ -153,12 +239,26 @@ public class SalesService : ISalesService
             inv.UpdatedBy = userId;
             _uow.SalesInvoices.Update(inv);
 
-            // Restore stock
+            // Restore stock + realtime broadcast
             foreach (var item in inv.Items)
+            {
                 await _stock.UpdateStockAsync(item.ProductVariantId, item.Quantity,
                     StockMovementType.Adjustment, $"CANCEL-{inv.InvoiceNumber}", userId);
 
+                var updatedStock = await _uow.Stocks.GetByVariantIdAsync(item.ProductVariantId);
+                var variant = await _uow.ProductVariants.GetByIdAsync(item.ProductVariantId);
+
+                await _realtime.NotifyStockUpdatedAsync(
+                    item.ProductVariantId,
+                    variant?.Barcode ?? "",
+                    (int)(updatedStock?.Quantity ?? 0),
+                    variant?.Product?.Name ?? "");
+            }
+
             await _uow.SaveChangesAsync();
+
+            await _commissionSvc.ReverseCommissionAsync(id, userId);
+
             await _uow.CommitTransactionAsync();
             return ServiceResult.Ok("Invoice cancelled.");
         }

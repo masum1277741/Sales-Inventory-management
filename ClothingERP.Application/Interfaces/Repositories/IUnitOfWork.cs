@@ -16,7 +16,12 @@ public interface IUnitOfWork : IDisposable
     IRepository<Color> Colors { get; }
     IProductRepository Products { get; }
     IProductVariantRepository ProductVariants { get; }
-
+    IRepository<LoyaltySettings> LoyaltySettings { get; }
+    IRepository<LoyaltyTransaction> LoyaltyTransactions { get; }
+    IRepository<ProductBundle> ProductBundles { get; }
+    IRepository<ProductBundleItem> ProductBundleItems { get; }
+    IRepository<GiftCard> GiftCards { get; }
+    IRepository<GiftCardTransaction> GiftCardTransactions { get; }
     // --- Stock ---
     IStockRepository Stocks { get; }
     IRepository<StockMovement> StockMovements { get; }
@@ -40,10 +45,13 @@ public interface IUnitOfWork : IDisposable
     IRepository<SalesPayment> SalesPayments { get; }
     ISalesReturnRepository SalesReturns { get; }
     IPurchaseReturnRepository PurchaseReturns { get; }
-
+    IRepository<CommissionSettings> CommissionSettings { get; }
+    IRepository<StaffCommissionRate> StaffCommissionRates { get; }
+    IRepository<CommissionTransaction> CommissionTransactions { get; }
+    IRepository<DashboardLayout> DashboardLayouts { get; }
     // --- Accounts ---
     IAccountTransactionRepository AccountTransactions { get; }
-
+    IRepository<Notification> Notifications { get; }
     // --- Security ---
     IAuditLogRepository AuditLogs { get; }
 

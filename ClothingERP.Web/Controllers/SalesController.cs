@@ -5,15 +5,17 @@ public class SalesController : BaseController
     private readonly ISalesService _salesSvc;
     private readonly ICustomerService _customerSvc;
     private readonly IProductService _productSvc;
-    private readonly IConfiguration _config;      
+    private readonly IConfiguration _config;
+    private readonly IBundleService _bundleSvc;
 
     public SalesController(ISalesService salesSvc, ICustomerService customerSvc,
-        IProductService productSvc, IConfiguration config)
+        IProductService productSvc, IConfiguration config, IBundleService bundleSvc)
     {
         _salesSvc = salesSvc;
         _customerSvc = customerSvc;
         _productSvc = productSvc;
-        _config = config;                        
+        _config = config;
+        _bundleSvc = bundleSvc;
     }
     // ── All Products for POS Grid ─────────────────────────────────────────
     [HttpGet]
@@ -43,7 +45,19 @@ public class SalesController : BaseController
         ViewBag.RateMVR = _config.GetValue<decimal>("ExchangeRates:USD_TO_MVR", 15.42m);
         return View();
     }
+    [HttpGet]
+    public async Task<IActionResult> SearchBundles(string keyword)
+    {
+        var bundles = await _bundleSvc.SearchBundlesAsync(keyword);
+        return Json(bundles);
+    }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAllBundles()
+    {
+        var bundles = await _bundleSvc.SearchBundlesAsync("");
+        return Json(bundles);
+    }
     // ── Sales History ─────────────────────────────────────────────────────
     public async Task<IActionResult> Index(DateTime? fromDate = null, DateTime? toDate = null)
     {

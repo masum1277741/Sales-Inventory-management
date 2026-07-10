@@ -296,6 +296,27 @@ body.sidebar-collapsed #topbar { left: var(--sidebar-collapsed); }
     padding:       5px 12px;
 }
 
+/* Topbar icon button (bell, install button, etc.) */
+.topbar-icon-btn {
+    width:           34px;
+    height:          34px;
+    border-radius:   var(--radius-sm);
+    background:      var(--clz-cream);
+    border:          1px solid var(--border);
+    color:           var(--text-mid);
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    cursor:          pointer;
+    transition:      background .15s, border-color .15s, color .15s;
+    flex-shrink:     0;
+}
+.topbar-icon-btn:hover {
+    background:   var(--clz-cream-mid);
+    border-color: var(--clz-gold-border);
+    color:        var(--clz-gold-deep);
+}
+
 /* User badge */
 #topbar .user-badge {
     display:       flex;
@@ -337,6 +358,205 @@ body.sidebar-collapsed #topbar { left: var(--sidebar-collapsed); }
 
 body.sidebar-collapsed #main-content { margin-left: var(--sidebar-collapsed); }
 
+/* ══ Global Search Trigger ════════════════════════════════════════════ */
+.search-trigger-btn {
+    display:        flex;
+    align-items:    center;
+    gap:            10px;
+    background:     var(--clz-cream);
+    border:         1px solid var(--border);
+    border-radius:  8px;
+    padding:        7px 14px;
+    color:          var(--text-muted);
+    font-size:      .82rem;
+    cursor:         pointer;
+    margin-left:    20px;
+    min-width:      220px;
+    flex-shrink:    0;
+    transition:     border-color .15s, background .15s;
+}
+.search-trigger-btn:hover { background: var(--clz-cream-mid); border-color: var(--clz-gold-border); }
+.search-trigger-btn span  { flex: 1; text-align: left; }
+.search-trigger-btn kbd {
+    background:    var(--clz-black);
+    color:         var(--clz-gold);
+    font-size:     .68rem;
+    padding:       2px 6px;
+    border-radius: 4px;
+    font-family:   inherit;
+}
+
+/* ══ Command Palette Overlay ══════════════════════════════════════════ */
+.search-overlay {
+    position:   fixed;
+    inset:      0;
+    background: rgba(10,10,10,.55);
+    z-index:    2000;
+    display:    none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 10vh;
+    backdrop-filter: blur(2px);
+}
+.search-overlay.open { display: flex; }
+
+.search-palette {
+    width:         min(620px, 92vw);
+    background:    #fff;
+    border-radius: 14px;
+    box-shadow:    0 24px 70px rgba(0,0,0,.35);
+    overflow:      hidden;
+    max-height:    72vh;
+    display:       flex;
+    flex-direction: column;
+    animation:     paletteIn .15s ease;
+}
+@@keyframes paletteIn {
+    from { opacity: 0; transform: translateY(-12px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.search-palette-input {
+    display:       flex;
+    align-items:   center;
+    gap:           12px;
+    padding:       18px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink:   0;
+}
+.search-palette-input i { color: var(--text-muted); font-size: 1.1rem; }
+.search-palette-input input {
+    flex:        1;
+    border:      none;
+    outline:     none;
+    font-size:   1rem;
+    color:       var(--text);
+    background:  transparent;
+}
+.search-palette-input kbd {
+    background:    var(--clz-cream);
+    border:        1px solid var(--border);
+    color:         var(--text-muted);
+    font-size:     .68rem;
+    padding:       2px 7px;
+    border-radius: 4px;
+}
+
+.search-palette-results {
+    overflow-y: auto;
+    padding:    8px;
+    flex:       1;
+}
+
+.search-empty-state {
+    text-align: center;
+    padding:    50px 20px;
+    color:      var(--text-muted);
+}
+.search-empty-state i { font-size: 2.2rem; opacity: .25; display: block; margin-bottom: 12px; }
+.search-empty-state p { font-size: .85rem; margin-bottom: 16px; }
+.search-hints { display: flex; gap: 16px; justify-content: center; font-size: .72rem; color: var(--text-muted); }
+.search-hints kbd {
+    background: var(--clz-cream); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 3px; margin-right: 3px; font-size: .68rem;
+}
+
+.search-cat-label {
+    font-size:      .68rem;
+    font-weight:    700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color:          var(--text-muted);
+    padding:        10px 12px 4px;
+}
+
+.search-result-item {
+    display:       flex;
+    align-items:   center;
+    gap:           12px;
+    padding:       10px 12px;
+    border-radius: 9px;
+    cursor:        pointer;
+    transition:    background .12s;
+}
+.search-result-item:hover,
+.search-result-item.active {
+    background: var(--clz-cream);
+}
+.search-result-item .sr-icon {
+    width:           34px; height: 34px;
+    border-radius:   9px;
+    background:      var(--clz-black);
+    color:           var(--clz-gold);
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    flex-shrink:     0;
+    font-size:       .95rem;
+}
+.search-result-item .sr-text { flex: 1; min-width: 0; }
+.search-result-item .sr-title {
+    font-size:    .87rem;
+    font-weight:  600;
+    color:        var(--text);
+    white-space:  nowrap;
+    overflow:     hidden;
+    text-overflow: ellipsis;
+}
+.search-result-item .sr-subtitle {
+    font-size: .74rem;
+    color:     var(--text-muted);
+    white-space: nowrap;
+    overflow:    hidden;
+    text-overflow: ellipsis;
+}
+.search-result-item .sr-badge {
+    font-size:     .68rem;
+    font-weight:   600;
+    padding:       3px 9px;
+    border-radius: 20px;
+    flex-shrink:   0;
+}
+.search-result-item .sr-badge.success { background: var(--success-bg); color: var(--success-text); }
+.search-result-item .sr-badge.danger  { background: var(--danger-bg);  color: var(--danger-text); }
+.search-result-item .sr-badge.warning { background: var(--warning-bg); color: var(--warning-text); }
+.search-result-item .sr-badge.info    { background: var(--info-bg);    color: var(--info-text); }
+.search-result-item .sr-badge.secondary { background: var(--gray-bg); color: var(--gray-text); }
+
+.search-loading {
+    text-align: center;
+    padding:    40px;
+    color:      var(--text-muted);
+    font-size:  .85rem;
+}
+            /* ══ Dashboard Customize Modal ════════════════════════════════════════ */
+            .widget-config-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 8px;
+                border-radius: 8px;
+                margin-bottom: 4px;
+                background: var(--clz-cream);
+                cursor: default;
+            }
+
+                .widget-config-row .drag-handle {
+                    cursor: grab;
+                    color: var(--text-muted);
+                }
+
+                    .widget-config-row .drag-handle:active {
+                        cursor: grabbing;
+                    }
+
+                .widget-config-row.sortable-ghost {
+                    opacity: .4;
+                }
+
+            .widget-wrapper {
+                transition: opacity .2s;
+            }
 /* ── Page Header ───────────────────────────────────────────────────── */
 .page-header {
     margin-bottom: 22px;
@@ -405,7 +625,84 @@ body.sidebar-collapsed #main-content { margin-left: var(--sidebar-collapsed); }
     font-size:       1.15rem;
     flex-shrink:     0;
 }
+            /* ══ Bulk Action Toolbar (reusable across all list pages) ════════════ */
+            .bulk-toolbar {
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%) translateY(100px);
+                background: var(--clz-black);
+                color: #fff;
+                border-radius: 14px;
+                padding: 14px 20px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                box-shadow: 0 12px 40px rgba(0,0,0,.35);
+                z-index: 1500;
+                opacity: 0;
+                transition: transform .25s ease, opacity .25s ease;
+                pointer-events: none;
+            }
 
+                .bulk-toolbar.show {
+                    transform: translateX(-50%) translateY(0);
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+
+                .bulk-toolbar .bt-count {
+                    background: var(--clz-gold);
+                    color: #000;
+                    font-weight: 700;
+                    font-size: .8rem;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                }
+
+                .bulk-toolbar .bt-btn {
+                    background: transparent;
+                    border: 1px solid #3a3a3a;
+                    color: #e0e0e0;
+                    font-size: .82rem;
+                    padding: 7px 14px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: background .15s;
+                    white-space: nowrap;
+                }
+
+                    .bulk-toolbar .bt-btn:hover {
+                        background: rgba(201,169,110,.15);
+                        border-color: var(--clz-gold);
+                    }
+
+                    .bulk-toolbar .bt-btn.danger:hover {
+                        background: rgba(220,38,38,.18);
+                        border-color: #dc2626;
+                    }
+
+                .bulk-toolbar .bt-close {
+                    background: transparent;
+                    border: none;
+                    color: #888;
+                    font-size: 1.1rem;
+                    cursor: pointer;
+                    margin-left: 4px;
+                }
+
+            /* Selectable row highlight */
+            tr.row-selected {
+                background: rgba(201,169,110,.08) !important;
+            }
+
+            .bulk-checkbox-col {
+                width: 36px;
+                text-align: center;
+            }
 /* ══ STATUS BADGES — Universal High Contrast ═══════════════════════════ */
 .badge {
     font-size:      .69rem !important;
@@ -501,7 +798,51 @@ body.sidebar-collapsed #main-content { margin-left: var(--sidebar-collapsed); }
     font-size:  .69rem;
     font-weight:500;
 }
+            /* ══ Live Connection Indicator ═════════════════════════════════════════ */
+            .live-indicator {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: .72rem;
+                color: var(--text-muted);
+                padding: 0 8px;
+            }
 
+            .live-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #cbd5e1;
+                transition: background .3s;
+            }
+
+                .live-dot.connected {
+                    background: #16a34a;
+                    box-shadow: 0 0 0 0 rgba(22,163,74,.5);
+                    animation: liveBlip 2s infinite;
+                }
+
+                .live-dot.connecting {
+                    background: #ca8a04;
+                }
+
+                .live-dot.disconnected {
+                    background: #dc2626;
+                }
+
+            @@keyframes liveBlip {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(22,163,74,.45);
+                }
+
+                70% {
+                    box-shadow: 0 0 0 6px rgba(22,163,74,0);
+                }
+
+                100% {
+                    box-shadow: 0 0 0 0 rgba(22,163,74,0);
+                }
+            }
 /* ══ TEXT COLORS (override Bootstrap) ════════════════════════════════ */
 .text-success { color: var(--success-text) !important; }
 .text-danger  { color: var(--danger-text)  !important; }
@@ -905,6 +1246,112 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
     .card { box-shadow: none !important; border: 1px solid #ddd !important; }
     .page-header { border-bottom: 2px solid #333 !important; }
 }
+
+/* ══ Notification Bell & Panel ════════════════════════════════════════ */
+.notif-badge {
+    position:      absolute;
+    top:           2px; right: 2px;
+    background:    #dc2626;
+    color:         #fff;
+    font-size:     .6rem;
+    font-weight:   700;
+    min-width:     16px; height: 16px;
+    border-radius: 8px;
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    padding:       0 3px;
+    border:        1.5px solid #fff;
+}
+
+.notif-panel {
+    width:        360px;
+    padding:      0;
+    border:       1px solid var(--border);
+    border-radius: 12px;
+    overflow:     hidden;
+    box-shadow:   0 12px 36px rgba(0,0,0,.14);
+}
+
+.notif-panel-header {
+    display:        flex;
+    justify-content: space-between;
+    align-items:    center;
+    padding:        14px 16px;
+    border-bottom:  1px solid var(--border);
+    background:     var(--clz-cream);
+}
+.notif-markall-btn {
+    background: transparent; border: none;
+    color: var(--clz-gold-deep); font-size: .76rem; font-weight: 600;
+    cursor: pointer;
+}
+.notif-markall-btn:hover { text-decoration: underline; }
+
+.notif-panel-body {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.notif-item {
+    display:       flex;
+    gap:           12px;
+    padding:       12px 16px;
+    border-bottom: 1px solid #f5f3ef;
+    cursor:        pointer;
+    transition:    background .12s;
+    position:      relative;
+}
+.notif-item:hover { background: var(--clz-cream); }
+.notif-item.unread { background: rgba(201,169,110,.06); }
+.notif-item.unread::before {
+    content: '';
+    position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--clz-gold);
+}
+
+.notif-icon {
+    width:           36px; height: 36px;
+    border-radius:   10px;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    flex-shrink:     0;
+    font-size:       .95rem;
+}
+.notif-icon.info     { background: var(--info-bg);    color: var(--info-text); }
+.notif-icon.success  { background: var(--success-bg); color: var(--success-text); }
+.notif-icon.warning  { background: var(--warning-bg); color: var(--warning-text); }
+.notif-icon.danger   { background: var(--danger-bg);  color: var(--danger-text); }
+
+.notif-content { flex: 1; min-width: 0; }
+.notif-title { font-size: .85rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.notif-msg   { font-size: .78rem; color: var(--text-mid); line-height: 1.35; }
+.notif-time  { font-size: .68rem; color: var(--text-muted); margin-top: 4px; }
+
+.notif-close-btn {
+    background: transparent; border: none; color: #ccc;
+    font-size: .8rem; cursor: pointer; flex-shrink: 0;
+    align-self: flex-start; padding: 2px;
+}
+.notif-close-btn:hover { color: #dc2626; }
+
+.notif-panel-footer {
+    text-align: center;
+    padding:    10px;
+    border-top: 1px solid var(--border);
+    background: var(--clz-cream);
+}
+.notif-panel-footer a { font-size: .8rem; font-weight: 600; }
+
+.notif-empty {
+    text-align: center;
+    padding:    40px 20px;
+    color:      var(--text-muted);
+}
+.notif-empty i { font-size: 2rem; opacity: .3; display: block; margin-bottom: 10px; }
+.notif-empty p { font-size: .82rem; margin: 0; }
 </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -961,10 +1408,20 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
 
     <!-- ══ TOP BAR ════════════════════════════════════════════════════════════ -->
     <header id="topbar">
-        <button class="btn btn-sm btn-light" id="sidebarToggle">
+        <button class="btn btn-sm btn-light" id="sidebarToggle" type="button">
             <i class="bi bi-list fs-5"></i>
         </button>
         <span class="page-title">@(ViewData["Title"] ?? "Dashboard")</span>
+
+        <!-- ══ Global Search Trigger ═══════════════════════════════════════ -->
+        <button class="search-trigger-btn d-none d-md-flex" type="button" onclick="openSearchPalette()">
+            <i class="bi bi-search"></i>
+            <span>Search anything...</span>
+            <kbd>Ctrl K</kbd>
+        </button>
+        <button class="btn btn-sm btn-light d-md-none" type="button" onclick="openSearchPalette()">
+            <i class="bi bi-search"></i>
+        </button>
 
         <div class="topbar-right">
             <!-- Quick Stats -->
@@ -977,6 +1434,35 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
                 <span class="d-none d-md-inline ms-1">New Sale</span>
             </a>
 
+            <!-- ══ Notification Bell ═══════════════════════════════════════════════ -->
+            <div class="dropdown notif-dropdown">
+                <button class="topbar-icon-btn position-relative" data-bs-toggle="dropdown"
+                        onclick="loadNotificationFeed()" title="Notifications">
+                    <i class="bi bi-bell" style="font-size:.95rem;"></i>
+                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                </button>
+
+                <div class="dropdown-menu dropdown-menu-end notif-panel">
+                    <div class="notif-panel-header">
+                        <span class="fw-semibold">Notifications</span>
+                        <button class="notif-markall-btn" onclick="markAllNotificationsRead()">সব read করুন</button>
+                    </div>
+                    <div class="notif-panel-body" id="notifPanelBody">
+                        <div class="notif-empty">
+                            <i class="bi bi-bell-slash"></i>
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+                    <div class="notif-panel-footer">
+                        <a href="/Notification/Index">সব notification দেখুন</a>
+                    </div>
+                </div>
+            </div>
+            <!-- ══ Live Connection Indicator ═══════════════════════════════════════ -->
+            <div class="live-indicator" id="liveIndicator" title="Real-time connection status">
+                <span class="live-dot" id="liveDot"></span>
+                <span class="d-none d-lg-inline">Live</span>
+            </div>
             <!-- User Menu -->
             <div class="dropdown">
                 <div class="user-badge dropdown-toggle" data-bs-toggle="dropdown">
@@ -1010,6 +1496,28 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
         @RenderBody()
     </main>
 
+    <!-- ══ Global Search Command Palette ══════════════════════════════════ -->
+    <div class="search-overlay" id="searchOverlay" onclick="if(event.target===this)closeSearchPalette()">
+        <div class="search-palette">
+            <div class="search-palette-input">
+                <i class="bi bi-search"></i>
+                <input type="text" id="globalSearchInput" placeholder="Search products, customers, invoices, suppliers..." autocomplete="off" />
+                <kbd>ESC</kbd>
+            </div>
+            <div class="search-palette-results" id="searchResults">
+                <div class="search-empty-state">
+                    <i class="bi bi-search"></i>
+                    <p>প্রোডাক্ট, customer, invoice, supplier, gift card — যা খুঁজছেন টাইপ করুন</p>
+                    <div class="search-hints">
+                        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+                        <span><kbd>Enter</kbd> select</span>
+                        <span><kbd>Esc</kbd> close</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ══ SCRIPTS ════════════════════════════════════════════════════════════ -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -1019,7 +1527,8 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         // ── Sidebar Toggle ───────────────────────────────────────────────────
         $('#sidebarToggle').on('click', function () {
@@ -1084,6 +1593,347 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
         $(document).ready(function () {
         $('select.select2').select2({ theme: 'bootstrap-5', width: '100%' });
         });
+
+        // ══════════════════════════════════════════════════════════════════════
+        // GLOBAL SEARCH (Ctrl+K Command Palette)
+        // ══════════════════════════════════════════════════════════════════════
+        let searchDebounce;
+        let flatResults = [];
+        let activeIndex = -1;
+
+        function openSearchPalette() {
+            document.getElementById('searchOverlay').classList.add('open');
+            const input = document.getElementById('globalSearchInput');
+            input.value = '';
+            input.focus();
+            showEmptyState();
+        }
+
+        function closeSearchPalette() {
+            document.getElementById('searchOverlay').classList.remove('open');
+            clearTimeout(searchDebounce);
+        }
+
+        function showEmptyState() {
+            document.getElementById('searchResults').innerHTML = `
+                <div class="search-empty-state">
+                    <i class="bi bi-search"></i>
+                    <p>প্রোডাক্ট, customer, invoice, supplier, gift card — যা খুঁজছেন টাইপ করুন</p>
+                    <div class="search-hints">
+                        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+                        <span><kbd>Enter</kbd> select</span>
+                        <span><kbd>Esc</kbd> close</span>
+                    </div>
+                </div>`;
+            flatResults = [];
+            activeIndex = -1;
+        }
+
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                const overlay = document.getElementById('searchOverlay');
+                overlay.classList.contains('open') ? closeSearchPalette() : openSearchPalette();
+            }
+
+            if (e.key === 'Escape' && document.getElementById('searchOverlay').classList.contains('open')) {
+                closeSearchPalette();
+            }
+        });
+
+        document.getElementById('globalSearchInput')?.addEventListener('input', function () {
+            clearTimeout(searchDebounce);
+            const val = this.value.trim();
+
+            if (val.length < 2) {
+                showEmptyState();
+                return;
+            }
+
+            document.getElementById('searchResults').innerHTML = `<div class="search-loading">খোঁজা হচ্ছে...</div>`;
+
+            searchDebounce = setTimeout(async () => {
+                try {
+                    const groups = await fetch(`/Search/Global?keyword=${encodeURIComponent(val)}`).then(r => r.json());
+                    renderSearchResults(groups);
+                } catch {
+                    document.getElementById('searchResults').innerHTML = `<div class="search-loading">কিছু ভুল হয়েছে, আবার চেষ্টা করুন।</div>`;
+                }
+            }, 250);
+        });
+
+        function renderSearchResults(groups) {
+            flatResults = [];
+            activeIndex = -1;
+
+            if (!groups.length) {
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="search-empty-state">
+                        <i class="bi bi-emoji-frown"></i>
+                        <p>কোনো ফলাফল পাওয়া যায়নি।</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            groups.forEach(group => {
+                html += `<div class="search-cat-label">${escapeHtml(group.category)}</div>`;
+                group.items.forEach(item => {
+                    const idx = flatResults.length;
+                    flatResults.push(item);
+                    html += `
+                        <div class="search-result-item" data-idx="${idx}" data-url="${escapeHtml(item.url)}" onclick="navigateTo(this.dataset.url)">
+                            <div class="sr-icon"><i class="bi ${escapeHtml(group.icon || 'bi-search')}"></i></div>
+                            <div class="sr-text">
+                                <div class="sr-title">${escapeHtml(item.title)}</div>
+                                ${item.subtitle ? `<div class="sr-subtitle">${escapeHtml(item.subtitle)}</div>` : ''}
+                            </div>
+                            ${item.badge ? `<span class="sr-badge ${escapeHtml(item.badgeColor || 'secondary')}">${escapeHtml(item.badge)}</span>` : ''}
+                        </div>`;
+                });
+            });
+
+            document.getElementById('searchResults').innerHTML = html;
+        }
+
+        function escapeHtml(s) {
+            return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function navigateTo(url) {
+            closeSearchPalette();
+            window.location.href = url;
+        }
+
+        document.getElementById('globalSearchInput')?.addEventListener('keydown', function (e) {
+            const items = document.querySelectorAll('.search-result-item');
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+                updateActiveItem(items);
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                navigateTo(flatResults[activeIndex].url);
+            }
+        });
+
+        function updateActiveItem(items) {
+            items.forEach(i => i.classList.remove('active'));
+            if (items[activeIndex]) {
+                items[activeIndex].classList.add('active');
+                items[activeIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+
+        const BulkActions = {
+            selected: new Set(),
+            rowDataMap: {},    
+
+            init(tableSelector, checkboxClass) {
+                this.tableSelector  = tableSelector;
+                this.checkboxClass  = checkboxClass;
+                this.selected.clear();
+                this.updateToolbar();
+            },
+
+            toggleRow(id, checked, label) {
+                if (checked) { this.selected.add(id); this.rowDataMap[id] = label; }
+                else this.selected.delete(id);
+
+                $(`#row-${id}`).toggleClass('row-selected', checked);
+                this.updateToolbar();
+            },
+
+            toggleAll(checked) {
+                $(`.${this.checkboxClass}`).each((_, el) => {
+                    el.checked = checked;
+                    const id = parseInt(el.value);
+                    const label = el.dataset.label || '';
+                    this.toggleRow(id, checked, label);
+                });
+            },
+
+            clear() {
+                this.selected.clear();
+                $(`.${this.checkboxClass}`).prop('checked', false);
+                $(this.tableSelector + ' tr').removeClass('row-selected');
+                $('#selectAllCheckbox').prop('checked', false);
+                this.updateToolbar();
+            },
+
+            updateToolbar() {
+                const count = this.selected.size;
+                const toolbar = document.getElementById('bulkToolbar');
+                if (!toolbar) return;
+                toolbar.classList.toggle('show', count > 0);
+                const countEl = document.getElementById('bulkCount');
+                if (countEl) countEl.textContent = `${count} selected`;
+            },
+
+            getIds() { return Array.from(this.selected); }
+        };
+
+        function bulkCheckboxChanged(el) {
+            BulkActions.toggleRow(parseInt(el.value), el.checked, el.dataset.label || '');
+        }
+        function bulkSelectAll(el) {
+            BulkActions.toggleAll(el.checked);
+        }
+        function bulkClearSelection() {
+            BulkActions.clear();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // NOTIFICATION CENTER
+        // ══════════════════════════════════════════════════════════════════════
+        let notifLoaded = false;
+
+        // ── Initial unread count load + polling ──────────────────────────────────
+        async function refreshUnreadCount() {
+            try {
+                const data = await fetch('/Notification/UnreadCount').then(r => r.json());
+                const badge = document.getElementById('notifBadge');
+                if (data.count > 0) {
+                    badge.textContent = data.count > 99 ? '99+' : data.count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch {}
+        }
+
+        refreshUnreadCount();
+        setInterval(refreshUnreadCount, 60000); 
+
+        // ── Load full feed when bell clicked ─────────────────────────────────────
+        async function loadNotificationFeed() {
+            const body = document.getElementById('notifPanelBody');
+            body.innerHTML = `<div class="notif-empty"><i class="bi bi-hourglass-split"></i><p>Loading...</p></div>`;
+
+            try {
+                const feed = await fetch('/Notification/GetFeed').then(r => r.json());
+                renderNotifFeed(feed);
+                refreshUnreadCount();
+            } catch {
+                body.innerHTML = `<div class="notif-empty"><i class="bi bi-wifi-off"></i><p>Failed to load.</p></div>`;
+            }
+        }
+
+        function renderNotifFeed(feed) {
+            const body = document.getElementById('notifPanelBody');
+
+            if (!feed.notifications.length) {
+                body.innerHTML = `
+                    <div class="notif-empty">
+                        <i class="bi bi-bell-slash"></i>
+                        <p>কোনো notification নেই — সব ঠিক আছে!</p>
+                    </div>`;
+                return;
+            }
+
+            body.innerHTML = feed.notifications.map(n => `
+                <div class="notif-item ${n.isRead ? '' : 'unread'}" onclick="handleNotifClick(${n.id}, '${n.actionUrl || ''}')">
+                    <div class="notif-icon ${n.severity}"><i class="bi ${n.icon}"></i></div>
+                    <div class="notif-content">
+                        <div class="notif-title">${escapeHtmlNotif(n.title)}</div>
+                        <div class="notif-msg">${escapeHtmlNotif(n.message)}</div>
+                        <div class="notif-time">${n.timeAgo}</div>
+                    </div>
+                    <button class="notif-close-btn" onclick="event.stopPropagation();dismissNotif(${n.id}, this)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>`).join('');
+        }
+
+        function escapeHtmlNotif(s) {
+            return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        // ── Click → mark read + navigate ──────────────────────────────────────────
+        function handleNotifClick(id, url) {
+            $.post('/Notification/MarkAsRead', { id, __RequestVerificationToken: notifTok() });
+            if (url) window.location.href = url;
+            else { refreshUnreadCount(); }
+        }
+
+        function dismissNotif(id, btn) {
+            $.post('/Notification/Delete', { id, __RequestVerificationToken: notifTok() }, () => {
+                btn.closest('.notif-item').remove();
+                refreshUnreadCount();
+            });
+        }
+
+        function markAllNotificationsRead() {
+            $.post('/Notification/MarkAllAsRead', { __RequestVerificationToken: notifTok() }, d => {
+                if (d.success) {
+                    toastr.success(d.message);
+                    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+                    refreshUnreadCount();
+                }
+            });
+        }
+
+        function notifTok() {
+            return document.querySelector('[name=__RequestVerificationToken]')?.value || '';
+        }
+
+
+        let appHubConnection = null;
+
+        function setLiveStatus(status) {
+            const dot = document.getElementById('liveDot');
+            if (!dot) return;
+            dot.className = 'live-dot ' + status;  // connected | connecting | disconnected
+        }
+
+        async function startSignalRConnection() {
+            if (typeof signalR === 'undefined') return;
+
+            appHubConnection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/app')
+                .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])  // exponential-ish backoff
+                .configureLogging(signalR.LogLevel.Warning)
+                .build();
+
+            appHubConnection.onreconnecting(() => setLiveStatus('connecting'));
+            appHubConnection.onreconnected(() => setLiveStatus('connected'));
+            appHubConnection.onclose(() => setLiveStatus('disconnected'));
+
+        
+            appHubConnection.on('StockUpdated', data => {
+                document.dispatchEvent(new CustomEvent('rt:stockUpdated', { detail: data }));
+            });
+
+            appHubConnection.on('SaleCompleted', data => {
+                document.dispatchEvent(new CustomEvent('rt:saleCompleted', { detail: data }));
+            });
+
+            appHubConnection.on('LowStockAlert', data => {
+                document.dispatchEvent(new CustomEvent('rt:lowStockAlert', { detail: data }));
+              
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning(`${data.productName} — মাত্র ${data.quantity} pcs বাকি!`, 'Low Stock', { timeOut: 4000 });
+                }
+            });
+
+            try {
+                await appHubConnection.start();
+                setLiveStatus('connected');
+            } catch (err) {
+                setLiveStatus('disconnected');
+                console.warn('[SignalR] Connection failed:', err);
+                setTimeout(startSignalRConnection, 5000); 
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', startSignalRConnection);
 
     </script>
             
@@ -1150,7 +2000,7 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
                     });
 
                     function showInstallButton() {
-                    // Topbar এ install button দেখাও
+             
                     const topbar = document.querySelector('.topbar-right');
                     if (!topbar || document.getElementById('pwa-install-btn')) return;
 
@@ -1180,5 +2030,13 @@ hr { border-color: var(--border); opacity: 1; margin: 16px 0; }
                     });
                 </script>
     @await RenderSectionAsync("Scripts", required: false)
+
+<div class="bulk-toolbar" id="bulkToolbar">
+    <span class="bt-count" id="bulkCount">0 selected</span>
+    <div id="bulkActionButtons" class="d-flex gap-2"></div>
+    <button class="bt-close" onclick="bulkClearSelection()" title="Clear selection">
+        <i class="bi bi-x-lg"></i>
+    </button>
+</div>
 </body>
 </html>

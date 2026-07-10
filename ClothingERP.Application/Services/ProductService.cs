@@ -121,6 +121,128 @@ public class ProductService : IProductService
             "Product created successfully.");
     }
 
+    // ── Bulk Price Update ──────────────────────────────────────────────────
+    public async Task<BulkActionResultDto> BulkUpdatePriceAsync(BulkPriceUpdateDto dto, int userId)
+    {
+        var result = new BulkActionResultDto();
+
+        var products = await _uow.Products.GetQueryable()
+            .Where(p => dto.ProductIds.Contains(p.Id) && !p.IsDeleted)
+            .ToListAsync();
+
+        foreach (var product in products)
+        {
+            try
+            {
+                decimal ApplyChange(decimal current)
+                {
+                    decimal delta = dto.Mode == "Percent" ? current * (dto.Value / 100m) : dto.Value;
+                    var newVal = dto.Direction == "Increase" ? current + delta : current - delta;
+                    return Math.Max(0, Math.Round(newVal, 2));
+                }
+
+                if (dto.PriceField is "RetailPrice" or "Both")
+                    product.RetailPrice = ApplyChange(product.RetailPrice);
+
+                if (dto.PriceField is "CostPrice" or "Both")
+                    product.CostPrice = ApplyChange(product.CostPrice);
+
+                product.UpdatedBy = userId;
+                product.UpdatedAt = DateTime.UtcNow;
+                _uow.Products.Update(product);
+                result.SuccessCount++;
+            }
+            catch (Exception ex)
+            {
+                result.FailCount++;
+                result.Errors.Add($"{product.Name}: {ex.Message}");
+            }
+        }
+
+        await _uow.SaveChangesAsync();
+        result.Success = result.SuccessCount > 0;
+        result.Message = $"{result.SuccessCount} product(s) updated successfully" +
+                          (result.FailCount > 0 ? $", {result.FailCount} failed." : ".");
+        return result;
+    }
+
+    // ── Bulk Status Toggle ─────────────────────────────────────────────────
+    public async Task<BulkActionResultDto> BulkToggleStatusAsync(BulkStatusUpdateDto dto, int userId)
+    {
+        var result = new BulkActionResultDto();
+        var products = await _uow.Products.GetQueryable()
+            .Where(p => dto.Ids.Contains(p.Id) && !p.IsDeleted)
+            .ToListAsync();
+
+        foreach (var product in products)
+        {
+            product.IsActive = dto.IsActive;
+            product.UpdatedBy = userId;
+            product.UpdatedAt = DateTime.UtcNow;
+            _uow.Products.Update(product);
+            result.SuccessCount++;
+        }
+
+        await _uow.SaveChangesAsync();
+        result.Success = true;
+        result.Message = $"{result.SuccessCount} product(s) {(dto.IsActive ? "activated" : "deactivated")}.";
+        return result;
+    }
+
+    // ── Bulk Delete (soft delete) ──────────────────────────────────────────
+    public async Task<BulkActionResultDto> BulkDeleteAsync(BulkDeleteDto dto)
+    {
+        var result = new BulkActionResultDto();
+        var products = await _uow.Products.GetQueryable()
+            .Where(p => dto.Ids.Contains(p.Id) && !p.IsDeleted)
+            .ToListAsync();
+
+        foreach (var product in products)
+        {
+            try
+            {
+                _uow.Products.Remove(product); // soft delete (IsDeleted = true via base repository)
+                result.SuccessCount++;
+            }
+            catch (Exception ex)
+            {
+                result.FailCount++;
+                result.Errors.Add($"{product.Name}: {ex.Message}");
+            }
+        }
+
+        await _uow.SaveChangesAsync();
+        result.Success = result.SuccessCount > 0;
+        result.Message = $"{result.SuccessCount} product(s) deleted" +
+                          (result.FailCount > 0 ? $", {result.FailCount} failed." : ".");
+        return result;
+    }
+
+    // ── Bulk Category/Brand Reassign ───────────────────────────────────────
+    public async Task<BulkActionResultDto> BulkUpdateCategoryAsync(BulkCategoryUpdateDto dto, int userId)
+    {
+        var result = new BulkActionResultDto();
+        var products = await _uow.Products.GetQueryable()
+            .Where(p => dto.ProductIds.Contains(p.Id) && !p.IsDeleted)
+            .ToListAsync();
+
+        foreach (var product in products)
+        {
+            if (dto.CategoryId.HasValue) product.CategoryId = dto.CategoryId.Value;
+            if (dto.SubCategoryId.HasValue) product.SubCategoryId = dto.SubCategoryId.Value;
+            if (dto.BrandId.HasValue) product.BrandId = dto.BrandId.Value;
+            product.UpdatedBy = userId;
+            product.UpdatedAt = DateTime.UtcNow;
+            _uow.Products.Update(product);
+            result.SuccessCount++;
+        }
+
+        await _uow.SaveChangesAsync();
+        result.Success = true;
+        result.Message = $"{result.SuccessCount} product(s) re-categorized successfully.";
+        return result;
+    }
+
     // ── Update ────────────────────────────────────────────────────────────
     public async Task<ServiceResult<ProductDto>> UpdateAsync(
         int id, UpdateProductDto dto, int updatedBy)

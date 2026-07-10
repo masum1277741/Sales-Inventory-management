@@ -1,0 +1,107 @@
+﻿@model IEnumerable<CommissionTransactionDto>
+@{
+    ViewData["Title"] = "Commission Details"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-person-badge me-2 text-primary"></i>@ViewBag.UserName — Commission History</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Commission</a></li>
+                <li class="breadcrumb-item active">Details</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card border-start border-3 border-warning">
+            <div class="text-muted small">Pending Payout</div>
+            <h4 class="fw-bold mb-0" style="color:#78350f;">$@((decimal)ViewBag.Pending).ToString("N2")</h4>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card"><div class="text-muted small">Total Paid</div><h4 class="fw-bold mb-0" style="color:#065f46;">$@((decimal)ViewBag.Paid).ToString("N2")</h4></div>
+    </div>
+    <div class="col-sm-4 d-flex align-items-end">
+        <button class="btn btn-success w-100" id="markPaidBtn" onclick="markSelectedPaid()" disabled>
+            <i class="bi bi-cash-coin me-1"></i>Mark Selected as Paid
+        </button>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table id="histTable" class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="40"><input type="checkbox" id="selectAll" onclick="toggleAll(this)" /></th>
+                        <th>Date</th>
+                        <th>Invoice</th>
+                        <th class="text-end">Sale Amount</th>
+                        <th class="text-center">Rate</th>
+                        <th class="text-end">Commission</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in items)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                @if (t.Status == "Pending")
+                                {
+                                    <input type="checkbox" class="rowCheck" value="@t.Id" onclick="updateBtn()" />
+                                }
+                            </td>
+                            <td class="small">@t.TransactionDate.ToString("dd MMM yyyy")</td>
+                            <td><code class="small">@t.InvoiceNumber</code></td>
+                            <td class="text-end">$@t.SaleAmount.ToString("N2")</td>
+                            <td class="text-center">@t.CommissionPercent.ToString("N1")%</td>
+                            <td class="text-end fw-bold">$@t.CommissionAmount.ToString("N2")</td>
+                            <td class="text-center">
+                                @{
+                                    var cls = t.Status switch { "Paid" => "bg-success", "Reversed" => "bg-danger", _ => "bg-warning text-dark" };
+                                }
+                                <span class="badge @cls">@t.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+@section Scripts {
+    <script>
+        $(function () { initDataTable('#histTable', { order: [[1,'desc']], paging: false } ); });
+
+        function toggleAll(src) { $('.rowCheck').prop('checked', src.checked); updateBtn(); }
+        function updateBtn() { $('#markPaidBtn').prop('disabled', $('.rowCheck:checked').length === 0); }
+
+        function markSelectedPaid() {
+            const ids = $('.rowCheck:checked').map(function() { return parseInt(this.value); }).get();
+            if (!ids.length) return;
+
+            Swal.fire({ title: `Mark ${ids.length} commission(s) as paid?`, icon: 'question', showCancelButton: true })
+            .then(r => {
+                if (r.isConfirmed) {
+                    fetch('/Commission/MarkAsPaid', {
+                        method: 'POST',
+                        headers: { 'Content-Type':'application/json', 'RequestVerificationToken': $('[name=__RequestVerificationToken]').val() },
+                        body: JSON.stringify({ transactionIds: ids })
+                    }).then(r => r.json()).then(d => {
+                        if (d.success) { toastr.success(d.message); location.reload(); }
+                        else toastr.error(d.message);
+                    });
+                }
+            });
+        }
+    </script>
+}

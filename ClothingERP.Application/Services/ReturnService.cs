@@ -2,8 +2,13 @@
 
 public class ReturnService : IReturnService
 {
-    private readonly IUnitOfWork _uow; private readonly IMapper _mapper; private readonly IStockService _stock;
-    public ReturnService(IUnitOfWork uow, IMapper mapper, IStockService stock) => (_uow, _mapper, _stock) = (uow, mapper, stock);
+    private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
+    private readonly IStockService _stock;
+    private readonly IGiftCardService _giftCardSvc;
+
+    public ReturnService(IUnitOfWork uow, IMapper mapper, IStockService stock, IGiftCardService giftCardService)
+        => (_uow, _mapper, _stock, _giftCardSvc) = (uow, mapper, stock, giftCardService);
 
     public async Task<IEnumerable<SalesReturnListDto>> GetAllSalesReturnsAsync()
     {
@@ -61,6 +66,25 @@ public class ReturnService : IReturnService
             ret.TotalAmount = total;
             await _uow.SalesReturns.AddAsync(ret);
             await _uow.SaveChangesAsync();
+
+            // Store Credit Refund Logic - যখন refund method "StoreCredit" বাছা হবে
+            if (dto.RefundMethod == RefundMethod.StoreCredit && ret.CustomerId.HasValue)
+            {
+                var storeCreditResult = await _giftCardSvc.IssueStoreCreditAsync(new IssueStoreCreditDto
+                {
+                    CustomerId = ret.CustomerId.Value,
+                    Amount = ret.RefundAmount,
+                    SourceReturnId = ret.Id,
+                    Notes = $"Refund for return {ret.ReturnNumber}"
+                }, userId);
+
+                if (!storeCreditResult.Success)
+                {
+                    await _uow.RollbackTransactionAsync();
+                    return ServiceResult<SalesReturnDto>.Fail($"Store credit issuance failed: {storeCreditResult.Message}");
+                }
+            }
+
             await _uow.CommitTransactionAsync();
 
             var result = await _uow.SalesReturns.GetWithDetailsAsync(ret.Id);

@@ -1,12 +1,18 @@
-﻿namespace ClothingERP.Infrastructure.Repositories;
+﻿using ClothingERP.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace ClothingERP.Infrastructure.Repositories;
 
 public class StockRepository : GenericRepository<Stock>, IStockRepository
 {
     public StockRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<Stock?> GetByVariantIdAsync(int variantId)
-        => await _dbSet.Include(s => s.ProductVariant).ThenInclude(v => v.Product)
-                       .FirstOrDefaultAsync(s => s.ProductVariantId == variantId);
+        => await _dbSet
+            .Include(s => s.ProductVariant).ThenInclude(v => v.Product)
+            .Include(s => s.ProductVariant).ThenInclude(v => v.Size)
+            .Include(s => s.ProductVariant).ThenInclude(v => v.Color)
+            .FirstOrDefaultAsync(s => s.ProductVariantId == variantId && !s.IsDeleted);
 
     public async Task<Stock?> GetWithMovementsAsync(int stockId)
         => await _dbSet
@@ -44,4 +50,27 @@ public class StockRepository : GenericRepository<Stock>, IStockRepository
         => await _dbSet
             .Where(s => s.Quantity > 0)
             .SumAsync(s => s.Quantity * (s.ProductVariant.CostPriceOverride ?? s.ProductVariant.Product.CostPrice));
+
+    public async Task<bool> TryDecrementAsync(int variantId, int quantity)
+    {
+        var rows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE Stocks
+            SET Quantity = Quantity - {quantity}, UpdatedAt = {DateTime.UtcNow}
+            WHERE ProductVariantId = {variantId}
+              AND Quantity >= {quantity}
+              AND IsDeleted = 0");
+
+        return rows > 0;  
+    }
+
+    public async Task<bool> IncrementAsync(int variantId, int quantity)
+    {
+        var rows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE Stocks
+            SET Quantity = Quantity + {quantity}, UpdatedAt = {DateTime.UtcNow}
+            WHERE ProductVariantId = {variantId}
+              AND IsDeleted = 0");
+
+        return rows > 0;
+    }
 }

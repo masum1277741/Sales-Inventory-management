@@ -1,0 +1,39 @@
+﻿@model ClothingERP.Application.DTOs.DashboardDto
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+        <span class="fw-semibold"><i class="bi bi-box-seam me-2 text-warning"></i>Low Stock Detail</span>
+        <a asp-controller="Stock" asp-action="Index" class="btn btn-sm btn-light">View All</a>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.LowStockAlerts.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var item in Model.LowStockAlerts)
+                {
+                    <div class="list-group-item border-0 px-4 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold small">@item.ProductName</div>
+                                <small class="text-muted">@item.SizeName · @item.ColorName</small>
+                                <br /><small class="text-muted font-monospace">@item.Barcode</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge @(item.Quantity <= 0 ? "bg-danger" : "bg-warning text-dark") rounded-pill fs-6 px-3">
+                                    @item.Quantity
+                                </span>
+                                <br /><small class="text-muted">pcs left</small>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-check-circle fs-2 text-success"></i>
+                <p class="mt-2 small">All stock levels are healthy!</p>
+            </div>
+        }
+    </div>
+</div>

@@ -3,7 +3,9 @@
 public class CustomerService : ICustomerService
 {
     private readonly IUnitOfWork _uow; private readonly IMapper _mapper;
-    public CustomerService(IUnitOfWork uow, IMapper mapper) => (_uow, _mapper) = (uow, mapper);
+    private readonly INotificationService _notificationSvc;
+    public CustomerService(IUnitOfWork uow, IMapper mapper, INotificationService notificationService)
+     => (_uow, _mapper, _notificationSvc) = (uow, mapper, notificationService);
 
     public async Task<IEnumerable<CustomerListDto>> GetAllAsync()
     {
@@ -165,13 +167,26 @@ public class CustomerService : ICustomerService
         };
         await _uow.CustomerPayments.AddAsync(payment);
 
-     
+
         customer.CurrentBalance = Math.Max(0, customer.CurrentBalance - amount);
         customer.UpdatedBy = userId;
         customer.UpdatedAt = DateTime.UtcNow;
         _uow.Customers.Update(customer);
 
         await _uow.SaveChangesAsync();
+
+        // ── Payment Received Notification ─────────────────────────────────
+        await _notificationSvc.CreateAsync(new CreateNotificationDto
+        {
+            UserId = null,
+            Title = "Payment Received",
+            Message = $"{customer.Name} থেকে ${amount:N2} পেমেন্ট পাওয়া গেছে।",
+            Type = "Payment",
+            Severity = "success",
+            Icon = "bi-cash-coin",
+            ActionUrl = $"/Customer/Ledger/{customerId}"
+        });
+
         return ServiceResult.Ok("Payment recorded successfully.");
     }
 

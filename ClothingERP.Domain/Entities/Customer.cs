@@ -13,7 +13,7 @@ public class Customer : BaseEntity
     public decimal TotalPurchaseAmount { get; set; }
     public decimal CurrentBalance { get; set; } // positive = customer owes us
     public bool IsActive { get; set; } = true;
-
+    public DateTime? DateOfBirth { get; set; }
     public virtual CustomerGroup CustomerGroup { get; set; } = null!;
     public virtual ICollection<SalesInvoice> SalesInvoices { get; set; } = new List<SalesInvoice>();
     public virtual ICollection<CustomerLedger> LedgerEntries { get; set; } = new List<CustomerLedger>();

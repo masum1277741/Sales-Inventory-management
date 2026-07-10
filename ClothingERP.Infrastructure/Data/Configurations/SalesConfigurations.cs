@@ -11,6 +11,10 @@ public class SalesInvoiceConfiguration : IEntityTypeConfiguration<SalesInvoice>
         builder.Property(x => x.TaxAmount).HasColumnType("decimal(18,2)");
         builder.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
         builder.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.TotalAmountBDT).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.TotalAmountMVR).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.ExchangeRateBDT).HasPrecision(18, 6);
+        builder.Property(x => x.ExchangeRateMVR).HasPrecision(18, 6);
         builder.Property(x => x.Notes).HasMaxLength(1000);
         builder.HasIndex(x => x.InvoiceNumber).IsUnique();
         builder.HasIndex(x => x.InvoiceDate);

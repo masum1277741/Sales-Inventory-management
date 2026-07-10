@@ -1146,10 +1146,10 @@ namespace ClothingERP.Infrastructure.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("ExchangeRateBDT")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<decimal?>("ExchangeRateMVR")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<DateTime>("InvoiceDate")
                         .HasColumnType("datetime2");

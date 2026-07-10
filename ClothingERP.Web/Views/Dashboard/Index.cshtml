@@ -2,374 +2,169 @@
 @{
     ViewData["Title"] = "Dashboard";
     var today = DateTime.Now.ToString("dddd, dd MMMM yyyy");
+
+    var layout     = (List<WidgetConfigDto>)ViewBag.WidgetLayout;
+    var allWidgets = (List<WidgetDefinitionDto>)ViewBag.AvailableWidgets;
+
+    string SizeClass(string size) => size switch
+    {
+        "Small"  => "col-6 col-md-3",
+        "Medium" => "col-md-6",
+        "Large"  => "col-lg-8",
+        "Full"   => "col-12",
+        _        => "col-md-6"
+    };
 }
 
-<!-- ── Page Header ─────────────────────────────────────────────────────── -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-0">Dashboard</h4>
         <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>@today</small>
     </div>
-    <a asp-controller="Sales" asp-action="POS" class="btn btn-primary">
-        <i class="bi bi-cart-plus me-1"></i>New Sale
-    </a>
-</div>
-
-<!-- ── Row 1: Today Stats ──────────────────────────────────────────────── -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted small mb-1">Today's Sales</p>
-                    <h4 class="fw-bold mb-0">৳@Model.TodaySales</h4>
-                    <small class="text-muted">@Model.TodayInvoiceCount invoices</small>
-                </div>
-                <div class="icon-wrap" style="background:#e8f0fe;">
-                    <i class="bi bi-cash-coin" style="color:#4f7cff;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted small mb-1">Today's Profit</p>
-                    <h4 class="fw-bold mb-0 @(Model.TodayProfit >= 0 ? "text-success" : "text-danger")">
-                        ৳@Model.TodayProfit
-                    </h4>
-                    <small class="text-muted">Net earning</small>
-                </div>
-                <div class="icon-wrap" style="background:#e8f5e9;">
-                    <i class="bi bi-graph-up-arrow" style="color:#43a047;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted small mb-1">Stock Value</p>
-                    <h4 class="fw-bold mb-0">৳@Model.TotalStockValue</h4>
-                    <small class="text-muted">Total inventory</small>
-                </div>
-                <div class="icon-wrap" style="background:#fff3e0;">
-                    <i class="bi bi-archive" style="color:#f57c00;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <p class="text-muted small mb-1">Active Customers</p>
-                    <h4 class="fw-bold mb-0">@Model.TotalActiveCustomers</h4>
-                    <small class="text-muted">Total registered</small>
-                </div>
-                <div class="icon-wrap" style="background:#f3e5f5;">
-                    <i class="bi bi-people" style="color:#8e24aa;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ── Row 2: Alerts ───────────────────────────────────────────────────── -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <a asp-controller="Stock" asp-action="Index" asp-route-filter="low" class="text-decoration-none">
-            <div class="stat-card h-100 border-start border-3 border-warning">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="icon-wrap" style="background:#fff8e1;">
-                        <i class="bi bi-exclamation-triangle" style="color:#f9a825;"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold mb-0 text-warning">@Model.LowStockCount</h5>
-                        <small class="text-muted">Low Stock Items</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a asp-controller="Stock" asp-action="Index" asp-route-filter="out" class="text-decoration-none">
-            <div class="stat-card h-100 border-start border-3 border-danger">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="icon-wrap" style="background:#fce4ec;">
-                        <i class="bi bi-x-circle" style="color:#e53935;"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold mb-0 text-danger">@Model.OutOfStockCount</h5>
-                        <small class="text-muted">Out of Stock</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a asp-controller="Report" asp-action="CustomerDue" class="text-decoration-none">
-            <div class="stat-card h-100 border-start border-3 border-info">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="icon-wrap" style="background:#e3f2fd;">
-                        <i class="bi bi-person-lines-fill" style="color:#1e88e5;"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold mb-0 text-info">৳@Model.TotalCustomerDue</h5>
-                        <small class="text-muted">Customer Due</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-6 col-md-3">
-        <a asp-controller="Report" asp-action="SupplierDue" class="text-decoration-none">
-            <div class="stat-card h-100 border-start border-3 border-secondary">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="icon-wrap" style="background:#f5f5f5;">
-                        <i class="bi bi-truck" style="color:#546e7a;"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold mb-0 text-secondary">৳@Model.TotalSupplierDue</h5>
-                        <small class="text-muted">Supplier Due</small>
-                    </div>
-                </div>
-            </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-light border" onclick="openCustomizeModal()">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Customize Dashboard
+        </button>
+        <a asp-controller="Sales" asp-action="POS" class="btn btn-primary">
+            <i class="bi bi-cart-plus me-1"></i>New Sale
         </a>
     </div>
 </div>
 
-<!-- ── Row 3: Chart + Top Products ───────────────────────────────────────── -->
-<div class="row g-3 mb-4">
-    <!-- Monthly Sales Chart -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-                <span class="fw-semibold"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Monthly Sales Overview (@DateTime.Now.Year)</span>
-            </div>
-            <div class="card-body">
-                <canvas id="salesChart" style="max-height:280px;"></canvas>
+<div class="row g-3" id="widgetContainer">
+    @foreach (var w in layout.Where(x => x.IsVisible).OrderBy(x => x.Order))
+    {
+        <div class="@SizeClass(w.Size) widget-wrapper" data-widget-key="@w.WidgetKey">
+            @await Html.PartialAsync($"~/Views/Dashboard/Widgets/_{w.WidgetKey}.cshtml", Model)
+        </div>
+    }
+
+    @if (!layout.Any(x => x.IsVisible))
+    {
+        <div class="col-12">
+            <div class="card border-0 shadow-sm text-center py-5 text-muted">
+                <i class="bi bi-grid-3x3-gap d-block mb-2" style="font-size:2.5rem;"></i>
+                সব widget বন্ধ আছে। "Customize Dashboard" থেকে চালু করুন।
             </div>
         </div>
-    </div>
+    }
+</div>
 
-    <!-- Top Selling Products -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-bottom py-3">
-                <span class="fw-semibold"><i class="bi bi-trophy me-2 text-warning"></i>Top Products (30 days)</span>
+<!-- ══ Customize Modal ══════════════════════════════════════════════════ -->
+<div class="modal fade" id="customizeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Customize Dashboard</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="card-body p-0">
-                @if (Model.TopSellingProducts.Any())
-                {
-                    <div class="list-group list-group-flush">
-                        @foreach (var (product, index) in Model.TopSellingProducts.Select((p, i) => (p, i + 1)))
-                        {
-                            <div class="list-group-item border-0 px-4 py-3">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="fw-bold text-muted" style="width:20px;">@index</div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-semibold small">@product.ProductName</div>
-                                        <small class="text-muted">@product.QuantitySold.ToString("N0") sold</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold small text-success">৳@product.TotalRevenue</div>
-                                    </div>
-                                </div>
+            <div class="modal-body">
+                <p class="text-muted small">Drag <i class="bi bi-grip-vertical"></i> দিয়ে সাজান, চেকবক্স দিয়ে দেখান/লুকান।</p>
+                <div id="widgetConfigList">
+                    @foreach (var w in layout.OrderBy(x => x.Order))
+                    {
+                        var def = allWidgets.First(d => d.WidgetKey == w.WidgetKey);
+                        <div class="widget-config-row" data-key="@w.WidgetKey" data-size="@w.Size">
+                            <i class="bi bi-grip-vertical drag-handle"></i>
+                            <i class="bi @def.Icon"></i>
+                            <span class="flex-grow-1">@def.Title</span>
+                            @if (def.AllowResize)
+                            {
+                                <select class="form-select form-select-sm size-select" style="width:90px;">
+                                    <option value="Small"  selected="@(w.Size == "Small")">Small</option>
+                                    <option value="Medium" selected="@(w.Size == "Medium")">Medium</option>
+                                    <option value="Large"  selected="@(w.Size == "Large")">Large</option>
+                                    <option value="Full"   selected="@(w.Size == "Full")">Full</option>
+                                </select>
+                            }
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input visibility-toggle" type="checkbox" @(w.IsVisible ? "checked" : "") />
                             </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-4 text-muted">
-                        <i class="bi bi-inbox fs-2"></i>
-                        <p class="mt-2 small">No sales data yet</p>
-                    </div>
-                }
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-light" onclick="resetLayout()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Default
+                </button>
+                <button class="btn btn-primary px-4" onclick="saveLayout()">
+                    <i class="bi bi-check-lg me-1"></i>Save Layout
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ── Row 4: Recent Invoices + Low Stock Alerts ────────────────────────── -->
-<div class="row g-3">
-    <!-- Recent Invoices -->
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-                <span class="fw-semibold"><i class="bi bi-receipt me-2 text-primary"></i>Recent Invoices</span>
-                <a asp-controller="Sales" asp-action="Index" class="btn btn-sm btn-light">View All</a>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.RecentInvoices.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Invoice #</th>
-                                    <th>Customer</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var inv in Model.RecentInvoices)
-                                {
-                                    <tr>
-                                        <td class="ps-4">
-                                            <a asp-controller="Sales" asp-action="Details"
-                                                   asp-route-id="@inv.Id" class="fw-semibold text-primary text-decoration-none">
-                                                @inv.InvoiceNumber
-                                            </a>
-                                            <br /><small class="text-muted">@inv.InvoiceDate.ToString("dd MMM, hh:mm tt")</small>
-                                        </td>
-                                        <td>
-                                            <span class="fw-semibold small">@inv.CustomerName</span>
-                                        </td>
-                                        <td>
-                                            <div class="fw-bold">৳@inv.TotalAmount</div>
-                                            @if (inv.DueAmount > 0)
-                                            {
-                                                <small class="text-danger">Due: ৳@inv.DueAmount</small>
-                                            }
-                                        </td>
-                                        <td>
-                                            @{
-                                                var (cls, label) = inv.Status switch
-                                                {
-                                                    "FullyPaid" => ("bg-success", "Paid"),
-                                                    "PartiallyPaid" => ("bg-warning text-dark", "Partial"),
-                                                    "Confirmed" => ("bg-info", "Confirmed"),
-                                                    "Cancelled" => ("bg-secondary", "Cancelled"),
-                                                    _ => ("bg-light text-dark", inv.Status)
-                                                };
-                                            }
-                                            <span class="badge @cls rounded-pill">@label</span>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-4 text-muted">
-                        <i class="bi bi-receipt fs-2"></i>
-                        <p class="mt-2 small">No invoices today</p>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
+@Html.AntiForgeryToken()
 
-    <!-- Low Stock Alerts -->
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-                <span class="fw-semibold"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Low Stock Alerts</span>
-                <a asp-controller="Stock" asp-action="Index" class="btn btn-sm btn-light">View All</a>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.LowStockAlerts.Any())
-                {
-                    <div class="list-group list-group-flush">
-                        @foreach (var item in Model.LowStockAlerts)
-                        {
-                            <div class="list-group-item border-0 px-4 py-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="fw-semibold small">@item.ProductName</div>
-                                        <small class="text-muted">@item.SizeName · @item.ColorName</small>
-                                        <br /><small class="text-muted font-monospace">@item.Barcode</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="badge @(item.Quantity <= 0 ? "bg-danger" : "bg-warning text-dark") rounded-pill fs-6 px-3">
-                                            @item.Quantity
-                                        </span>
-                                        <br /><small class="text-muted">pcs left</small>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-4 text-muted">
-                        <i class="bi bi-check-circle fs-2 text-success"></i>
-                        <p class="mt-2 small">All stock levels are healthy!</p>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.css" />
+    <style>
+        .widget-config-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 8px; border-bottom: 1px solid var(--border);
+        }
+        .widget-config-row .drag-handle { cursor: grab; color: #bbb; }
+        .widget-config-row:last-child { border-bottom: none; }
+    </style>
+}
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     <script>
-        (function () {
-            const labels  = @Json.Serialize(Model.MonthlySalesChart.Select(m => m.Month).ToList());
-            const sales   = @Json.Serialize(Model.MonthlySalesChart.Select(m => m.SalesAmount).ToList());
-            const profits = @Json.Serialize(Model.MonthlySalesChart.Select(m => m.ProfitAmount).ToList());
+        let sortableInstance = null;
 
-            const ctx = document.getElementById('salesChart');
-            if (!ctx) return;
+        function openCustomizeModal() {
+        new bootstrap.Modal('#customizeModal').show();
+        if (!sortableInstance) {
+        sortableInstance = new Sortable(document.getElementById('widgetConfigList'), {
+        handle: '.drag-handle',
+        animation: 150
+        });
+        }
+        }
 
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            label: 'Sales (৳)',
-                            data: sales,
-                            backgroundColor: 'rgba(79, 124, 255, 0.85)',
-                            borderRadius: 6,
-                            order: 2
-                        },
-                        {
-                            label: 'Profit (৳)',
-                            data: profits,
-                            type: 'line',
-                            borderColor: '#43a047',
-                            backgroundColor: 'rgba(67,160,71,.12)',
-                            borderWidth: 2.5,
-                            tension: .35,
-                            fill: true,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#43a047',
-                            order: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    interaction: { intersect: false, mode: 'index' },
-                    plugins: {
-                        legend: { position: 'top', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ` ${ctx.dataset.label}: ৳${ctx.parsed.y.toLocaleString()}`
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(0,0,0,.04)' },
-                            ticks: {
-                                callback: v => '৳' + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v)
-                            }
-                        },
-                        x: { grid: { display: false } }
-                    }
-                }
+        function collectLayoutFromModal() {
+            const rows = document.querySelectorAll('#widgetConfigList .widget-config-row');
+            const widgets = [];
+            rows.forEach((row, index) => {
+                const sizeSelect = row.querySelector('.size-select');
+                widgets.push({
+                    widgetKey: row.dataset.key,
+                    order: index,
+                    size: sizeSelect ? sizeSelect.value : row.dataset.size,
+                    isVisible: row.querySelector('.visibility-toggle').checked
+                });
             });
-        })();
+            return { widgets };
+        }
+
+        async function saveLayout() {
+        const rows = document.querySelectorAll('.widget-config-row');
+        const widgets = Array.from(rows).map((row, idx) => ({
+        widgetKey: row.dataset.key,
+        order:     idx,
+        isVisible: row.querySelector('.visibility-toggle').checked,
+        size:      row.querySelector('.size-select')?.value || row.dataset.size || 'Medium'
+        }));
+
+        fetch('/Dashboard/SaveLayout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': $('[name=__RequestVerificationToken]').val() },
+        body: JSON.stringify({ widgets })
+        }).then(r => r.json()).then(d => {
+        if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 600); }
+        else toastr.error(d.message);
+        });
+        }
+        async function resetLayout() {
+        Swal.fire({ title: 'Default layout এ ফিরে যাবেন?', icon: 'question', showCancelButton: true })
+        .then(r => { if (r.isConfirmed) {
+        $.post('/Dashboard/ResetLayout', { __RequestVerificationToken: $('[name=__RequestVerificationToken]').val() }, d => {
+        if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 600); }
+        });
+        }});
+        }
     </script>
 }

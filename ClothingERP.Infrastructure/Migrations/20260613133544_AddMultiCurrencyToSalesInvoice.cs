@@ -13,13 +13,13 @@ namespace ClothingERP.Infrastructure.Migrations
             migrationBuilder.AddColumn<decimal>(
                 name: "ExchangeRateBDT",
                 table: "SalesInvoices",
-                type: "decimal(18,2)",
+                type: "decimal(18,6)",
                 nullable: true);
 
             migrationBuilder.AddColumn<decimal>(
                 name: "ExchangeRateMVR",
                 table: "SalesInvoices",
-                type: "decimal(18,2)",
+                type: "decimal(18,6)",
                 nullable: true);
 
             migrationBuilder.AddColumn<decimal>(

@@ -5,9 +5,12 @@ public class PurchaseService : IPurchaseService
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
     private readonly IStockService _stock;
+    private readonly INotificationService _notificationSvc;
+    private readonly IRealtimeNotifier _realtime; 
 
-    public PurchaseService(IUnitOfWork uow, IMapper mapper, IStockService stock)
-        => (_uow, _mapper, _stock) = (uow, mapper, stock);
+    public PurchaseService(IUnitOfWork uow, IMapper mapper, IStockService stock,
+        INotificationService notificationService, IRealtimeNotifier realtime)
+        => (_uow, _mapper, _stock, _notificationSvc, _realtime) = (uow, mapper, stock, notificationService, realtime);
 
     public async Task<IEnumerable<PurchaseOrderListDto>> GetAllOrdersAsync()
     {
@@ -59,6 +62,20 @@ public class PurchaseService : IPurchaseService
 
         await _uow.PurchaseOrders.AddAsync(po);
         await _uow.SaveChangesAsync();
+
+        // ── Purchase Order Needs Approval Notification ───────────────────
+        var supplier = await _uow.Suppliers.GetByIdAsync(po.SupplierId);
+        await _notificationSvc.CreateAsync(new CreateNotificationDto
+        {
+            UserId = null,
+            Title = "Purchase Order Needs Approval",
+            Message = $"{po.PONumber} ({supplier?.CompanyName}) — ${po.TotalAmount:N2} approval এর জন্য অপেক্ষমাণ।",
+            Type = "PendingApproval",
+            Severity = "info",
+            Icon = "bi-bag-check",
+            ActionUrl = $"/Purchase/Details/{po.Id}",
+            DedupeKey = $"po-pending-{po.Id}"
+        });
 
         // Supplier ledger entry
         await AddSupplierLedgerEntry(po.SupplierId, LedgerEntryType.Invoice,
@@ -182,9 +199,18 @@ public class PurchaseService : IPurchaseService
                     _uow.PurchaseOrders.Update(po);
                 }
 
-                // Update stock
+                // Update stock (existing logic — keeps StockMovement/ledger bookkeeping intact)
                 await _stock.UpdateStockAsync(itemDto.ProductVariantId, itemDto.ReceivedQuantity,
                     StockMovementType.Purchase, grn.GRNNumber, userId);
+
+                // ── Real-time stock update broadcast ──────────────────────
+                var stock = await _uow.Stocks.GetByVariantIdAsync(itemDto.ProductVariantId);
+                var variant = await _uow.ProductVariants.GetByIdAsync(itemDto.ProductVariantId);
+                await _realtime.NotifyStockUpdatedAsync(
+                    itemDto.ProductVariantId,
+                    variant?.Barcode ?? "",
+                    (int)(stock?.Quantity ?? 0),
+                    variant?.Product?.Name ?? "");
             }
 
             await _uow.GoodsReceiptNotes.AddAsync(grn);

@@ -58,6 +58,7 @@ public static class DbSeeder
                 new() { Name = "Roles & Permissions", Icon = "bi-shield-lock",      Controller = "Role",       Action = "Index",       SortOrder = 21 },
                 new() { Name = "Audit Log",           Icon = "bi-clock-history",    Controller = "AuditLog",   Action = "Index",       SortOrder = 22 },
                 new() { Name = "Barcode Print",       Icon = "bi-upc-scan",         Controller = "Barcode",    Action = "Index",       SortOrder = 23 },
+                new() { Name = "Loyalty Settings",    Icon = "bi-gift",             Controller = "Loyalty",    Action = "Settings",    SortOrder = 24 },
             };
             context.AppModules.AddRange(modules);
             await context.SaveChangesAsync();

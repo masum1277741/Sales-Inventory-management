@@ -1,0 +1,50 @@
+﻿@model ClothingERP.Application.DTOs.DashboardDto
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom py-3">
+        <span class="fw-semibold"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Sales Trend — @DateTime.Now.Year</span>
+    </div>
+    <div class="card-body">
+        <canvas id="salesTrendChart" style="max-height:280px;"></canvas>
+    </div>
+</div>
+<script>
+    (function () {
+        const ctx = document.getElementById('salesTrendChart');
+        if (!ctx || ctx.dataset.rendered) return;
+        ctx.dataset.rendered = "1";
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: @Json.Serialize(Model.MonthlySalesChart.Select(m => m.Month).ToList()),
+                datasets: [
+                    {
+                        label: 'Sales (৳)',
+                        data: @Json.Serialize(Model.MonthlySalesChart.Select(m => m.SalesAmount).ToList()),
+                        backgroundColor: 'rgba(201,169,110,.75)',
+                        borderRadius: 6,
+                        order: 2
+                    },
+                    {
+                        label: 'Profit (৳)',
+                        data: @Json.Serialize(Model.MonthlySalesChart.Select(m => m.ProfitAmount).ToList()),
+                        type: 'line',
+                        borderColor: '#43a047',
+                        backgroundColor: 'rgba(67,160,71,.12)',
+                        borderWidth: 2.5,
+                        tension: .35,
+                        fill: true,
+                        pointRadius: 4,
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: { legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    })();
+</script>

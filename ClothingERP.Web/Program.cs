@@ -2,6 +2,8 @@ using ClothingERP.Application;
 using ClothingERP.Infrastructure;
 using ClothingERP.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using ClothingERP.Web.Hubs;
+using ClothingERP.Web.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +12,7 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<ClothingERP.Web.Filters.SidebarMenuFilter>());
 builder.Services.AddAntiforgery(options =>
 {
-    options.HeaderName = "RequestVerificationToken"; 
+    options.HeaderName = "RequestVerificationToken";
 });
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
@@ -25,7 +27,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
         options.Cookie.Name = "ClothingERP.Auth";
-        options.Cookie.SameSite = SameSiteMode.Strict;   
+        options.Cookie.SameSite = SameSiteMode.Strict;
         options.Cookie.MaxAge = null;
     });
 
@@ -38,6 +40,10 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
+
+// ── SignalR / Realtime ───────────────────────────────────────────────────
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
 // ── Pipeline ─────────────────────────────────────────────────────────────
 var app = builder.Build();
@@ -66,5 +72,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+
+app.MapHub<AppHub>("/hubs/app");
 
 app.Run();

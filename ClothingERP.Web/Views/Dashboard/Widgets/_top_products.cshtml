@@ -1,0 +1,35 @@
+﻿@model ClothingERP.Application.DTOs.DashboardDto
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom py-3">
+        <span class="fw-semibold"><i class="bi bi-trophy me-2 text-warning"></i>Top Products (30 days)</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.TopSellingProducts.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var (product, index) in Model.TopSellingProducts.Select((p, i) => (p, i + 1)))
+                {
+                    <div class="list-group-item border-0 px-4 py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fw-bold text-muted" style="width:20px;">@index</div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold small">@product.ProductName</div>
+                                <small class="text-muted">@product.QuantitySold.ToString("N0") sold</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold small text-success">৳@product.TotalRevenue.ToString("N2")</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-2"></i>
+                <p class="mt-2 small">No sales data yet</p>
+            </div>
+        }
+    </div>
+</div>

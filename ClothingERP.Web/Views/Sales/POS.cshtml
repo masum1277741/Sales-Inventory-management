@@ -183,15 +183,42 @@
     .pcard-body::-webkit-scrollbar { width: 3px; }
     .pcard-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    /* ══ Product Grid ════════════════════════════════════════════════════ */
-    .product-grid {
+    .panel-tabs {
+        display: flex;
+        gap: 4px;
+        padding: 0 8px;
+    }
+
+    .panel-tab {
+        flex: 1;
+        padding: 6px 10px;
+        border-radius: 7px;
+        font-size: .74rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+    .panel-tab.active {
+        background: var(--black) !important;
+        border-color: var(--black) !important;
+        color: #fff !important;
+    }
+
+    .panel-section { display: none; }
+    .panel-section.active { display: block; }
+
+    /* ══ Product / Bundle Grid ════════════════════════════════════════════ */
+    .product-grid,
+    .bundle-grid {
         display:               grid;
         grid-template-columns: repeat(2, 1fr);
         gap:                   6px;
         padding:               8px;
     }
 
-    .product-card {
+    .product-card,
+    .bundle-card {
         border:        1px solid var(--border);
         border-radius: 8px;
         padding:       8px;
@@ -202,17 +229,23 @@
         overflow:      hidden;
     }
 
-    .product-card:hover {
+    .product-card:hover,
+    .bundle-card:hover {
         border-color:  var(--gold);
         box-shadow:    0 2px 8px rgba(201,169,110,.2);
         transform:     translateY(-1px);
     }
 
-    .product-card:active { transform: scale(.97); }
+    .product-card:active,
+    .bundle-card:active { transform: scale(.97); }
 
     .product-card.out-of-stock { opacity: .5; cursor: not-allowed; }
 
-    .pc-icon {
+    .bundle-card { border-left: 3px solid var(--gold); }
+    .bundle-card.out-of-stock { opacity: .55; cursor: not-allowed; }
+
+    .pc-icon,
+    .bc-icon {
         width:           36px;
         height:          36px;
         border-radius:   8px;
@@ -226,7 +259,8 @@
         flex-shrink:     0;
     }
 
-    .pc-name {
+    .pc-name,
+    .bc-name {
         font-size:    .75rem;
         font-weight:  600;
         color:        var(--text);
@@ -238,7 +272,8 @@
         -webkit-box-orient: vertical;
     }
 
-    .pc-variant {
+    .pc-variant,
+    .bc-meta {
         font-size:    .65rem;
         color:        var(--muted);
         margin-bottom:4px;
@@ -255,20 +290,23 @@
         flex-shrink: 0;
     }
 
-    .pc-price {
+    .pc-price,
+    .bc-price {
         font-size:   .8rem;
         font-weight: 700;
         color:       var(--black);
         line-height: 1;
     }
 
-    .pc-price-sub {
+    .pc-price-sub,
+    .bc-price-sub {
         font-size:   .62rem;
         color:       var(--muted);
         margin-top:  1px;
     }
 
-    .pc-stock {
+    .pc-stock,
+    .bc-stock {
         position:      absolute;
         top:           4px; right: 4px;
         font-size:     .58rem;
@@ -277,10 +315,11 @@
         border-radius: 10px;
     }
 
-    .pc-stock.in  { background: var(--success-bg); color: var(--success); }
-    .pc-stock.out { background: var(--danger-bg);  color: var(--danger); }
+    .pc-stock.in,  .bc-stock.in  { background: var(--success-bg); color: var(--success); }
+    .pc-stock.out, .bc-stock.out { background: var(--danger-bg);  color: var(--danger); }
 
-    .pc-add {
+    .pc-add,
+    .bc-add {
         margin-top:    6px;
         width:         100%;
         padding:       4px;
@@ -298,9 +337,129 @@
         gap:           3px;
     }
 
-    .pc-add:hover { background: var(--gold-d); border-color: var(--gold-d); }
+    .pc-add:hover,
+    .bc-add:hover { background: var(--gold-d); border-color: var(--gold-d); }
+
+    .bundle-summary {
+        font-size: .62rem;
+        color: var(--muted);
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 2.4em;
+    }
 
     /* ══ Pagination ══════════════════════════════════════════════════════ */
+    .pos-pagination {
+        display:         flex;
+        align-items:     center;
+        justify-content: center;
+        gap:             4px;
+        padding:         8px;
+        border-top:      1px solid var(--border);
+        flex-shrink:     0;
+        background:      #faf9f7;
+    }
+
+    .pg-btn {
+        width:         28px; height: 28px;
+        border-radius: 6px;
+        border:        1px solid var(--border);
+        background:    #fff;
+        color:         var(--text);
+        font-size:     .75rem;
+        font-weight:   600;
+        cursor:        pointer;
+        display:       flex;
+        align-items:   center;
+        justify-content:center;
+        transition:    all .15s;
+    }
+
+    .pg-btn:hover   { border-color: var(--gold); color: var(--gold-d); }
+    .pg-btn.active  { background: var(--black); border-color: var(--black); color: #fff; }
+    .pg-btn:disabled{ opacity: .4; cursor: not-allowed; }
+
+    .pg-info { font-size: .72rem; color: var(--muted); padding: 0 4px; }
+
+    /* ══ Cart Table ══════════════════════════════════════════════════════ */
+    .cart-wrap { overflow-y: auto; flex: 1; }
+
+    .cart-empty {
+        display:         flex;
+        flex-direction:  column;
+        align-items:     center;
+        justify-content: center;
+        padding:         30px 20px;
+        color:           var(--muted);
+        height:          100%;
+        min-height:      120px;
+    }
+
+    .cart-empty i { font-size: 2.5rem; margin-bottom: 8px; opacity: .4; }
+    .cart-empty p { font-size: .82rem; margin: 0; }
+
+    .cart-table { width: 100%; border-collapse: collapse; }
+    .cart-table th {
+        font-size:      .66rem;
+        text-transform: uppercase;
+        color:          var(--muted);
+        padding:        6px 8px;
+        background:     #faf9f7;
+        border-bottom:  1px solid var(--border);
+        font-weight:    600;
+        letter-spacing: .04em;
+    }
+    .cart-table td { padding: 5px 8px; border-bottom: 1px solid #f5f3ef; vertical-align: middle; }
+    .cart-table tr:last-child td { border-bottom: none; }
+
+    .ci-name  { font-size: .78rem; font-weight: 600; color: var(--text); }
+    .ci-meta  { font-size: .66rem; color: var(--muted); }
+
+    .qty-btn {
+        width:  20px; height: 20px;
+        border: none;
+        border-radius: 4px;
+        background: #f0ebe0;
+        color:  var(--text);
+        font-size: .82rem;
+        cursor: pointer;
+        display:  inline-flex;
+        align-items:   center;
+        justify-content: center;
+        transition: background .12s;
+    }
+    .qty-btn:hover { background: var(--black); color: #fff; }
+
+    .qty-input {
+        width:         42px;
+        text-align:    center;
+        border:        1px solid var(--border);
+        border-radius: 5px;
+        padding:       1px 2px;
+        font-size:     .8rem;
+        font-weight:   700;
+        color:         var(--text);
+    }
+
+    .rm-btn {
+        width:  20px; height: 20px;
+        border: none;
+        border-radius: 50%;
+        background: var(--danger-bg);
+        color:  var(--danger);
+        cursor: pointer;
+        display: inline-flex;
+        align-items:   center;
+        justify-content: center;
+        font-size: .75rem;
+        transition: background .12s;
+    }
+    .rm-btn:hover { background: var(--danger); color: #fff; }
+
+    /* ══ Customer ════════════════════════════════════════════════════════ */
     .pos-pagination {
         display:         flex;
         align-items:     center;
@@ -836,20 +995,47 @@
 <!-- ══ Body ══════════════════════════════════════════════════════════ -->
 <div class="pos-body">
 
-    <!-- ── Left: Products ──────────────────────────────────────────── -->
+    <!-- ── Left: Products / Bundles ───────────────────────────────── -->
     <div class="pos-products-panel mob-active" id="panel-products">
-        <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-            <div class="pcard-hdr">
-                <span><i class="bi bi-grid me-1" style="color:var(--gold);"></i>Products</span>
-                <span id="productCount" style="font-size:.72rem;color:var(--muted);"></span>
-            </div>
-            <div class="pcard-body" id="productGrid" style="flex:1;">
-                <div class="pos-loading">
-                    <div class="spinner"></div>
-                    Loading products...
+        <div class="panel-tabs mb-2">
+            <button class="btn btn-sm panel-tab active" id="tabProducts" onclick="switchPanel('products')"
+                    style="background:#0a0a0a;color:#c9a96e;border:1px solid #0a0a0a;">Products</button>
+            <button class="btn btn-sm panel-tab" id="tabBundles" onclick="switchPanel('bundles')"
+                    style="background:transparent;border:1px solid var(--border);">
+                <i class="bi bi-gift me-1"></i>Bundles
+            </button>
+        </div>
+
+        <div class="panel-section active" id="productsSection">
+            <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <div class="pcard-hdr">
+                    <span><i class="bi bi-grid me-1" style="color:var(--gold);"></i>Products</span>
+                    <span id="productCount" style="font-size:.72rem;color:var(--muted);"></span>
                 </div>
+                <div class="pcard-body" id="productGrid" style="flex:1;">
+                    <div class="pos-loading">
+                        <div class="spinner"></div>
+                        Loading products...
+                    </div>
+                </div>
+                <div class="pos-pagination" id="pagination" style="display:none;"></div>
             </div>
-            <div class="pos-pagination" id="pagination" style="display:none;"></div>
+        </div>
+
+        <div class="panel-section" id="bundlesSection" style="display:none;">
+            <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <div class="pcard-hdr">
+                    <span><i class="bi bi-gift me-1" style="color:var(--gold);"></i>Bundles</span>
+                    <span id="bundleCount" style="font-size:.72rem;color:var(--muted);"></span>
+                </div>
+                <div class="pcard-body" id="bundleGrid" style="flex:1;display:none;">
+                    <div class="pos-loading">
+                        <div class="spinner"></div>
+                        Loading bundles...
+                    </div>
+                </div>
+                <div class="pos-pagination" id="bundlePagination" style="display:none;"></div>
+            </div>
         </div>
 
         <!-- Actions -->
@@ -890,6 +1076,26 @@
                 <i class="bi bi-chevron-right" style="color:var(--muted);font-size:.75rem;"></i>
             </div>
             <input type="hidden" id="customerId" />
+
+            <!-- Loyalty Panel -->
+            <div id="loyaltyPanel" style="display:none;" class="px-3 pb-3">
+                <div class="rounded p-3" style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small" style="color:#c9a96e;">
+                            <i class="bi bi-gem me-1"></i>Loyalty Points
+                        </span>
+                        <span class="fw-bold text-white" id="loyaltyPointsBalance">0</span>
+                    </div>
+                    <div class="d-flex gap-2 mt-2" id="redeemRow" style="display:none;">
+                        <input type="number" id="redeemPointsInput" class="form-control form-control-sm"
+                               placeholder="Points to redeem" min="0" style="font-size:.8rem;" />
+                        <button class="btn btn-sm" style="background:#c9a96e;color:#000;" onclick="applyRedeem()">
+                            Apply
+                        </button>
+                    </div>
+                    <div class="small mt-1" style="color:#8a8a8a;" id="redeemHint"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Cart -->
@@ -972,6 +1178,16 @@
                 <button class="pay-tab active" data-method="1" onclick="setPayMethod(1,this)">Cash</button>
                 <button class="pay-tab"        data-method="5" onclick="setPayMethod(5,this)">Card</button>
                 <button class="pay-tab"        data-method="4" onclick="setPayMethod(4,this)">Mobile</button>
+                <button class="pay-tab"        data-method="6" onclick="setPayMethod(6,this)">Gift Card</button>
+            </div>
+
+            <!-- Gift Card code input — শুধু Gift Card method select হলে দেখাবে -->
+            <div id="giftCardInputRow" style="display:none;padding:0 12px;margin-top:8px;">
+                <div class="input-group">
+                    <input type="text" id="giftCardCode" class="form-control" placeholder="GC-XXXX-XXXX-XXXX" style="text-transform:uppercase;" />
+                    <button class="btn btn-outline-secondary" onclick="checkGiftCard()">Check</button>
+                </div>
+                <div id="giftCardBalance" class="small mt-1"></div>
             </div>
 
             <!-- Amount -->
@@ -1101,16 +1317,23 @@ const tok  = () => document.querySelector('[name=__RequestVerificationToken]').v
 
 /* ── State ──────────────────────────────────────────────────────────── */
 const state = {
+    activePanel: 'products',
     products:   [],      // all products from server
     filtered:   [],      // after search filter
     page:       1,       // current page
+    bundles:    [],      // all bundles from server
+    bundleFiltered: [],  // after search filter
+    bundlePage: 1,       // current bundle page
     customers:  [],      // all customers
     custFilter: [],      // filtered customers
     cart:       [],      // cart items
     customerId: null,
     customerName: null,
     payMethod:  1,
-    isCredit:   false
+    isCredit:   false,
+    // Loyalty fields
+    loyaltyPointsToRedeem: 0,
+    loyaltyDiscountValue:  0
 };
 
 /* ── Init ───────────────────────────────────────────────────────────── */
@@ -1120,7 +1343,9 @@ document.getElementById('posDate').textContent =
 toastr.options = { positionClass:'toast-top-right', timeOut:2500, closeButton:true };
 
 document.getElementById('searchInput').addEventListener('input', e => {
-    filterProducts(e.target.value.trim());
+    const val = e.target.value.trim();
+    if (state.activePanel === 'bundles') filterBundles(val);
+    else filterProducts(val);
 });
 
 document.getElementById('searchInput').addEventListener('keydown', async e => {
@@ -1128,6 +1353,11 @@ document.getElementById('searchInput').addEventListener('keydown', async e => {
     e.preventDefault();
     const val = e.target.value.trim();
     if (!val) return;
+
+    if (state.activePanel === 'bundles') {
+        filterBundles(val);
+        return;
+    }
 
     // Try barcode first
     try {
@@ -1144,7 +1374,7 @@ document.getElementById('searchInput').addEventListener('keydown', async e => {
     filterProducts(val);
 });
 
-/* ── Load Products ──────────────────────────────────────────────────── */
+/* ── Load Products / Bundles ───────────────────────────────────────── */
 async function loadProducts() {
     try {
         const res  = await fetch('/Sales/GetAllProducts');
@@ -1165,7 +1395,29 @@ async function loadProducts() {
     }
 }
 
-/* ── Filter Products ────────────────────────────────────────────────── */
+async function loadBundles() {
+    try {
+        const res = await fetch('/Sales/GetAllBundles');
+        const data = await res.json();
+        state.bundles = data || [];
+        state.bundleFiltered = state.bundles;
+        renderBundleGrid();
+    } catch (err) {
+        const grid = document.getElementById('bundleGrid');
+        grid.style.display = 'block';
+        grid.innerHTML = `
+            <div class="pos-loading" style="color:#dc2626;min-height:120px;">
+                <i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>
+                <span>Failed to load bundles</span>
+                <button onclick="loadBundles()"
+                        style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:.78rem;margin-top:4px;">
+                    Retry
+                </button>
+            </div>`;
+    }
+}
+
+/* ── Filter Products / Bundles ──────────────────────────────────────── */
 function filterProducts(keyword) {
     if (!keyword) {
         state.filtered = state.products;
@@ -1183,7 +1435,25 @@ function filterProducts(keyword) {
     renderProductGrid();
 }
 
-/* ── Render Product Grid ────────────────────────────────────────────── */
+function filterBundles(keyword) {
+    if (!keyword) {
+        state.bundleFiltered = state.bundles;
+    } else {
+        const kw = keyword.toLowerCase();
+        state.bundleFiltered = state.bundles.filter(b => {
+            const summary = (b.itemsSummary || []).join(' ').toLowerCase();
+            return (b.name || '').toLowerCase().includes(kw) ||
+                   summary.includes(kw) ||
+                   String(b.bundlePrice ?? '').includes(kw) ||
+                   String(b.regularPrice ?? '').includes(kw);
+        });
+    }
+    state.bundlePage = 1;
+    renderBundleGrid();
+}
+
+
+/* ── Render Product / Bundle Grids ─────────────────────────────────── */
 function renderProductGrid() {
     const total = state.filtered.length;
     const pages = Math.ceil(total / PAGE_SIZE) || 1;
@@ -1207,7 +1477,6 @@ function renderProductGrid() {
 
     grid.innerHTML = `<div class="product-grid">${items.map(v => productCard(v)).join('')}</div>`;
 
-    // Pagination
     const pgEl = document.getElementById('pagination');
     if (pages <= 1) {
         pgEl.style.display = 'none';
@@ -1215,10 +1484,8 @@ function renderProductGrid() {
     }
 
     pgEl.style.display = 'flex';
-    let pgHtml = `<button class="pg-btn" onclick="changePage(${state.page-1})"
-                          ${state.page===1?'disabled':''}>‹</button>`;
+    let pgHtml = `<button class="pg-btn" onclick="changePage(${state.page-1})" ${state.page===1?'disabled':''}>‹</button>`;
 
-    // Show max 5 page buttons
     let pStart = Math.max(1, state.page - 2);
     let pEnd   = Math.min(pages, pStart + 4);
     pStart     = Math.max(1, pEnd - 4);
@@ -1226,17 +1493,85 @@ function renderProductGrid() {
     if (pStart > 1) pgHtml += `<span class="pg-info">…</span>`;
 
     for (let i = pStart; i <= pEnd; i++) {
-        pgHtml += `<button class="pg-btn ${i===state.page?'active':''}"
-                           onclick="changePage(${i})">${i}</button>`;
+        pgHtml += `<button class="pg-btn ${i===state.page?'active':''}" onclick="changePage(${i})">${i}</button>`;
     }
 
     if (pEnd < pages) pgHtml += `<span class="pg-info">…</span>`;
 
-    pgHtml += `<button class="pg-btn" onclick="changePage(${state.page+1})"
-                       ${state.page===pages?'disabled':''}>›</button>`;
+    pgHtml += `<button class="pg-btn" onclick="changePage(${state.page+1})" ${state.page===pages?'disabled':''}>›</button>`;
     pgHtml += `<span class="pg-info">${state.page}/${pages}</span>`;
-
     pgEl.innerHTML = pgHtml;
+}
+
+function renderBundleGrid() {
+    const total = state.bundleFiltered.length;
+    const pages = Math.ceil(total / PAGE_SIZE) || 1;
+    const start = (state.bundlePage - 1) * PAGE_SIZE;
+    const items = state.bundleFiltered.slice(start, start + PAGE_SIZE);
+
+    document.getElementById('bundleCount').textContent =
+        total + ' bundle' + (total !== 1 ? 's' : '');
+
+    const grid = document.getElementById('bundleGrid');
+    grid.style.display = 'block';
+
+    if (!items.length) {
+        grid.innerHTML = `
+            <div class="pos-loading" style="min-height:120px;">
+                <i class="bi bi-gift" style="font-size:2rem;opacity:.3;"></i>
+                <span>No bundles found</span>
+            </div>`;
+        document.getElementById('bundlePagination').style.display = 'none';
+        return;
+    }
+
+    grid.innerHTML = `<div class="bundle-grid">${items.map(b => bundleCard(b)).join('')}</div>`;
+
+    const pgEl = document.getElementById('bundlePagination');
+    if (pages <= 1) {
+        pgEl.style.display = 'none';
+        return;
+    }
+
+    pgEl.style.display = 'flex';
+    let pgHtml = `<button class="pg-btn" onclick="changeBundlePage(${state.bundlePage-1})" ${state.bundlePage===1?'disabled':''}>‹</button>`;
+
+    let pStart = Math.max(1, state.bundlePage - 2);
+    let pEnd   = Math.min(pages, pStart + 4);
+    pStart     = Math.max(1, pEnd - 4);
+
+    if (pStart > 1) pgHtml += `<span class="pg-info">…</span>`;
+
+    for (let i = pStart; i <= pEnd; i++) {
+        pgHtml += `<button class="pg-btn ${i===state.bundlePage?'active':''}" onclick="changeBundlePage(${i})">${i}</button>`;
+    }
+
+    if (pEnd < pages) pgHtml += `<span class="pg-info">…</span>`;
+
+    pgHtml += `<button class="pg-btn" onclick="changeBundlePage(${state.bundlePage+1})" ${state.bundlePage===pages?'disabled':''}>›</button>`;
+    pgHtml += `<span class="pg-info">${state.bundlePage}/${pages}</span>`;
+    pgEl.innerHTML = pgHtml;
+}
+
+function bundleCard(b) {
+    const outOfStock = !b.isActive || b.availableStock <= 0;
+    const summary = (b.itemsSummary || []).join(' • ');
+    return `
+    <div class="bundle-card ${outOfStock?'out-of-stock':''}"
+         onclick="${outOfStock?'toastr.error(\'Bundle unavailable: '+String(b.name).replace(/'/g,"\\'")+'\')':'addBundleToCart('+b.id+')'}">
+        <span class="bc-stock ${outOfStock?'out':'in'}">${outOfStock?'Out':b.availableStock}</span>
+        <div class="bc-icon"><i class="bi bi-gift"></i></div>
+        <div class="bc-name">${b.name}</div>
+        <div class="bc-meta">
+            <span style="background:#f0ebe0;color:#555;border-radius:3px;padding:1px 4px;font-size:.6rem;">
+                ${b.itemCount} item${b.itemCount !== 1 ? 's' : ''}
+            </span>
+        </div>
+        <div class="bundle-summary">${summary}</div>
+        <div class="bc-price">${fUSD(b.bundlePrice)}</div>
+        <div class="bc-price-sub">Regular ${fUSD(b.regularPrice)} · Save ${fUSD(b.savingsAmount)}</div>
+        ${!outOfStock ? `<button class="bc-add"><i class="bi bi-plus"></i> Add Bundle</button>` : ''}
+    </div>`;
 }
 
 function productCard(v) {
@@ -1272,14 +1607,59 @@ function changePage(p) {
     document.getElementById('productGrid').scrollTop = 0;
 }
 
+function changeBundlePage(p) {
+    const pages = Math.ceil(state.bundleFiltered.length / PAGE_SIZE) || 1;
+    if (p < 1 || p > pages) return;
+    state.bundlePage = p;
+    renderBundleGrid();
+    document.getElementById('bundleGrid').scrollTop = 0;
+}
+
+async function addBundleToCart(bundleId) {
+    const bundle = state.bundles.find(b => b.id === bundleId);
+    if (!bundle || bundle.availableStock <= 0) { toastr.error('Bundle unavailable.'); return; }
+
+    const detail = await fetch(`/Bundle/Details/${bundleId}`).then(r => r.json()).catch(() => null);
+    const fullBundle = detail || bundle;
+    const bundleName = fullBundle.name || bundle.name;
+    const items = fullBundle.items || [];
+
+    if (!items.length) {
+        toastr.error('Bundle details not available.');
+        return;
+    }
+
+    items.forEach(item => {
+        addToCart({
+            variantId: item.productVariantId,
+            productName: item.productName,
+            sizeName: item.sizeName,
+            colorName: item.colorName,
+            colorHex: '#333',
+            barcode: item.barcode,
+            retailPrice: item.unitPrice,
+            costPrice: 0,
+            stock: item.availableStock
+        }, { bundleId: fullBundle.id || bundle.id, bundleName }, item.quantity);
+    });
+
+    toastr.success(`${bundleName} bundle cart এ যোগ হলো — ${fUSD(fullBundle.bundlePrice || bundle.bundlePrice)}`);
+}
+
 /* ── Cart ───────────────────────────────────────────────────────────── */
-function addToCart(v) {
+function addToCart(v, bundleMeta = null, qtyDelta = 1) {
     if (v.stock <= 0) { toastr.error('Out of stock: ' + v.productName); return; }
 
-    const existing = state.cart.find(i => i.variantId === v.variantId);
+    const existing = state.cart.find(i => i.variantId === v.variantId && (i.bundleId || null) === (bundleMeta?.bundleId || null));
+    const currentQty = existing ? existing.qty : 0;
+    if (currentQty + qtyDelta > v.stock) { toastr.warning('Max stock reached!'); return; }
+
     if (existing) {
-        if (existing.qty >= v.stock) { toastr.warning('Max stock reached!'); return; }
-        existing.qty++;
+        existing.qty += qtyDelta;
+        if (bundleMeta?.bundleId) {
+            existing.bundleId = bundleMeta.bundleId;
+            existing.bundleName = bundleMeta.bundleName;
+        }
     } else {
         state.cart.push({
             variantId:   v.variantId,
@@ -1288,10 +1668,12 @@ function addToCart(v) {
             colorName:   v.colorName,
             colorHex:    v.colorHex || '#333',
             barcode:     v.barcode,
-            qty:         1,
+            qty:         qtyDelta,
             unitPrice:   v.retailPrice,
             costPrice:   v.costPrice || 0,
-            stock:       v.stock
+            stock:       v.stock,
+            bundleId:    bundleMeta?.bundleId || null,
+            bundleName:  bundleMeta?.bundleName || null
         });
         toastr.success(v.productName + ' added', '', { timeOut: 1200 });
     }
@@ -1343,6 +1725,7 @@ function renderCart() {
                         ${item.sizeName}
                     </span>
                     ${item.colorName}
+                    ${item.bundleName ? `<span style="background:#fff3cd;color:#8a6d3b;border-radius:3px;padding:1px 4px;font-size:.6rem;">${item.bundleName}</span>` : ''}
                 </div>
             </td>
             <td class="text-center">
@@ -1435,10 +1818,35 @@ function calcChange() {
 }
 
 /* ── Payment ────────────────────────────────────────────────────────── */
+let giftCardValidated = null;
+
 function setPayMethod(method, btn) {
     state.payMethod = method;
     document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
+    document.getElementById('giftCardInputRow').style.display = method === 6 ? '' : 'none';
+}
+
+async function checkGiftCard() {
+    const code = document.getElementById('giftCardCode').value.trim();
+    if (!code) return;
+    const result = await fetch(`/GiftCard/Lookup?code=${encodeURIComponent(code)}`).then(r => r.json());
+    const balDiv = document.getElementById('giftCardBalance');
+
+    if (!result.found || !result.isUsable) {
+        balDiv.innerHTML = `<span class="text-danger">${result.message || 'Card not found.'}</span>`;
+        giftCardValidated = null;
+        return;
+    }
+
+    giftCardValidated = result;
+    balDiv.innerHTML = `<span class="text-success">Balance: $${result.currentBalance.toFixed(2)}</span>`;
+
+    // Amount field এ balance বসিয়ে দাও (max total পর্যন্ত)
+    const total = getTotal();
+    const useAmount = Math.min(result.currentBalance, total);
+    document.getElementById('payAmount').value = useAmount.toFixed(2);
+    calcChange();
 }
 
 function toggleCredit(checked) {
@@ -1462,21 +1870,28 @@ async function checkout() {
     }
 
     const dto = {
-        customerId:      state.customerId,
-        discountAmount:  parseFloat(document.getElementById('discountInput').value) || 0,
-        taxAmount:       parseFloat(document.getElementById('taxInput').value)      || 0,
-        isCredit:        state.isCredit,
-        notes:           document.getElementById('notesInput').value,
-        exchangeRateBDT: RATE_BDT,
-        exchangeRateMVR: RATE_MVR,
+        customerId:             state.customerId,
+        discountAmount:         parseFloat(document.getElementById('discountInput').value) || 0,
+        taxAmount:              parseFloat(document.getElementById('taxInput').value)      || 0,
+        isCredit:               state.isCredit,
+        notes:                  document.getElementById('notesInput').value,
+        exchangeRateBDT:        RATE_BDT,
+        exchangeRateMVR:        RATE_MVR,
+        loyaltyPointsRedeemed:  state.loyaltyPointsToRedeem || 0,
         items: state.cart.map(i => ({
             productVariantId: i.variantId,
+            productBundleId:  i.bundleId,
+            bundleName:       i.bundleName,
             quantity:         i.qty,
             unitPrice:        i.unitPrice,
             discountAmount:   0,
             taxAmount:        0
         })),
-        payments: state.isCredit ? [] : [{ paymentMethod: state.payMethod, amount }]
+        payments: state.isCredit ? [] : [{
+            paymentMethod: state.payMethod,
+            amount,
+            giftCardCode: state.payMethod === 6 ? document.getElementById('giftCardCode').value.trim() : null
+        }]
     };
 
     const btn = document.getElementById('checkoutBtn');
@@ -1541,8 +1956,13 @@ async function holdCart() {
         isCredit: false, exchangeRateBDT: RATE_BDT, exchangeRateMVR: RATE_MVR,
         notes: 'HOLD',
         items: state.cart.map(i => ({
-            productVariantId: i.variantId, quantity: i.qty,
-            unitPrice: i.unitPrice, discountAmount: 0, taxAmount: 0
+            productVariantId: i.variantId,
+            productBundleId:  i.bundleId,
+            bundleName:       i.bundleName,
+            quantity:         i.qty,
+            unitPrice:        i.unitPrice,
+            discountAmount:   0,
+            taxAmount:        0
         })),
         payments: []
     };
@@ -1732,6 +2152,7 @@ function selectCustomer(id, name, phone, balance) {
     document.getElementById('custSub').textContent = (phone ? phone + ' · ' : '') + 'Due: ' + fUSD(balance);
     document.getElementById('custSub').style.display = '';
     document.getElementById('clearCustBtn').style.display = '';
+    loadLoyaltyInfo(id);
     closeCustModal();
 }
 
@@ -1741,6 +2162,56 @@ function clearCustomer() {
     document.getElementById('custName').innerHTML = '<i class="bi bi-plus-circle me-1" style="color:var(--muted);"></i>Walk-in Customer';
     document.getElementById('custSub').style.display = 'none';
     document.getElementById('clearCustBtn').style.display = 'none';
+    document.getElementById('loyaltyPanel').style.display = 'none';
+    state.loyaltyPointsToRedeem = 0;
+}
+
+/* ── Loyalty ────────────────────────────────────────────────────────── */
+let currentLoyalty = null;
+
+async function loadLoyaltyInfo(customerId) {
+    try {
+        const info = await fetch(`/Loyalty/GetCustomerLoyalty?customerId=${customerId}`).then(r => r.json());
+        currentLoyalty = info;
+
+        document.getElementById('loyaltyPanel').style.display = '';
+        document.getElementById('loyaltyPointsBalance').textContent = info.currentPoints + ' pts';
+
+        const redeemRow = document.getElementById('redeemRow');
+        const hint = document.getElementById('redeemHint');
+
+        if (info.canRedeem) {
+            redeemRow.style.display = 'flex';
+            hint.textContent = `Redeemable up to $${info.redeemableValueUSD.toFixed(2)}`;
+        } else {
+            redeemRow.style.display = 'none';
+            hint.textContent = info.currentPoints > 0
+                ? `Need more points to redeem`
+                : 'No points yet';
+        }
+    } catch {
+        document.getElementById('loyaltyPanel').style.display = 'none';
+    }
+}
+
+async function applyRedeem() {
+    const points = parseInt(document.getElementById('redeemPointsInput').value) || 0;
+    if (!points || !state.customerId) return;
+
+    const preview = await fetch(`/Loyalty/PreviewRedeem?customerId=${state.customerId}&points=${points}`)
+        .then(r => r.json());
+
+    if (!preview.success) { toastr.error(preview.message); return; }
+
+    state.loyaltyPointsToRedeem = points;
+    state.loyaltyDiscountValue  = preview.discountValue;
+
+    const currentDiscount = parseFloat(document.getElementById('discountInput').value) || 0;
+    document.getElementById('discountInput').value = (currentDiscount + preview.discountValue).toFixed(2);
+    recalculate();
+
+    toastr.success(`$${preview.discountValue.toFixed(2)} discount applied from ${points} points!`);
+    document.getElementById('redeemPointsInput').value = '';
 }
 
 /* ── Clear Cart ─────────────────────────────────────────────────────── */
@@ -1757,6 +2228,37 @@ function clearCart(showToast = true) {
     renderCart();
     updateCartBadge();
     if (showToast) toastr.info('Cart cleared.');
+}
+
+/* ── Panel Switches ─────────────────────────────────────────────────── */
+function switchPanel(tab) {
+    state.activePanel = tab;
+
+    document.getElementById('productsSection').classList.toggle('active', tab === 'products');
+    document.getElementById('bundlesSection').classList.toggle('active', tab === 'bundles');
+    document.getElementById('bundleGrid').style.display = tab === 'bundles' ? 'block' : 'none';
+
+    const productBtn = document.getElementById('tabProducts');
+    const bundleBtn  = document.getElementById('tabBundles');
+    if (productBtn) {
+        productBtn.classList.toggle('active', tab === 'products');
+        productBtn.style.background = tab === 'products' ? '#0a0a0a' : 'transparent';
+        productBtn.style.color = tab === 'products' ? '#c9a96e' : '#000';
+        productBtn.style.borderColor = tab === 'products' ? '#0a0a0a' : 'var(--border)';
+    }
+    if (bundleBtn) {
+        bundleBtn.classList.toggle('active', tab === 'bundles');
+        bundleBtn.style.background = tab === 'bundles' ? '#0a0a0a' : 'transparent';
+        bundleBtn.style.color = tab === 'bundles' ? '#c9a96e' : '#000';
+        bundleBtn.style.borderColor = tab === 'bundles' ? '#0a0a0a' : 'var(--border)';
+    }
+
+    if (tab === 'products') {
+        setTimeout(() => document.getElementById('searchInput').focus(), 100);
+        renderProductGrid();
+    } else {
+        renderBundleGrid();
+    }
 }
 
 /* ── Mobile Tab Switch ──────────────────────────────────────────────── */
@@ -1785,7 +2287,40 @@ document.getElementById('receiptOverlay').addEventListener('click', function(e) 
 
 /* ── Start ──────────────────────────────────────────────────────────── */
 loadProducts();
+loadBundles();
+switchPanel('products');
 document.getElementById('searchInput').focus();
+     
+        document.addEventListener('rt:stockUpdated', e => {
+        const { variantId, quantity, productName } = e.detail;
+
+        const product = state.products.find(p => p.variantId === variantId);
+        if (product) {
+        const oldQty = product.stock;
+        product.stock = quantity;
+
+        if (state.filtered.some(p => p.variantId === variantId)) {
+        renderProductGrid();
+        }
+
+        if (quantity < oldQty) {
+        const cartItem = state.cart.find(i => i.variantId === variantId);
+        if (cartItem && cartItem.qty > quantity) {
+        toastr.warning(
+        `${productName} এর স্টক পরিবর্তন হয়েছে (অন্য terminal এ বিক্রি হয়েছে)। আপনার cart এ qty সমন্বয় করুন।`,
+        'Stock Update', { timeOut: 6000 }
+        );
+        cartItem.qty = Math.max(1, quantity);
+        cartItem.stock = quantity;
+        renderCart();
+        }
+        }
+        }
+        });
+
+        document.addEventListener('rt:saleCompleted', e => {
+        
+        });
 </script>
 </body>
 </html>

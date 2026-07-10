@@ -57,6 +57,8 @@ public class CreateSalesInvoiceDto
     public List<CreateSalesPaymentDto> Payments { get; set; } = new();
     public decimal ExchangeRateBDT { get; set; } = 110m;
     public decimal ExchangeRateMVR { get; set; } = 15.42m;
+    // ── Loyalty ───────────────────────────────────────────────────────────
+    public int LoyaltyPointsRedeemed { get; set; } = 0;
 }
 
 public class CreateSalesInvoiceItemDto
@@ -71,6 +73,8 @@ public class CreateSalesInvoiceItemDto
     public decimal DiscountAmount { get; set; }
     [Range(0, 9999999)]
     public decimal TaxAmount { get; set; }
+    public int? ProductBundleId { get; set; }
+    public string? BundleName { get; set; }
 }
 
 public class SalesPaymentDto
@@ -89,4 +93,5 @@ public class CreateSalesPaymentDto
     [Required, Range(0.01, 9999999)]
     public decimal Amount { get; set; }
     public string? ReferenceNumber { get; set; }
+    public string? GiftCardCode { get; set; }
 }

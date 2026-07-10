@@ -18,6 +18,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Color> Colors => Set<Color>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
+    public DbSet<ProductBundle> ProductBundles => Set<ProductBundle>();
+    public DbSet<ProductBundleItem> ProductBundleItems => Set<ProductBundleItem>();
 
     // ── Stock ───────────────────────────────────────────────────────
     public DbSet<Stock> Stocks => Set<Stock>();
@@ -28,6 +30,24 @@ public class ApplicationDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<CustomerLedger> CustomerLedgers => Set<CustomerLedger>();
     public DbSet<CustomerPayment> CustomerPayments => Set<CustomerPayment>();
+
+    // ── Loyalty ─────────────────────────────────────────────────────
+    public DbSet<LoyaltySettings> LoyaltySettings => Set<LoyaltySettings>();
+    public DbSet<LoyaltyTransaction> LoyaltyTransactions => Set<LoyaltyTransaction>();
+
+    // ── Gift Card ───────────────────────────────────────────────────
+    public DbSet<GiftCard> GiftCards => Set<GiftCard>();
+    public DbSet<GiftCardTransaction> GiftCardTransactions => Set<GiftCardTransaction>();
+
+    // ── Commission ──────────────────────────────────────────────────
+    public DbSet<CommissionSettings> CommissionSettings => Set<CommissionSettings>();
+    public DbSet<StaffCommissionRate> StaffCommissionRates => Set<StaffCommissionRate>();
+    public DbSet<CommissionTransaction> CommissionTransactions => Set<CommissionTransaction>();
+
+    // ── Notification / Dashboard ───────────────────────────────────
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<DashboardLayout> DashboardLayouts => Set<DashboardLayout>();
+
     // ── Supplier ────────────────────────────────────────────────────
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<SupplierLedger> SupplierLedgers => Set<SupplierLedger>();
