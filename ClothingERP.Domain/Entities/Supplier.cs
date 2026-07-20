@@ -11,7 +11,7 @@ public class Supplier : BaseEntity
     public string? BankAccountNumber { get; set; }
     public decimal CurrentBalance { get; set; } // positive = we owe them
     public bool IsActive { get; set; } = true;
-
+    public int? AverageLeadTimeDays { get; set; }
     public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
     public virtual ICollection<SupplierLedger> LedgerEntries { get; set; } = new List<SupplierLedger>();
 }

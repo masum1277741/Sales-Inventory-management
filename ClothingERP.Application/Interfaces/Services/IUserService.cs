@@ -2,7 +2,7 @@
 
 public interface IUserService
 {
-    Task<IEnumerable<UserDto>> GetAllAsync();
+    Task<IEnumerable<UserListDto>> GetAllAsync();
     Task<UserDto?> GetByIdAsync(int id);
     Task<ServiceResult<UserDto>> CreateAsync(CreateUserDto dto, int createdBy);
     Task<ServiceResult<UserDto>> UpdateAsync(int id, UpdateUserDto dto, int updatedBy);
@@ -10,3 +10,4 @@ public interface IUserService
     Task<ServiceResult> ToggleStatusAsync(int id, int updatedBy);
     Task<ServiceResult> ResetPasswordAsync(int id, string newPassword, int updatedBy);
 }
+

@@ -13,1863 +13,2246 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
     <style>
-    /* ══ Variables ═══════════════════════════════════════════════════════ */
-    :root {
-        --hdr:      50px;
-        --tabs:     54px;
-        --black:    #0a0a0a;
-        --gold:     #c9a96e;
-        --gold-d:   #a6845a;
-        --cream:    #f5f2ed;
-        --border:   #e8e3da;
-        --card:     #ffffff;
-        --text:     #1a1a1a;
-        --muted:    #6b7280;
-        --success:  #065f46;
-        --success-bg: #d1fae5;
-        --danger:   #7f1d1d;
-        --danger-bg:#fee2e2;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: 'Segoe UI', sans-serif; background: var(--cream); overflow: hidden; }
-
-    /* ══ POS Header ══════════════════════════════════════════════════════ */
-    .pos-hdr {
-        height:      var(--hdr);
-        background:  var(--black);
-        display:     flex;
-        align-items: center;
-        padding:     0 12px;
-        gap:         10px;
-        position:    fixed;
-        top: 0; left: 0; right: 0;
-        z-index:     200;
-    }
-
-    .pos-logo {
-        height:  30px;
-        filter:  brightness(0) invert(1);
-        opacity: .88;
-        flex-shrink: 0;
-    }
-
-    .pos-search-wrap {
-        flex: 1;
-        max-width: 380px;
-        position:  relative;
-    }
-
-    .pos-search-input {
-        width:       100%;
-        background:  rgba(255,255,255,.10);
-        border:      1px solid rgba(255,255,255,.18);
-        border-radius: 8px;
-        color:       #fff;
-        padding:     6px 36px 6px 12px;
-        font-size:   .85rem;
-        outline:     none;
-        transition:  background .18s, border-color .18s;
-    }
-
-    .pos-search-input:focus {
-        background:  rgba(255,255,255,.16);
-        border-color: var(--gold);
-    }
-
-    .pos-search-input::placeholder { color: rgba(255,255,255,.4); }
-
-    .pos-search-icon {
-        position:  absolute;
-        right:     10px; top: 50%;
-        transform: translateY(-50%);
-        color:     rgba(255,255,255,.4);
-        font-size: .9rem;
-        pointer-events: none;
-    }
-
-    .pos-hdr-right {
-        margin-left: auto;
-        display:     flex;
-        align-items: center;
-        gap:         6px;
-    }
-
-    .pos-hdr-btn {
-        padding:       5px 10px;
-        border-radius: 6px;
-        font-size:     .73rem;
-        font-weight:   500;
-        text-decoration: none;
-        transition:    background .15s;
-        border:        1px solid rgba(255,255,255,.18);
-        color:         rgba(255,255,255,.75);
-        background:    transparent;
-        cursor:        pointer;
-        display:       flex;
-        align-items:   center;
-        gap:           4px;
-    }
-
-    .pos-hdr-btn:hover { background: rgba(255,255,255,.10); color: #fff; }
-    .pos-hdr-btn.gold  { background: var(--gold); border-color: var(--gold); color: #000; }
-    .pos-hdr-btn.gold:hover { background: var(--gold-d); }
-
-    .pos-date { color: rgba(255,255,255,.5); font-size: .73rem; display: flex; align-items: center; gap: 4px; }
-
-    /* ══ Desktop 3-Column Body ═══════════════════════════════════════════ */
-    .pos-body {
-        position: fixed;
-        top: var(--hdr); left: 0; right: 0; bottom: 0;
-        display:  flex;
-        gap:      8px;
-        padding:  8px;
-        overflow: hidden;
-    }
-
-    /* Left — Products */
-    .pos-products-panel {
-        width:    300px;
-        flex-shrink: 0;
-        display:  flex;
-        flex-direction: column;
-        gap:      6px;
-    }
-
-    /* Center — Cart */
-    .pos-cart-panel {
-        flex:     1;
-        display:  flex;
-        flex-direction: column;
-        gap:      6px;
-        min-width: 0;
-    }
-
-    /* Right — Payment */
-    .pos-payment-panel {
-        width:    270px;
-        flex-shrink: 0;
-        display:  flex;
-        flex-direction: column;
-        gap:      6px;
-    }
-
-    /* ══ Panel Card ══════════════════════════════════════════════════════ */
-    .pcard {
-        background:    var(--card);
-        border-radius: 10px;
-        border:        1px solid var(--border);
-        overflow:      hidden;
-    }
-
-    .pcard-hdr {
-        padding:        8px 12px;
-        border-bottom:  1px solid var(--border);
-        font-size:      .8rem;
-        font-weight:    600;
-        color:          var(--text);
-        display:        flex;
-        align-items:    center;
-        justify-content:space-between;
-        background:     #faf9f7;
-        flex-shrink:    0;
-    }
-
-    .pcard-body {
-        overflow-y: auto;
-        flex:       1;
-    }
-
-    .pcard-body::-webkit-scrollbar { width: 3px; }
-    .pcard-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .panel-tabs {
-        display: flex;
-        gap: 4px;
-        padding: 0 8px;
-    }
-
-    .panel-tab {
-        flex: 1;
-        padding: 6px 10px;
-        border-radius: 7px;
-        font-size: .74rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all .15s;
-    }
-
-    .panel-tab.active {
-        background: var(--black) !important;
-        border-color: var(--black) !important;
-        color: #fff !important;
-    }
-
-    .panel-section { display: none; }
-    .panel-section.active { display: block; }
-
-    /* ══ Product / Bundle Grid ════════════════════════════════════════════ */
-    .product-grid,
-    .bundle-grid {
-        display:               grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap:                   6px;
-        padding:               8px;
-    }
-
-    .product-card,
-    .bundle-card {
-        border:        1px solid var(--border);
-        border-radius: 8px;
-        padding:       8px;
-        cursor:        pointer;
-        transition:    all .15s;
-        background:    #fff;
-        position:      relative;
-        overflow:      hidden;
-    }
-
-    .product-card:hover,
-    .bundle-card:hover {
-        border-color:  var(--gold);
-        box-shadow:    0 2px 8px rgba(201,169,110,.2);
-        transform:     translateY(-1px);
-    }
-
-    .product-card:active,
-    .bundle-card:active { transform: scale(.97); }
-
-    .product-card.out-of-stock { opacity: .5; cursor: not-allowed; }
-
-    .bundle-card { border-left: 3px solid var(--gold); }
-    .bundle-card.out-of-stock { opacity: .55; cursor: not-allowed; }
-
-    .pc-icon,
-    .bc-icon {
-        width:           36px;
-        height:          36px;
-        border-radius:   8px;
-        background:      linear-gradient(135deg, var(--black), #333);
-        display:         flex;
-        align-items:     center;
-        justify-content: center;
-        color:           var(--gold);
-        font-size:       1rem;
-        margin-bottom:   6px;
-        flex-shrink:     0;
-    }
-
-    .pc-name,
-    .bc-name {
-        font-size:    .75rem;
-        font-weight:  600;
-        color:        var(--text);
-        line-height:  1.2;
-        margin-bottom:3px;
-        overflow:     hidden;
-        display:      -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-    }
-
-    .pc-variant,
-    .bc-meta {
-        font-size:    .65rem;
-        color:        var(--muted);
-        margin-bottom:4px;
-        display:      flex;
-        gap:          3px;
-        align-items:  center;
-        flex-wrap:    wrap;
-    }
-
-    .pc-color-dot {
-        width:  8px; height: 8px;
-        border-radius: 50%;
-        border: 1px solid rgba(0,0,0,.15);
-        flex-shrink: 0;
-    }
-
-    .pc-price,
-    .bc-price {
-        font-size:   .8rem;
-        font-weight: 700;
-        color:       var(--black);
-        line-height: 1;
-    }
-
-    .pc-price-sub,
-    .bc-price-sub {
-        font-size:   .62rem;
-        color:       var(--muted);
-        margin-top:  1px;
-    }
-
-    .pc-stock,
-    .bc-stock {
-        position:      absolute;
-        top:           4px; right: 4px;
-        font-size:     .58rem;
-        font-weight:   600;
-        padding:       1px 5px;
-        border-radius: 10px;
-    }
-
-    .pc-stock.in,  .bc-stock.in  { background: var(--success-bg); color: var(--success); }
-    .pc-stock.out, .bc-stock.out { background: var(--danger-bg);  color: var(--danger); }
-
-    .pc-add,
-    .bc-add {
-        margin-top:    6px;
-        width:         100%;
-        padding:       4px;
-        border:        1px solid var(--black);
-        border-radius: 5px;
-        background:    var(--black);
-        color:         #fff;
-        font-size:     .7rem;
-        font-weight:   600;
-        cursor:        pointer;
-        transition:    background .15s;
-        display:       flex;
-        align-items:   center;
-        justify-content:center;
-        gap:           3px;
-    }
-
-    .pc-add:hover,
-    .bc-add:hover { background: var(--gold-d); border-color: var(--gold-d); }
-
-    .bundle-summary {
-        font-size: .62rem;
-        color: var(--muted);
-        line-height: 1.25;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        min-height: 2.4em;
-    }
-
-    /* ══ Pagination ══════════════════════════════════════════════════════ */
-    .pos-pagination {
-        display:         flex;
-        align-items:     center;
-        justify-content: center;
-        gap:             4px;
-        padding:         8px;
-        border-top:      1px solid var(--border);
-        flex-shrink:     0;
-        background:      #faf9f7;
-    }
-
-    .pg-btn {
-        width:         28px; height: 28px;
-        border-radius: 6px;
-        border:        1px solid var(--border);
-        background:    #fff;
-        color:         var(--text);
-        font-size:     .75rem;
-        font-weight:   600;
-        cursor:        pointer;
-        display:       flex;
-        align-items:   center;
-        justify-content:center;
-        transition:    all .15s;
-    }
-
-    .pg-btn:hover   { border-color: var(--gold); color: var(--gold-d); }
-    .pg-btn.active  { background: var(--black); border-color: var(--black); color: #fff; }
-    .pg-btn:disabled{ opacity: .4; cursor: not-allowed; }
-
-    .pg-info { font-size: .72rem; color: var(--muted); padding: 0 4px; }
-
-    /* ══ Cart Table ══════════════════════════════════════════════════════ */
-    .cart-wrap { overflow-y: auto; flex: 1; }
-
-    .cart-empty {
-        display:         flex;
-        flex-direction:  column;
-        align-items:     center;
-        justify-content: center;
-        padding:         30px 20px;
-        color:           var(--muted);
-        height:          100%;
-        min-height:      120px;
-    }
-
-    .cart-empty i { font-size: 2.5rem; margin-bottom: 8px; opacity: .4; }
-    .cart-empty p { font-size: .82rem; margin: 0; }
-
-    .cart-table { width: 100%; border-collapse: collapse; }
-    .cart-table th {
-        font-size:      .66rem;
-        text-transform: uppercase;
-        color:          var(--muted);
-        padding:        6px 8px;
-        background:     #faf9f7;
-        border-bottom:  1px solid var(--border);
-        font-weight:    600;
-        letter-spacing: .04em;
-    }
-    .cart-table td { padding: 5px 8px; border-bottom: 1px solid #f5f3ef; vertical-align: middle; }
-    .cart-table tr:last-child td { border-bottom: none; }
-
-    .ci-name  { font-size: .78rem; font-weight: 600; color: var(--text); }
-    .ci-meta  { font-size: .66rem; color: var(--muted); }
-
-    .qty-btn {
-        width:  20px; height: 20px;
-        border: none;
-        border-radius: 4px;
-        background: #f0ebe0;
-        color:  var(--text);
-        font-size: .82rem;
-        cursor: pointer;
-        display:  inline-flex;
-        align-items:   center;
-        justify-content: center;
-        transition: background .12s;
-    }
-    .qty-btn:hover { background: var(--black); color: #fff; }
-
-    .qty-input {
-        width:         42px;
-        text-align:    center;
-        border:        1px solid var(--border);
-        border-radius: 5px;
-        padding:       1px 2px;
-        font-size:     .8rem;
-        font-weight:   700;
-        color:         var(--text);
-    }
-
-    .rm-btn {
-        width:  20px; height: 20px;
-        border: none;
-        border-radius: 50%;
-        background: var(--danger-bg);
-        color:  var(--danger);
-        cursor: pointer;
-        display: inline-flex;
-        align-items:   center;
-        justify-content: center;
-        font-size: .75rem;
-        transition: background .12s;
-    }
-    .rm-btn:hover { background: var(--danger); color: #fff; }
-
-    /* ══ Customer ════════════════════════════════════════════════════════ */
-    .pos-pagination {
-        display:         flex;
-        align-items:     center;
-        justify-content: center;
-        gap:             4px;
-        padding:         8px;
-        border-top:      1px solid var(--border);
-        flex-shrink:     0;
-        background:      #faf9f7;
-    }
-
-    .pg-btn {
-        width:         28px; height: 28px;
-        border-radius: 6px;
-        border:        1px solid var(--border);
-        background:    #fff;
-        color:         var(--text);
-        font-size:     .75rem;
-        font-weight:   600;
-        cursor:        pointer;
-        display:       flex;
-        align-items:   center;
-        justify-content:center;
-        transition:    all .15s;
-    }
-
-    .pg-btn:hover   { border-color: var(--gold); color: var(--gold-d); }
-    .pg-btn.active  { background: var(--black); border-color: var(--black); color: #fff; }
-    .pg-btn:disabled{ opacity: .4; cursor: not-allowed; }
-
-    .pg-info { font-size: .72rem; color: var(--muted); padding: 0 4px; }
-
-    /* ══ Cart Table ══════════════════════════════════════════════════════ */
-    .cart-wrap { overflow-y: auto; flex: 1; }
-
-    .cart-empty {
-        display:         flex;
-        flex-direction:  column;
-        align-items:     center;
-        justify-content: center;
-        padding:         30px 20px;
-        color:           var(--muted);
-        height:          100%;
-        min-height:      120px;
-    }
-
-    .cart-empty i { font-size: 2.5rem; margin-bottom: 8px; opacity: .4; }
-    .cart-empty p { font-size: .82rem; margin: 0; }
-
-    .cart-table { width: 100%; border-collapse: collapse; }
-    .cart-table th {
-        font-size:      .66rem;
-        text-transform: uppercase;
-        color:          var(--muted);
-        padding:        6px 8px;
-        background:     #faf9f7;
-        border-bottom:  1px solid var(--border);
-        font-weight:    600;
-        letter-spacing: .04em;
-    }
-    .cart-table td { padding: 5px 8px; border-bottom: 1px solid #f5f3ef; vertical-align: middle; }
-    .cart-table tr:last-child td { border-bottom: none; }
-
-    .ci-name  { font-size: .78rem; font-weight: 600; color: var(--text); }
-    .ci-meta  { font-size: .66rem; color: var(--muted); }
-
-    .qty-btn {
-        width:  20px; height: 20px;
-        border: none;
-        border-radius: 4px;
-        background: #f0ebe0;
-        color:  var(--text);
-        font-size: .82rem;
-        cursor: pointer;
-        display:  inline-flex;
-        align-items:   center;
-        justify-content: center;
-        transition: background .12s;
-    }
-    .qty-btn:hover { background: var(--black); color: #fff; }
-
-    .qty-input {
-        width:         42px;
-        text-align:    center;
-        border:        1px solid var(--border);
-        border-radius: 5px;
-        padding:       1px 2px;
-        font-size:     .8rem;
-        font-weight:   700;
-        color:         var(--text);
-    }
-
-    .rm-btn {
-        width:  20px; height: 20px;
-        border: none;
-        border-radius: 50%;
-        background: var(--danger-bg);
-        color:  var(--danger);
-        cursor: pointer;
-        display: inline-flex;
-        align-items:   center;
-        justify-content: center;
-        font-size: .75rem;
-        transition: background .12s;
-    }
-    .rm-btn:hover { background: var(--danger); color: #fff; }
-
-    /* ══ Customer ════════════════════════════════════════════════════════ */
-    .cust-display {
-        padding: 8px 12px;
-        cursor:  pointer;
-        transition: background .15s;
-        display:    flex;
-        align-items:center;
-        justify-content:space-between;
-        gap: 8px;
-    }
-    .cust-display:hover { background: #faf9f7; }
-    .cust-name { font-size: .8rem; font-weight: 500; color: var(--text); }
-    .cust-sub  { font-size: .68rem; color: var(--muted); }
-
-    /* Customer Modal */
-    .cust-search-modal {
-        display:    none;
-        position:   fixed;
-        inset:      0;
-        z-index:    500;
-        background: rgba(0,0,0,.5);
-        align-items:center;
-        justify-content:center;
-    }
-    .cust-search-modal.open { display: flex; }
-    .cust-modal-box {
-        background:    #fff;
-        border-radius: 14px;
-        width:         min(90vw, 480px);
-        max-height:    70vh;
-        display:       flex;
-        flex-direction:column;
-        overflow:      hidden;
-        box-shadow:    0 20px 60px rgba(0,0,0,.2);
-    }
-    .cust-modal-hdr {
-        padding:       14px 16px;
-        border-bottom: 1px solid var(--border);
-        display:       flex;
-        align-items:   center;
-        gap:           10px;
-    }
-    .cust-modal-hdr input {
-        flex:     1;
-        border:   1px solid var(--border);
-        border-radius: 7px;
-        padding:  7px 12px;
-        font-size:.85rem;
-        outline:  none;
-    }
-    .cust-modal-hdr input:focus { border-color: var(--gold); }
-    .cust-modal-body { overflow-y: auto; flex: 1; }
-
-    .cust-item {
-        padding:     10px 16px;
-        border-bottom: 1px solid #f5f3ef;
-        cursor:      pointer;
-        transition:  background .12s;
-        display:     flex;
-        align-items: center;
-        gap:         10px;
-    }
-    .cust-item:hover { background: #faf9f7; }
-    .cust-avatar {
-        width:  34px; height: 34px;
-        border-radius: 50%;
-        background:    var(--black);
-        color:         var(--gold);
-        display:       flex;
-        align-items:   center;
-        justify-content:center;
-        font-size:     .85rem;
-        font-weight:   700;
-        flex-shrink:   0;
-    }
-    .cust-item-name { font-size: .84rem; font-weight: 600; color: var(--text); }
-    .cust-item-sub  { font-size: .7rem;  color: var(--muted); }
-    .cust-due { margin-left: auto; font-size: .75rem; font-weight: 700; color: var(--danger); }
-
-    /* ══ Totals ══════════════════════════════════════════════════════════ */
-    .totals-section { padding: 8px 12px; }
-
-    .total-row {
-        display:         flex;
-        justify-content: space-between;
-        align-items:     center;
-        font-size:       .8rem;
-        padding:         3px 0;
-    }
-
-    .total-row .lbl  { color: var(--muted); }
-    .total-row .val  { font-weight: 600; color: var(--text); }
-
-    .total-grand {
-        border-top:  2px solid var(--black);
-        margin-top:  6px;
-        padding-top: 6px;
-    }
-
-    .total-grand .lbl { font-weight: 700; font-size: .88rem; color: var(--text); }
-    .total-grand .val { font-size: .88rem; }
-    .total-currency   { font-size: .68rem; color: var(--muted); text-align: right; margin-top: 1px; }
-
-    /* ══ Payment ═════════════════════════════════════════════════════════ */
-    .pay-methods { display: flex; gap: 4px; padding: 8px 12px 0; }
-
-    .pay-tab {
-        flex:          1;
-        padding:       5px 6px;
-        border-radius: 7px;
-        border:        1px solid var(--border);
-        background:    #fff;
-        font-size:     .72rem;
-        font-weight:   600;
-        cursor:        pointer;
-        text-align:    center;
-        transition:    all .15s;
-        color:         var(--muted);
-    }
-
-    .pay-tab.active {
-        background:    var(--black);
-        border-color:  var(--black);
-        color:         var(--gold);
-    }
-
-    .pay-input-wrap { padding: 8px 12px; }
-
-    .pay-amount-input {
-        width:         100%;
-        border:        2px solid var(--border);
-        border-radius: 8px;
-        padding:       8px 12px;
-        font-size:     1.1rem;
-        font-weight:   700;
-        text-align:    right;
-        color:         var(--text);
-        outline:       none;
-        transition:    border-color .18s;
-    }
-
-    .pay-amount-input:focus { border-color: var(--gold); }
-
-    .quick-amts { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
-
-    .quick-amt-btn {
-        flex:          1;
-        min-width:     48px;
-        padding:       4px 6px;
-        border-radius: 6px;
-        border:        1px solid var(--border);
-        background:    #fff;
-        font-size:     .72rem;
-        font-weight:   600;
-        cursor:        pointer;
-        text-align:    center;
-        transition:    all .15s;
-        color:         var(--text);
-    }
-
-    .quick-amt-btn:hover { border-color: var(--gold); color: var(--gold-d); }
-
-    .change-display {
-        margin:        8px 12px;
-        padding:       8px 10px;
-        background:    #f5f3ef;
-        border-radius: 7px;
-        font-size:     .77rem;
-    }
-
-    .change-row {
-        display:         flex;
-        justify-content: space-between;
-        align-items:     center;
-        padding:         1px 0;
-    }
-
-    .change-row .lbl { color: var(--muted); }
-
-    /* Checkout button */
-    .btn-checkout {
-        margin:        8px 12px 0;
-        width:         calc(100% - 24px);
-        padding:       12px;
-        border:        none;
-        border-radius: 10px;
-        background:    var(--black);
-        color:         #fff;
-        font-size:     .88rem;
-        font-weight:   700;
-        cursor:        pointer;
-        transition:    background .2s;
-        display:       flex;
-        align-items:   center;
-        justify-content:center;
-        gap:           6px;
-    }
-
-    .btn-checkout:hover    { background: var(--gold-d); }
-    .btn-checkout:disabled { opacity: .6; cursor: not-allowed; }
-
-    .btn-hold {
-        margin:        6px 12px 10px;
-        width:         calc(100% - 24px);
-        padding:       8px;
-        border:        1px solid var(--gold);
-        border-radius: 8px;
-        background:    transparent;
-        color:         var(--gold-d);
-        font-size:     .8rem;
-        font-weight:   600;
-        cursor:        pointer;
-        transition:    all .15s;
-        display:       flex;
-        align-items:   center;
-        justify-content:center;
-        gap:           5px;
-    }
-
-    .btn-hold:hover { background: var(--gold); color: #000; }
-
-    /* Credit switch */
-    .credit-wrap { padding: 4px 12px; }
-
-    /* ══ Mobile: Bottom Tabs ═════════════════════════════════════════════ */
-    .mobile-tabs {
-        display:   none;
-        position:  fixed;
-        bottom:    0; left: 0; right: 0;
-        height:    var(--tabs);
-        background:var(--black);
-        z-index:   200;
-        border-top:1px solid rgba(255,255,255,.08);
-    }
-
-    .mobile-tabs nav {
-        display:   flex;
-        height:    100%;
-    }
-
-    .mob-tab {
-        flex:            1;
-        display:         flex;
-        flex-direction:  column;
-        align-items:     center;
-        justify-content: center;
-        gap:             2px;
-        color:           rgba(255,255,255,.45);
-        font-size:       .62rem;
-        font-weight:     500;
-        cursor:          pointer;
-        transition:      color .15s;
-        border:          none;
-        background:      transparent;
-        padding:         0;
-        position:        relative;
-    }
-
-    .mob-tab i      { font-size: 1.1rem; }
-    .mob-tab.active { color: var(--gold); }
-
-    .mob-badge {
-        position:      absolute;
-        top:           6px; right: calc(50% - 20px);
-        background:    #dc2626;
-        color:         #fff;
-        border-radius: 10px;
-        font-size:     .58rem;
-        font-weight:   700;
-        padding:       1px 5px;
-        min-width:     16px;
-        text-align:    center;
-    }
-
-    /* ══ Responsive ══════════════════════════════════════════════════════ */
-    @@media (max-width: 900px) {
-        .pos-payment-panel { width: 240px; }
-    }
-
-    @@media (max-width: 768px) {
-        .pos-body {
-            flex-direction: column;
-            padding:        6px;
-            bottom:         var(--tabs);
-            overflow:       hidden;
-        }
-
-        /* Hide/show panels via tabs */
-        .pos-products-panel,
-        .pos-cart-panel,
-        .pos-payment-panel {
-            display:    none;
-            width:      100%;
-            flex:       1;
-            min-height: 0;
-        }
-
-        .pos-products-panel.mob-active,
-        .pos-cart-panel.mob-active,
-        .pos-payment-panel.mob-active {
-            display: flex;
-        }
-
-        .mobile-tabs { display: block; }
-
-        /* Mobile: product grid 3 cols */
-        .product-grid { grid-template-columns: repeat(3, 1fr); }
-
-        /* Mobile: payment panel full scroll */
-        .pos-payment-panel.mob-active { overflow-y: auto; }
-    }
-
-    @@media (max-width: 480px) {
-        .product-grid { grid-template-columns: repeat(2, 1fr); }
-        .pos-hdr .pos-date { display: none; }
-    }
-
-    /* ══ Receipt Modal ════════════════════════════════════════════════════ */
-    .receipt-overlay {
-        display:         none;
-        position:        fixed;
-        inset:           0;
-        z-index:         600;
-        background:      rgba(0,0,0,.6);
-        align-items:     center;
-        justify-content: center;
-    }
-    .receipt-overlay.open { display: flex; }
-    .receipt-box {
-        background:    #fff;
-        border-radius: 14px;
-        width:         min(90vw, 340px);
-        overflow:      hidden;
-        box-shadow:    0 20px 60px rgba(0,0,0,.25);
-    }
-    .receipt-top {
-        background:  var(--black);
-        padding:     20px;
-        text-align:  center;
-        color:       #fff;
-    }
-    .receipt-top i { font-size: 2rem; color: var(--gold); }
-    .receipt-top h5 { margin: 8px 0 2px; font-size: 1.1rem; }
-    .receipt-top p  { color: rgba(255,255,255,.5); font-size: .78rem; margin: 0; }
-    .receipt-body   { padding: 16px 20px; }
-    .receipt-row    { display: flex; justify-content: space-between; padding: 4px 0; font-size: .85rem; border-bottom: 1px solid #f5f3ef; }
-    .receipt-row:last-child { border-bottom: none; }
-    .receipt-foot   { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
-    .receipt-foot a, .receipt-foot button {
-        flex: 1; padding: 10px; border-radius: 8px;
-        font-size: .82rem; font-weight: 600; text-align: center;
-        text-decoration: none; cursor: pointer; border: none;
-        transition: opacity .15s;
-    }
-    .receipt-foot a      { background: #f0ebe0; color: var(--text); }
-    .receipt-foot button { background: var(--black); color: var(--gold); }
-    .receipt-foot a:hover, .receipt-foot button:hover { opacity: .85; }
-
-    /* Loading spinner */
-    .pos-loading {
-        display:         flex;
-        flex-direction:  column;
-        align-items:     center;
-        justify-content: center;
-        height:          100%;
-        gap:             10px;
-        color:           var(--muted);
-        font-size:       .85rem;
-    }
-    .spinner {
-        width:  28px; height: 28px;
-        border: 3px solid var(--border);
-        border-top-color: var(--gold);
-        border-radius: 50%;
-        animation: spin .7s linear infinite;
-    }
-    @@keyframes spin { to { transform: rotate(360deg); } }
+            /* ══ Variables ═══════════════════════════════════════════════════════ */
+            :root {
+                --hdr: 50px;
+                --tabs: 54px;
+                --black: #0a0a0a;
+                --gold: #c9a96e;
+                --gold-d: #a6845a;
+                --cream: #f5f2ed;
+                --border: #e8e3da;
+                --card: #ffffff;
+                --text: #1a1a1a;
+                --muted: #6b7280;
+                --success: #065f46;
+                --success-bg: #d1fae5;
+                --danger: #7f1d1d;
+                --danger-bg: #fee2e2;
+            }
+
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            html, body {
+                height: 100%;
+                font-family: 'Segoe UI', sans-serif;
+                background: var(--cream);
+                overflow: hidden;
+            }
+
+            /* ══ POS Header ══════════════════════════════════════════════════════ */
+            .pos-hdr {
+                height: var(--hdr);
+                background: var(--black);
+                display: flex;
+                align-items: center;
+                padding: 0 12px;
+                gap: 10px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 200;
+            }
+
+            .pos-logo {
+                height: 30px;
+                filter: brightness(0) invert(1);
+                opacity: .88;
+                flex-shrink: 0;
+            }
+
+            .pos-search-wrap {
+                flex: 1;
+                max-width: 380px;
+                position: relative;
+            }
+
+            .pos-search-input {
+                width: 100%;
+                background: rgba(255,255,255,.10);
+                border: 1px solid rgba(255,255,255,.18);
+                border-radius: 8px;
+                color: #fff;
+                padding: 6px 36px 6px 12px;
+                font-size: .85rem;
+                outline: none;
+                transition: background .18s, border-color .18s;
+            }
+
+                .pos-search-input:focus {
+                    background: rgba(255,255,255,.16);
+                    border-color: var(--gold);
+                }
+
+                .pos-search-input::placeholder {
+                    color: rgba(255,255,255,.4);
+                }
+
+            .pos-search-icon {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: rgba(255,255,255,.4);
+                font-size: .9rem;
+                pointer-events: none;
+            }
+
+            .pos-hdr-right {
+                margin-left: auto;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .pos-hdr-btn {
+                padding: 5px 10px;
+                border-radius: 6px;
+                font-size: .73rem;
+                font-weight: 500;
+                text-decoration: none;
+                transition: background .15s;
+                border: 1px solid rgba(255,255,255,.18);
+                color: rgba(255,255,255,.75);
+                background: transparent;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+                .pos-hdr-btn:hover {
+                    background: rgba(255,255,255,.10);
+                    color: #fff;
+                }
+
+                .pos-hdr-btn.gold {
+                    background: var(--gold);
+                    border-color: var(--gold);
+                    color: #000;
+                }
+
+                    .pos-hdr-btn.gold:hover {
+                        background: var(--gold-d);
+                    }
+
+            .pos-date {
+                color: rgba(255,255,255,.5);
+                font-size: .73rem;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            /* ══ Desktop 3-Column Body ═══════════════════════════════════════════ */
+            .pos-body {
+                position: fixed;
+                top: var(--hdr);
+                left: 0;
+                right: 0;
+                bottom: 0;
+                display: flex;
+                gap: 8px;
+                padding: 8px;
+                overflow: hidden;
+            }
+
+            /* Left — Products */
+            .pos-products-panel {
+                width: 300px;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            /* Center — Cart */
+            .pos-cart-panel {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                min-width: 0;
+            }
+
+            /* Right — Payment */
+            .pos-payment-panel {
+                width: 270px;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            /* ══ Panel Card ══════════════════════════════════════════════════════ */
+            .pcard {
+                background: var(--card);
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                overflow: hidden;
+            }
+
+            .pcard-hdr {
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--border);
+                font-size: .8rem;
+                font-weight: 600;
+                color: var(--text);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #faf9f7;
+                flex-shrink: 0;
+            }
+
+            .pcard-body {
+                overflow-y: auto;
+                flex: 1;
+            }
+
+                .pcard-body::-webkit-scrollbar {
+                    width: 3px;
+                }
+
+                .pcard-body::-webkit-scrollbar-thumb {
+                    background: var(--border);
+                    border-radius: 2px;
+                }
+
+            .panel-tabs {
+                display: flex;
+                gap: 4px;
+                padding: 0 8px;
+            }
+
+            .panel-tab {
+                flex: 1;
+                padding: 6px 10px;
+                border-radius: 7px;
+                font-size: .74rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all .15s;
+            }
+
+                .panel-tab.active {
+                    background: var(--black) !important;
+                    border-color: var(--black) !important;
+                    color: #fff !important;
+                }
+
+            .panel-section {
+                display: none;
+            }
+
+                .panel-section.active {
+                    display: block;
+                }
+
+            /* ══ Product / Bundle Grid ════════════════════════════════════════════ */
+            .product-grid,
+            .bundle-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+                padding: 8px;
+            }
+
+            .product-card,
+            .bundle-card {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 8px;
+                cursor: pointer;
+                transition: all .15s;
+                background: #fff;
+                position: relative;
+                overflow: hidden;
+            }
+
+                .product-card:hover,
+                .bundle-card:hover {
+                    border-color: var(--gold);
+                    box-shadow: 0 2px 8px rgba(201,169,110,.2);
+                    transform: translateY(-1px);
+                }
+
+                .product-card:active,
+                .bundle-card:active {
+                    transform: scale(.97);
+                }
+
+                .product-card.out-of-stock {
+                    opacity: .5;
+                    cursor: not-allowed;
+                }
+
+            .bundle-card {
+                border-left: 3px solid var(--gold);
+            }
+
+                .bundle-card.out-of-stock {
+                    opacity: .55;
+                    cursor: not-allowed;
+                }
+
+            .pc-icon,
+            .bc-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                background: linear-gradient(135deg, var(--black), #333);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--gold);
+                font-size: 1rem;
+                margin-bottom: 6px;
+                flex-shrink: 0;
+            }
+
+            .pc-name,
+            .bc-name {
+                font-size: .75rem;
+                font-weight: 600;
+                color: var(--text);
+                line-height: 1.2;
+                margin-bottom: 3px;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+
+            .pc-variant,
+            .bc-meta {
+                font-size: .65rem;
+                color: var(--muted);
+                margin-bottom: 4px;
+                display: flex;
+                gap: 3px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            .pc-color-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                border: 1px solid rgba(0,0,0,.15);
+                flex-shrink: 0;
+            }
+
+            .pc-price,
+            .bc-price {
+                font-size: .8rem;
+                font-weight: 700;
+                color: var(--black);
+                line-height: 1;
+            }
+
+            .pc-price-sub,
+            .bc-price-sub {
+                font-size: .62rem;
+                color: var(--muted);
+                margin-top: 1px;
+            }
+
+            .pc-stock,
+            .bc-stock {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                font-size: .58rem;
+                font-weight: 600;
+                padding: 1px 5px;
+                border-radius: 10px;
+            }
+
+                .pc-stock.in, .bc-stock.in {
+                    background: var(--success-bg);
+                    color: var(--success);
+                }
+
+                .pc-stock.out, .bc-stock.out {
+                    background: var(--danger-bg);
+                    color: var(--danger);
+                }
+
+            .pc-add,
+            .bc-add {
+                margin-top: 6px;
+                width: 100%;
+                padding: 4px;
+                border: 1px solid var(--black);
+                border-radius: 5px;
+                background: var(--black);
+                color: #fff;
+                font-size: .7rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background .15s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+            }
+
+                .pc-add:hover,
+                .bc-add:hover {
+                    background: var(--gold-d);
+                    border-color: var(--gold-d);
+                }
+
+            .bundle-summary {
+                font-size: .62rem;
+                color: var(--muted);
+                line-height: 1.25;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                min-height: 2.4em;
+            }
+
+            /* ══ Pagination ══════════════════════════════════════════════════════ */
+            .pos-pagination {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                padding: 8px;
+                border-top: 1px solid var(--border);
+                flex-shrink: 0;
+                background: #faf9f7;
+            }
+
+            .pg-btn {
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                background: #fff;
+                color: var(--text);
+                font-size: .75rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all .15s;
+            }
+
+                .pg-btn:hover {
+                    border-color: var(--gold);
+                    color: var(--gold-d);
+                }
+
+                .pg-btn.active {
+                    background: var(--black);
+                    border-color: var(--black);
+                    color: #fff;
+                }
+
+                .pg-btn:disabled {
+                    opacity: .4;
+                    cursor: not-allowed;
+                }
+
+            .pg-info {
+                font-size: .72rem;
+                color: var(--muted);
+                padding: 0 4px;
+            }
+
+            /* ══ Cart Table ══════════════════════════════════════════════════════ */
+            .cart-wrap {
+                overflow-y: auto;
+                flex: 1;
+            }
+
+            .cart-empty {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 30px 20px;
+                color: var(--muted);
+                height: 100%;
+                min-height: 120px;
+            }
+
+                .cart-empty i {
+                    font-size: 2.5rem;
+                    margin-bottom: 8px;
+                    opacity: .4;
+                }
+
+                .cart-empty p {
+                    font-size: .82rem;
+                    margin: 0;
+                }
+
+            .cart-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+                .cart-table th {
+                    font-size: .66rem;
+                    text-transform: uppercase;
+                    color: var(--muted);
+                    padding: 6px 8px;
+                    background: #faf9f7;
+                    border-bottom: 1px solid var(--border);
+                    font-weight: 600;
+                    letter-spacing: .04em;
+                }
+
+                .cart-table td {
+                    padding: 5px 8px;
+                    border-bottom: 1px solid #f5f3ef;
+                    vertical-align: middle;
+                }
+
+                .cart-table tr:last-child td {
+                    border-bottom: none;
+                }
+
+            .ci-name {
+                font-size: .78rem;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .ci-meta {
+                font-size: .66rem;
+                color: var(--muted);
+            }
+
+            .qty-btn {
+                width: 20px;
+                height: 20px;
+                border: none;
+                border-radius: 4px;
+                background: #f0ebe0;
+                color: var(--text);
+                font-size: .82rem;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition: background .12s;
+            }
+
+                .qty-btn:hover {
+                    background: var(--black);
+                    color: #fff;
+                }
+
+            .qty-input {
+                width: 42px;
+                text-align: center;
+                border: 1px solid var(--border);
+                border-radius: 5px;
+                padding: 1px 2px;
+                font-size: .8rem;
+                font-weight: 700;
+                color: var(--text);
+            }
+
+            .rm-btn {
+                width: 20px;
+                height: 20px;
+                border: none;
+                border-radius: 50%;
+                background: var(--danger-bg);
+                color: var(--danger);
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: .75rem;
+                transition: background .12s;
+            }
+
+                .rm-btn:hover {
+                    background: var(--danger);
+                    color: #fff;
+                }
+
+            /* ══ Customer ════════════════════════════════════════════════════════ */
+            .pos-pagination {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                padding: 8px;
+                border-top: 1px solid var(--border);
+                flex-shrink: 0;
+                background: #faf9f7;
+            }
+
+            .pg-btn {
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                background: #fff;
+                color: var(--text);
+                font-size: .75rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all .15s;
+            }
+
+                .pg-btn:hover {
+                    border-color: var(--gold);
+                    color: var(--gold-d);
+                }
+
+                .pg-btn.active {
+                    background: var(--black);
+                    border-color: var(--black);
+                    color: #fff;
+                }
+
+                .pg-btn:disabled {
+                    opacity: .4;
+                    cursor: not-allowed;
+                }
+
+            .pg-info {
+                font-size: .72rem;
+                color: var(--muted);
+                padding: 0 4px;
+            }
+
+            /* ══ Cart Table ══════════════════════════════════════════════════════ */
+            .cart-wrap {
+                overflow-y: auto;
+                flex: 1;
+            }
+
+            .cart-empty {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 30px 20px;
+                color: var(--muted);
+                height: 100%;
+                min-height: 120px;
+            }
+
+                .cart-empty i {
+                    font-size: 2.5rem;
+                    margin-bottom: 8px;
+                    opacity: .4;
+                }
+
+                .cart-empty p {
+                    font-size: .82rem;
+                    margin: 0;
+                }
+
+            .cart-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+                .cart-table th {
+                    font-size: .66rem;
+                    text-transform: uppercase;
+                    color: var(--muted);
+                    padding: 6px 8px;
+                    background: #faf9f7;
+                    border-bottom: 1px solid var(--border);
+                    font-weight: 600;
+                    letter-spacing: .04em;
+                }
+
+                .cart-table td {
+                    padding: 5px 8px;
+                    border-bottom: 1px solid #f5f3ef;
+                    vertical-align: middle;
+                }
+
+                .cart-table tr:last-child td {
+                    border-bottom: none;
+                }
+
+            .ci-name {
+                font-size: .78rem;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .ci-meta {
+                font-size: .66rem;
+                color: var(--muted);
+            }
+
+            .qty-btn {
+                width: 20px;
+                height: 20px;
+                border: none;
+                border-radius: 4px;
+                background: #f0ebe0;
+                color: var(--text);
+                font-size: .82rem;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition: background .12s;
+            }
+
+                .qty-btn:hover {
+                    background: var(--black);
+                    color: #fff;
+                }
+
+            .qty-input {
+                width: 42px;
+                text-align: center;
+                border: 1px solid var(--border);
+                border-radius: 5px;
+                padding: 1px 2px;
+                font-size: .8rem;
+                font-weight: 700;
+                color: var(--text);
+            }
+
+            .rm-btn {
+                width: 20px;
+                height: 20px;
+                border: none;
+                border-radius: 50%;
+                background: var(--danger-bg);
+                color: var(--danger);
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: .75rem;
+                transition: background .12s;
+            }
+
+                .rm-btn:hover {
+                    background: var(--danger);
+                    color: #fff;
+                }
+
+            /* ══ Customer ════════════════════════════════════════════════════════ */
+            .cust-display {
+                padding: 8px 12px;
+                cursor: pointer;
+                transition: background .15s;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+                .cust-display:hover {
+                    background: #faf9f7;
+                }
+
+            .cust-name {
+                font-size: .8rem;
+                font-weight: 500;
+                color: var(--text);
+            }
+
+            .cust-sub {
+                font-size: .68rem;
+                color: var(--muted);
+            }
+
+            /* Customer Modal */
+            .cust-search-modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 500;
+                background: rgba(0,0,0,.5);
+                align-items: center;
+                justify-content: center;
+            }
+
+                .cust-search-modal.open {
+                    display: flex;
+                }
+
+            .cust-modal-box {
+                background: #fff;
+                border-radius: 14px;
+                width: min(90vw, 480px);
+                max-height: 70vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0,0,0,.2);
+            }
+
+            .cust-modal-hdr {
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+                .cust-modal-hdr input {
+                    flex: 1;
+                    border: 1px solid var(--border);
+                    border-radius: 7px;
+                    padding: 7px 12px;
+                    font-size: .85rem;
+                    outline: none;
+                }
+
+                    .cust-modal-hdr input:focus {
+                        border-color: var(--gold);
+                    }
+
+            .cust-modal-body {
+                overflow-y: auto;
+                flex: 1;
+            }
+
+            .cust-item {
+                padding: 10px 16px;
+                border-bottom: 1px solid #f5f3ef;
+                cursor: pointer;
+                transition: background .12s;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+                .cust-item:hover {
+                    background: #faf9f7;
+                }
+
+            .cust-avatar {
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                background: var(--black);
+                color: var(--gold);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: .85rem;
+                font-weight: 700;
+                flex-shrink: 0;
+            }
+
+            .cust-item-name {
+                font-size: .84rem;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .cust-item-sub {
+                font-size: .7rem;
+                color: var(--muted);
+            }
+
+            .cust-due {
+                margin-left: auto;
+                font-size: .75rem;
+                font-weight: 700;
+                color: var(--danger);
+            }
+
+            /* ══ Totals ══════════════════════════════════════════════════════════ */
+            .totals-section {
+                padding: 8px 12px;
+            }
+
+            .total-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: .8rem;
+                padding: 3px 0;
+            }
+
+                .total-row .lbl {
+                    color: var(--muted);
+                }
+
+                .total-row .val {
+                    font-weight: 600;
+                    color: var(--text);
+                }
+
+            .total-grand {
+                border-top: 2px solid var(--black);
+                margin-top: 6px;
+                padding-top: 6px;
+            }
+
+                .total-grand .lbl {
+                    font-weight: 700;
+                    font-size: .88rem;
+                    color: var(--text);
+                }
+
+                .total-grand .val {
+                    font-size: .88rem;
+                }
+
+            .total-currency {
+                font-size: .68rem;
+                color: var(--muted);
+                text-align: right;
+                margin-top: 1px;
+            }
+
+            /* ══ Payment ═════════════════════════════════════════════════════════ */
+            .pay-methods {
+                display: flex;
+                gap: 4px;
+                padding: 8px 12px 0;
+            }
+
+            .pay-tab {
+                flex: 1;
+                padding: 5px 6px;
+                border-radius: 7px;
+                border: 1px solid var(--border);
+                background: #fff;
+                font-size: .72rem;
+                font-weight: 600;
+                cursor: pointer;
+                text-align: center;
+                transition: all .15s;
+                color: var(--muted);
+            }
+
+                .pay-tab.active {
+                    background: var(--black);
+                    border-color: var(--black);
+                    color: var(--gold);
+                }
+
+            .pay-input-wrap {
+                padding: 8px 12px;
+            }
+
+            .pay-amount-input {
+                width: 100%;
+                border: 2px solid var(--border);
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                text-align: right;
+                color: var(--text);
+                outline: none;
+                transition: border-color .18s;
+            }
+
+                .pay-amount-input:focus {
+                    border-color: var(--gold);
+                }
+
+            .quick-amts {
+                display: flex;
+                gap: 4px;
+                margin-top: 6px;
+                flex-wrap: wrap;
+            }
+
+            .quick-amt-btn {
+                flex: 1;
+                min-width: 48px;
+                padding: 4px 6px;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                background: #fff;
+                font-size: .72rem;
+                font-weight: 600;
+                cursor: pointer;
+                text-align: center;
+                transition: all .15s;
+                color: var(--text);
+            }
+
+                .quick-amt-btn:hover {
+                    border-color: var(--gold);
+                    color: var(--gold-d);
+                }
+
+            .change-display {
+                margin: 8px 12px;
+                padding: 8px 10px;
+                background: #f5f3ef;
+                border-radius: 7px;
+                font-size: .77rem;
+            }
+
+            .change-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1px 0;
+            }
+
+                .change-row .lbl {
+                    color: var(--muted);
+                }
+
+            /* Checkout button */
+            .btn-checkout {
+                margin: 8px 12px 0;
+                width: calc(100% - 24px);
+                padding: 12px;
+                border: none;
+                border-radius: 10px;
+                background: var(--black);
+                color: #fff;
+                font-size: .88rem;
+                font-weight: 700;
+                cursor: pointer;
+                transition: background .2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }
+
+                .btn-checkout:hover {
+                    background: var(--gold-d);
+                }
+
+                .btn-checkout:disabled {
+                    opacity: .6;
+                    cursor: not-allowed;
+                }
+
+            .btn-hold {
+                margin: 6px 12px 10px;
+                width: calc(100% - 24px);
+                padding: 8px;
+                border: 1px solid var(--gold);
+                border-radius: 8px;
+                background: transparent;
+                color: var(--gold-d);
+                font-size: .8rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all .15s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+            }
+
+                .btn-hold:hover {
+                    background: var(--gold);
+                    color: #000;
+                }
+
+            /* Credit switch */
+            .credit-wrap {
+                padding: 4px 12px;
+            }
+
+            /* ══ Mobile: Bottom Tabs ═════════════════════════════════════════════ */
+            .mobile-tabs {
+                display: none;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: var(--tabs);
+                background: var(--black);
+                z-index: 200;
+                border-top: 1px solid rgba(255,255,255,.08);
+            }
+
+                .mobile-tabs nav {
+                    display: flex;
+                    height: 100%;
+                }
+
+            .mob-tab {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                color: rgba(255,255,255,.45);
+                font-size: .62rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: color .15s;
+                border: none;
+                background: transparent;
+                padding: 0;
+                position: relative;
+            }
+
+                .mob-tab i {
+                    font-size: 1.1rem;
+                }
+
+                .mob-tab.active {
+                    color: var(--gold);
+                }
+
+            .mob-badge {
+                position: absolute;
+                top: 6px;
+                right: calc(50% - 20px);
+                background: #dc2626;
+                color: #fff;
+                border-radius: 10px;
+                font-size: .58rem;
+                font-weight: 700;
+                padding: 1px 5px;
+                min-width: 16px;
+                text-align: center;
+            }
+
+            /* ══ Responsive ══════════════════════════════════════════════════════ */
+            @@media (max-width: 900px) {
+                .pos-payment-panel {
+                    width: 240px;
+                }
+            }
+
+            @@media (max-width: 768px) {
+                .pos-body {
+                    flex-direction: column;
+                    padding: 6px;
+                    bottom: var(--tabs);
+                    overflow: hidden;
+                }
+                /* Hide/show panels via tabs */
+                .pos-products-panel,
+                .pos-cart-panel,
+                .pos-payment-panel {
+                    display: none;
+                    width: 100%;
+                    flex: 1;
+                    min-height: 0;
+                }
+
+                    .pos-products-panel.mob-active,
+                    .pos-cart-panel.mob-active,
+                    .pos-payment-panel.mob-active {
+                        display: flex;
+                    }
+
+                .mobile-tabs {
+                    display: block;
+                }
+                /* Mobile: product grid 3 cols */
+                .product-grid {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+                /* Mobile: payment panel full scroll */
+                .pos-payment-panel.mob-active {
+                    overflow-y: auto;
+                }
+            }
+
+            @@media (max-width: 480px) {
+                .product-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .pos-hdr .pos-date {
+                    display: none;
+                }
+            }
+
+            /* ══ Receipt Modal ════════════════════════════════════════════════════ */
+            .receipt-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 600;
+                background: rgba(0,0,0,.6);
+                align-items: center;
+                justify-content: center;
+            }
+
+                .receipt-overlay.open {
+                    display: flex;
+                }
+
+            .receipt-box {
+                background: #fff;
+                border-radius: 14px;
+                width: min(90vw, 340px);
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0,0,0,.25);
+            }
+
+            .receipt-top {
+                background: var(--black);
+                padding: 20px;
+                text-align: center;
+                color: #fff;
+            }
+
+                .receipt-top i {
+                    font-size: 2rem;
+                    color: var(--gold);
+                }
+
+                .receipt-top h5 {
+                    margin: 8px 0 2px;
+                    font-size: 1.1rem;
+                }
+
+                .receipt-top p {
+                    color: rgba(255,255,255,.5);
+                    font-size: .78rem;
+                    margin: 0;
+                }
+
+            .receipt-body {
+                padding: 16px 20px;
+            }
+
+            .receipt-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 4px 0;
+                font-size: .85rem;
+                border-bottom: 1px solid #f5f3ef;
+            }
+
+                .receipt-row:last-child {
+                    border-bottom: none;
+                }
+
+            .receipt-foot {
+                display: flex;
+                gap: 8px;
+                padding: 12px 16px;
+                border-top: 1px solid var(--border);
+            }
+
+                .receipt-foot a, .receipt-foot button {
+                    flex: 1;
+                    padding: 10px;
+                    border-radius: 8px;
+                    font-size: .82rem;
+                    font-weight: 600;
+                    text-align: center;
+                    text-decoration: none;
+                    cursor: pointer;
+                    border: none;
+                    transition: opacity .15s;
+                }
+
+                .receipt-foot a {
+                    background: #f0ebe0;
+                    color: var(--text);
+                }
+
+                .receipt-foot button {
+                    background: var(--black);
+                    color: var(--gold);
+                }
+
+                    .receipt-foot a:hover, .receipt-foot button:hover {
+                        opacity: .85;
+                    }
+
+            /* Loading spinner */
+            .pos-loading {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                gap: 10px;
+                color: var(--muted);
+                font-size: .85rem;
+            }
+
+            .spinner {
+                width: 28px;
+                height: 28px;
+                border: 3px solid var(--border);
+                border-top-color: var(--gold);
+                border-radius: 50%;
+                animation: spin .7s linear infinite;
+            }
+
+            @@keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
     </style>
 </head>
 <body>
 
-<!-- ══ Header ═════════════════════════════════════════════════════════ -->
-<header class="pos-hdr">
-    <img src="/logo/logo.png" class="pos-logo" alt="CLOZEY" />
+    <!-- ══ Header ═════════════════════════════════════════════════════════ -->
+    <header class="pos-hdr">
+        <img src="/logo/logo.png" class="pos-logo" alt="CLOZEY" />
 
-    <div class="pos-search-wrap">
-        <input type="text" id="searchInput" class="pos-search-input"
-               placeholder="Scan barcode or search product..." autocomplete="off" />
-        <i class="bi bi-search pos-search-icon"></i>
-    </div>
-
-    <div class="pos-hdr-right">
-        <span class="pos-date d-none d-sm-flex">
-            <i class="bi bi-calendar3"></i>
-            <span id="posDate"></span>
-        </span>
-        <a href="/Sales" class="pos-hdr-btn">
-            <i class="bi bi-receipt"></i>
-            <span class="d-none d-md-inline">History</span>
-        </a>
-        <a href="/Dashboard" class="pos-hdr-btn">
-            <i class="bi bi-house"></i>
-        </a>
-    </div>
-</header>
-
-<!-- ══ Mobile Tab Bar ═════════════════════════════════════════════════ -->
-<div class="mobile-tabs">
-    <nav>
-        <button class="mob-tab active" id="tab-products" onclick="switchTab('products')">
-            <i class="bi bi-grid"></i>
-            <span>Products</span>
-        </button>
-        <button class="mob-tab" id="tab-cart" onclick="switchTab('cart')">
-            <i class="bi bi-cart3"></i>
-            <span>Cart</span>
-            <span class="mob-badge" id="cartBadge" style="display:none;">0</span>
-        </button>
-        <button class="mob-tab" id="tab-pay" onclick="switchTab('pay')">
-            <i class="bi bi-credit-card"></i>
-            <span>Pay</span>
-        </button>
-    </nav>
-</div>
-
-<!-- ══ Body ══════════════════════════════════════════════════════════ -->
-<div class="pos-body">
-
-    <!-- ── Left: Products / Bundles ───────────────────────────────── -->
-    <div class="pos-products-panel mob-active" id="panel-products">
-        <div class="panel-tabs mb-2">
-            <button class="btn btn-sm panel-tab active" id="tabProducts" onclick="switchPanel('products')"
-                    style="background:#0a0a0a;color:#c9a96e;border:1px solid #0a0a0a;">Products</button>
-            <button class="btn btn-sm panel-tab" id="tabBundles" onclick="switchPanel('bundles')"
-                    style="background:transparent;border:1px solid var(--border);">
-                <i class="bi bi-gift me-1"></i>Bundles
-            </button>
+        <div class="pos-search-wrap">
+            <input type="text" id="searchInput" class="pos-search-input"
+                   placeholder="Scan barcode or search product..." autocomplete="off" />
+            <i class="bi bi-search pos-search-icon"></i>
         </div>
 
-        <div class="panel-section active" id="productsSection">
-            <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-                <div class="pcard-hdr">
-                    <span><i class="bi bi-grid me-1" style="color:var(--gold);"></i>Products</span>
-                    <span id="productCount" style="font-size:.72rem;color:var(--muted);"></span>
-                </div>
-                <div class="pcard-body" id="productGrid" style="flex:1;">
-                    <div class="pos-loading">
-                        <div class="spinner"></div>
-                        Loading products...
-                    </div>
-                </div>
-                <div class="pos-pagination" id="pagination" style="display:none;"></div>
-            </div>
-        </div>
+        <div class="pos-hdr-right">
+            <span class="pos-date d-none d-sm-flex">
+                <i class="bi bi-calendar3"></i>
+                <span id="posDate"></span>
+            </span>
 
-        <div class="panel-section" id="bundlesSection" style="display:none;">
-            <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-                <div class="pcard-hdr">
-                    <span><i class="bi bi-gift me-1" style="color:var(--gold);"></i>Bundles</span>
-                    <span id="bundleCount" style="font-size:.72rem;color:var(--muted);"></span>
-                </div>
-                <div class="pcard-body" id="bundleGrid" style="flex:1;display:none;">
-                    <div class="pos-loading">
-                        <div class="spinner"></div>
-                        Loading bundles...
-                    </div>
-                </div>
-                <div class="pos-pagination" id="bundlePagination" style="display:none;"></div>
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="pcard">
-            <div class="d-flex gap-2 p-2">
-                <button class="pos-hdr-btn w-100" style="border-color:var(--border);color:var(--muted);"
-                        onclick="showHeldInvoices()">
-                    <i class="bi bi-pause-circle"></i>Held
-                    <span id="heldCount" class="mob-badge" style="position:static;display:none;"></span>
-                </button>
-                <button class="pos-hdr-btn w-100" style="border-color:#fca5a5;color:var(--danger);"
-                        onclick="clearCart()">
-                    <i class="bi bi-trash"></i>Clear
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Center: Cart ────────────────────────────────────────────── -->
-    <div class="pos-cart-panel" id="panel-cart">
-
-        <!-- Customer -->
-        <div class="pcard">
-            <div class="pcard-hdr">
-                <span><i class="bi bi-person me-1" style="color:var(--gold);"></i>Customer</span>
-                <button onclick="clearCustomer()" id="clearCustBtn"
-                        style="display:none;background:transparent;border:none;font-size:.75rem;color:var(--danger);cursor:pointer;">
-                    <i class="bi bi-x"></i> Remove
-                </button>
-            </div>
-            <div class="cust-display" onclick="openCustomerModal()">
-                <div>
-                    <div class="cust-name" id="custName">
-                        <i class="bi bi-plus-circle me-1" style="color:var(--muted);"></i>Walk-in Customer
-                    </div>
-                    <div class="cust-sub" id="custSub" style="display:none;"></div>
-                </div>
-                <i class="bi bi-chevron-right" style="color:var(--muted);font-size:.75rem;"></i>
-            </div>
-            <input type="hidden" id="customerId" />
-
-            <!-- Loyalty Panel -->
-            <div id="loyaltyPanel" style="display:none;" class="px-3 pb-3">
-                <div class="rounded p-3" style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="small" style="color:#c9a96e;">
-                            <i class="bi bi-gem me-1"></i>Loyalty Points
-                        </span>
-                        <span class="fw-bold text-white" id="loyaltyPointsBalance">0</span>
-                    </div>
-                    <div class="d-flex gap-2 mt-2" id="redeemRow" style="display:none;">
-                        <input type="number" id="redeemPointsInput" class="form-control form-control-sm"
-                               placeholder="Points to redeem" min="0" style="font-size:.8rem;" />
-                        <button class="btn btn-sm" style="background:#c9a96e;color:#000;" onclick="applyRedeem()">
-                            Apply
-                        </button>
-                    </div>
-                    <div class="small mt-1" style="color:#8a8a8a;" id="redeemHint"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cart -->
-        <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-            <div class="pcard-hdr">
-                <span>
-                    <i class="bi bi-cart3 me-1" style="color:var(--gold);"></i>Cart
-                    <span id="cartCount"
-                          style="background:var(--black);color:var(--gold);border-radius:10px;padding:1px 7px;font-size:.7rem;margin-left:4px;">0</span>
+            @if ((bool)(ViewBag.RateIsStale ?? false))
+            {
+                <span class="pos-hdr-btn" style="border-color:#ca8a04;color:#fcd34d;" title="Exchange rate পুরনো হতে পারে">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span class="d-none d-md-inline">Rate may be outdated</span>
                 </span>
-                <span id="cartItemInfo" style="font-size:.72rem;color:var(--muted);">0 items</span>
-            </div>
-            <div class="cart-wrap" id="cartWrap">
-                <div class="cart-empty" id="cartEmpty">
-                    <i class="bi bi-cart-x"></i>
-                    <p>Cart is empty</p>
-                    <p style="font-size:.72rem;">Add products from the grid</p>
-                </div>
-                <table class="cart-table" id="cartTable" style="display:none;">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th class="text-center" style="width:80px;">Qty</th>
-                            <th class="text-end"    style="width:60px;">USD</th>
-                            <th class="text-end"    style="width:60px;">BDT</th>
-                            <th                     style="width:28px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="cartBody"></tbody>
-                </table>
-            </div>
+            }
 
-            <!-- Discount & Tax -->
-            <div style="padding:6px 8px;border-top:1px solid var(--border);display:flex;gap:6px;background:#faf9f7;flex-shrink:0;">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text" style="font-size:.72rem;background:#fff;border-color:var(--border);">Disc $</span>
-                    <input type="number" id="discountInput" class="form-control form-control-sm"
-                           value="0" min="0" step="0.01"
-                           style="border-color:var(--border);font-size:.8rem;" oninput="recalculate()" />
-                </div>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text" style="font-size:.72rem;background:#fff;border-color:var(--border);">Tax $</span>
-                    <input type="number" id="taxInput" class="form-control form-control-sm"
-                           value="0" min="0" step="0.01"
-                           style="border-color:var(--border);font-size:.8rem;" oninput="recalculate()" />
-                </div>
-                <input type="text" id="notesInput" class="form-control form-control-sm"
-                       placeholder="Notes..." style="border-color:var(--border);font-size:.78rem;" />
-            </div>
+            <a href="/Sales" class="pos-hdr-btn">
+                <i class="bi bi-receipt"></i>
+                <span class="d-none d-md-inline">History</span>
+            </a>
+            <a href="/Dashboard" class="pos-hdr-btn">
+                <i class="bi bi-house"></i>
+            </a>
         </div>
+    </header>
+
+    <!-- ══ Mobile Tab Bar ═════════════════════════════════════════════════ -->
+    <div class="mobile-tabs">
+        <nav>
+            <button class="mob-tab active" id="tab-products" onclick="switchTab('products')">
+                <i class="bi bi-grid"></i>
+                <span>Products</span>
+            </button>
+            <button class="mob-tab" id="tab-cart" onclick="switchTab('cart')">
+                <i class="bi bi-cart3"></i>
+                <span>Cart</span>
+                <span class="mob-badge" id="cartBadge" style="display:none;">0</span>
+            </button>
+            <button class="mob-tab" id="tab-pay" onclick="switchTab('pay')">
+                <i class="bi bi-credit-card"></i>
+                <span>Pay</span>
+            </button>
+        </nav>
     </div>
 
-    <!-- ── Right: Payment ──────────────────────────────────────────── -->
-    <div class="pos-payment-panel" id="panel-pay">
+    <!-- ══ Body ══════════════════════════════════════════════════════════ -->
+    <div class="pos-body">
 
-        <!-- Totals -->
-        <div class="pcard">
-            <div class="totals-section">
-                <div class="total-row"><span class="lbl">Subtotal</span><span class="val" id="totSubtotal">$0.00</span></div>
-                <div class="total-row"><span class="lbl" style="color:var(--danger);">Discount</span><span class="val" style="color:var(--danger);" id="totDiscount">$0.00</span></div>
-                <div class="total-row"><span class="lbl">Tax</span><span class="val" id="totTax">$0.00</span></div>
-                <div class="total-row total-grand">
-                    <span class="lbl">TOTAL</span>
-                    <div class="text-end">
-                        <div class="val" id="totTotal" style="font-size:.95rem;">$0.00</div>
-                        <div class="total-currency" id="totCurrency"></div>
+        <!-- ── Left: Products / Bundles ───────────────────────────────── -->
+        <div class="pos-products-panel mob-active" id="panel-products">
+            <div class="panel-tabs mb-2">
+                <button class="btn btn-sm panel-tab active" id="tabProducts" onclick="switchPanel('products')"
+                        style="background:#0a0a0a;color:#c9a96e;border:1px solid #0a0a0a;">
+                    Products
+                </button>
+                <button class="btn btn-sm panel-tab" id="tabBundles" onclick="switchPanel('bundles')"
+                        style="background:transparent;border:1px solid var(--border);">
+                    <i class="bi bi-gift me-1"></i>Bundles
+                </button>
+            </div>
+
+            <div class="panel-section active" id="productsSection">
+                <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                    <div class="pcard-hdr">
+                        <span><i class="bi bi-grid me-1" style="color:var(--gold);"></i>Products</span>
+                        <span id="productCount" style="font-size:.72rem;color:var(--muted);"></span>
+                    </div>
+                    <div class="pcard-body" id="productGrid" style="flex:1;">
+                        <div class="pos-loading">
+                            <div class="spinner"></div>
+                            Loading products...
+                        </div>
+                    </div>
+                    <div class="pos-pagination" id="pagination" style="display:none;"></div>
+                </div>
+            </div>
+
+            <div class="panel-section" id="bundlesSection" style="display:none;">
+                <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                    <div class="pcard-hdr">
+                        <span><i class="bi bi-gift me-1" style="color:var(--gold);"></i>Bundles</span>
+                        <span id="bundleCount" style="font-size:.72rem;color:var(--muted);"></span>
+                    </div>
+                    <div class="pcard-body" id="bundleGrid" style="flex:1;display:none;">
+                        <div class="pos-loading">
+                            <div class="spinner"></div>
+                            Loading bundles...
+                        </div>
+                    </div>
+                    <div class="pos-pagination" id="bundlePagination" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="pcard">
+                <div class="d-flex gap-2 p-2">
+                    <button class="pos-hdr-btn w-100" style="border-color:var(--border);color:var(--muted);"
+                            onclick="showHeldInvoices()">
+                        <i class="bi bi-pause-circle"></i>Held
+                        <span id="heldCount" class="mob-badge" style="position:static;display:none;"></span>
+                    </button>
+                    <button class="pos-hdr-btn w-100" style="border-color:#fca5a5;color:var(--danger);"
+                            onclick="clearCart()">
+                        <i class="bi bi-trash"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Center: Cart ────────────────────────────────────────────── -->
+        <div class="pos-cart-panel" id="panel-cart">
+
+            <!-- Customer -->
+            <div class="pcard">
+                <div class="pcard-hdr">
+                    <span><i class="bi bi-person me-1" style="color:var(--gold);"></i>Customer</span>
+                    <button onclick="clearCustomer()" id="clearCustBtn"
+                            style="display:none;background:transparent;border:none;font-size:.75rem;color:var(--danger);cursor:pointer;">
+                        <i class="bi bi-x"></i> Remove
+                    </button>
+                </div>
+                <div class="cust-display" onclick="openCustomerModal()">
+                    <div>
+                        <div class="cust-name" id="custName">
+                            <i class="bi bi-plus-circle me-1" style="color:var(--muted);"></i>Walk-in Customer
+                        </div>
+                        <div class="cust-sub" id="custSub" style="display:none;"></div>
+                    </div>
+                    <i class="bi bi-chevron-right" style="color:var(--muted);font-size:.75rem;"></i>
+                </div>
+                <input type="hidden" id="customerId" />
+
+                <!-- Loyalty Panel -->
+                <div id="loyaltyPanel" style="display:none;" class="px-3 pb-3">
+                    <div class="rounded p-3" style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a);">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small" style="color:#c9a96e;">
+                                <i class="bi bi-gem me-1"></i>Loyalty Points
+                            </span>
+                            <span class="fw-bold text-white" id="loyaltyPointsBalance">0</span>
+                        </div>
+                        <div class="d-flex gap-2 mt-2" id="redeemRow" style="display:none;">
+                            <input type="number" id="redeemPointsInput" class="form-control form-control-sm"
+                                   placeholder="Points to redeem" min="0" style="font-size:.8rem;" />
+                            <button class="btn btn-sm" style="background:#c9a96e;color:#000;" onclick="applyRedeem()">
+                                Apply
+                            </button>
+                        </div>
+                        <div class="small mt-1" style="color:#8a8a8a;" id="redeemHint"></div>
                     </div>
                 </div>
             </div>
+
+            <!-- Cart -->
+            <div class="pcard" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <div class="pcard-hdr">
+                    <span>
+                        <i class="bi bi-cart3 me-1" style="color:var(--gold);"></i>Cart
+                        <span id="cartCount"
+                              style="background:var(--black);color:var(--gold);border-radius:10px;padding:1px 7px;font-size:.7rem;margin-left:4px;">0</span>
+                    </span>
+                    <span id="cartItemInfo" style="font-size:.72rem;color:var(--muted);">0 items</span>
+                </div>
+                <div class="cart-wrap" id="cartWrap">
+                    <div class="cart-empty" id="cartEmpty">
+                        <i class="bi bi-cart-x"></i>
+                        <p>Cart is empty</p>
+                        <p style="font-size:.72rem;">Add products from the grid</p>
+                    </div>
+                    <table class="cart-table" id="cartTable" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-center" style="width:80px;">Qty</th>
+                                <th class="text-end" style="width:60px;">USD</th>
+                                <th class="text-end" style="width:60px;">BDT</th>
+                                <th style="width:28px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Discount & Tax -->
+                <div style="padding:6px 8px;border-top:1px solid var(--border);display:flex;gap:6px;background:#faf9f7;flex-shrink:0;">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text" style="font-size:.72rem;background:#fff;border-color:var(--border);">Disc $</span>
+                        <input type="number" id="discountInput" class="form-control form-control-sm"
+                               value="0" min="0" step="0.01"
+                               style="border-color:var(--border);font-size:.8rem;" oninput="recalculate()" />
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text" style="font-size:.72rem;background:#fff;border-color:var(--border);">Tax $</span>
+                        <input type="number" id="taxInput" class="form-control form-control-sm"
+                               value="0" min="0" step="0.01"
+                               style="border-color:var(--border);font-size:.8rem;" oninput="recalculate()" />
+                    </div>
+                    <input type="text" id="notesInput" class="form-control form-control-sm"
+                           placeholder="Notes..." style="border-color:var(--border);font-size:.78rem;" />
+                </div>
+            </div>
         </div>
 
-        <!-- Payment -->
-        <div class="pcard" style="flex:1;display:flex;flex-direction:column;">
-            <div class="pcard-hdr">
-                <span><i class="bi bi-credit-card me-1" style="color:var(--gold);"></i>Payment</span>
-            </div>
+        <!-- ── Right: Payment ──────────────────────────────────────────── -->
+        <div class="pos-payment-panel" id="panel-pay">
 
-            <!-- Methods -->
-            <div class="pay-methods">
-                <button class="pay-tab active" data-method="1" onclick="setPayMethod(1,this)">Cash</button>
-                <button class="pay-tab"        data-method="5" onclick="setPayMethod(5,this)">Card</button>
-                <button class="pay-tab"        data-method="4" onclick="setPayMethod(4,this)">Mobile</button>
-                <button class="pay-tab"        data-method="6" onclick="setPayMethod(6,this)">Gift Card</button>
-            </div>
-
-            <!-- Gift Card code input — শুধু Gift Card method select হলে দেখাবে -->
-            <div id="giftCardInputRow" style="display:none;padding:0 12px;margin-top:8px;">
-                <div class="input-group">
-                    <input type="text" id="giftCardCode" class="form-control" placeholder="GC-XXXX-XXXX-XXXX" style="text-transform:uppercase;" />
-                    <button class="btn btn-outline-secondary" onclick="checkGiftCard()">Check</button>
-                </div>
-                <div id="giftCardBalance" class="small mt-1"></div>
-            </div>
-
-            <!-- Amount -->
-            <div class="pay-input-wrap">
-                <input type="number" id="payAmount" class="pay-amount-input"
-                       placeholder="0.00" min="0" step="0.01" oninput="calcChange()" />
-                <div class="quick-amts" id="quickAmts"></div>
-            </div>
-
-            <!-- Change display -->
-            <div class="change-display">
-                <div class="change-row">
-                    <span class="lbl">Received</span>
-                    <span id="chgReceived" style="font-weight:600;">$0.00</span>
-                </div>
-                <div class="change-row">
-                    <span class="lbl">Change</span>
-                    <span id="chgChange" style="font-weight:700;color:var(--success);">$0.00</span>
+            <!-- Totals -->
+            <div class="pcard">
+                <div class="totals-section">
+                    <div class="total-row"><span class="lbl">Subtotal</span><span class="val" id="totSubtotal">$0.00</span></div>
+                    <div class="total-row"><span class="lbl" style="color:var(--danger);">Discount</span><span class="val" style="color:var(--danger);" id="totDiscount">$0.00</span></div>
+                    <div class="total-row"><span class="lbl">Tax</span><span class="val" id="totTax">$0.00</span></div>
+                    <div class="total-row total-grand">
+                        <span class="lbl">TOTAL</span>
+                        <div class="text-end">
+                            <div class="val" id="totTotal" style="font-size:.95rem;">$0.00</div>
+                            <div class="total-currency" id="totCurrency"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Credit Sale -->
-            <div class="credit-wrap">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox"
-                           id="creditToggle" onchange="toggleCredit(this.checked)"
-                           style="cursor:pointer;" />
-                    <label class="form-check-label"
-                           style="font-size:.78rem;font-weight:500;" for="creditToggle">
-                        Credit Sale
-                    </label>
+            <!-- Payment -->
+            <div class="pcard" style="flex:1;display:flex;flex-direction:column;">
+                <div class="pcard-hdr">
+                    <span><i class="bi bi-credit-card me-1" style="color:var(--gold);"></i>Payment</span>
+                </div>
+
+                <!-- Methods -->
+
+                <div class="pay-methods">
+                    <button class="pay-tab active" data-method="1" onclick="setPayMethod(1,this)">Cash</button>
+                    <button class="pay-tab" data-method="5" onclick="setPayMethod(5,this)">Card</button>
+                    <button class="pay-tab" data-method="4" onclick="setPayMethod(4,this)">Mobile</button>
+                    <button class="pay-tab" data-method="6" onclick="setPayMethod(6,this)">Gift Card</button>
+                    <button class="pay-tab" data-method="7" onclick="setPayMethod(7,this)">bKash</button>
+                    <button class="pay-tab" data-method="8" onclick="setPayMethod(8,this)">Nagad</button>
+                </div>
+
+           
+                <div id="digitalPayPanel" style="display:none;padding:0 12px;margin-top:8px;">
+                    <input type="text" id="customerMsisdn" class="form-control mb-2"
+                           placeholder="Customer এর মোবাইল নম্বর (01XXXXXXXXX)" maxlength="11" />
+                    <button class="btn w-100" style="background:#e2136e;color:#fff;" id="initiatePayBtn" onclick="initiateDigitalPayment()">
+                        <i class="bi bi-phone me-1"></i><span id="digitalPayBtnLabel">Pay with bKash</span>
+                    </button>
+                    <div id="paymentStatusBox" class="text-center mt-2 small" style="display:none;"></div>
+                </div>
+                <!-- Gift Card code input — শুধু Gift Card method select হলে দেখাবে -->
+                <div id="giftCardInputRow" style="display:none;padding:0 12px;margin-top:8px;">
+                    <div class="input-group">
+                        <input type="text" id="giftCardCode" class="form-control" placeholder="GC-XXXX-XXXX-XXXX" style="text-transform:uppercase;" />
+                        <button class="btn btn-outline-secondary" onclick="checkGiftCard()">Check</button>
+                    </div>
+                    <div id="giftCardBalance" class="small mt-1"></div>
+                </div>
+
+                <!-- Amount -->
+                <div class="pay-input-wrap">
+                    <input type="number" id="payAmount" class="pay-amount-input"
+                           placeholder="0.00" min="0" step="0.01" oninput="calcChange()" />
+                    <div class="quick-amts" id="quickAmts"></div>
+                </div>
+
+                <!-- Change display -->
+                <div class="change-display">
+                    <div class="change-row">
+                        <span class="lbl">Received</span>
+                        <span id="chgReceived" style="font-weight:600;">$0.00</span>
+                    </div>
+                    <div class="change-row">
+                        <span class="lbl">Change</span>
+                        <span id="chgChange" style="font-weight:700;color:var(--success);">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Credit Sale -->
+                <div class="credit-wrap">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox"
+                               id="creditToggle" onchange="toggleCredit(this.checked)"
+                               style="cursor:pointer;" />
+                        <label class="form-check-label"
+                               style="font-size:.78rem;font-weight:500;" for="creditToggle">
+                            Credit Sale
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="mt-auto">
+                    <button class="btn-checkout" id="checkoutBtn" onclick="checkout()">
+                        <i class="bi bi-check-circle"></i> Checkout
+                    </button>
+                    <button class="btn-hold" onclick="holdCart()">
+                        <i class="bi bi-pause-circle"></i> Hold Invoice
+                    </button>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Buttons -->
-            <div class="mt-auto">
-                <button class="btn-checkout" id="checkoutBtn" onclick="checkout()">
-                    <i class="bi bi-check-circle"></i> Checkout
+    <!-- ══ Customer Modal ════════════════════════════════════════════════ -->
+    <div class="cust-search-modal" id="custModal">
+        <div class="cust-modal-box">
+            <div class="cust-modal-hdr">
+                <input type="text" id="custSearchInput"
+                       placeholder="Search by name or phone..."
+                       oninput="filterCustomers(this.value)" autofocus />
+                <button onclick="closeCustModal()"
+                        style="background:transparent;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);">
+                    <i class="bi bi-x-lg"></i>
                 </button>
-                <button class="btn-hold" onclick="holdCart()">
-                    <i class="bi bi-pause-circle"></i> Hold Invoice
+            </div>
+            <div class="cust-modal-body" id="custList">
+                <div class="pos-loading" style="height:120px;">
+                    <div class="spinner"></div>
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Receipt Modal ══════════════════════════════════════════════════ -->
+    <div class="receipt-overlay" id="receiptOverlay">
+        <div class="receipt-box">
+            <div class="receipt-top">
+                <i class="bi bi-check-circle-fill"></i>
+                <h5>Sale Complete!</h5>
+                <p id="rcpNum">—</p>
+            </div>
+            <div class="receipt-body">
+                <div class="receipt-row">
+                    <span style="color:var(--muted);">Total</span>
+                    <span id="rcpTotal" style="font-weight:700;"></span>
+                </div>
+                <div class="receipt-row">
+                    <span style="color:var(--muted);">Paid</span>
+                    <span id="rcpPaid" style="font-weight:600;color:var(--success);"></span>
+                </div>
+                <div class="receipt-row" id="rcpChangeRow">
+                    <span style="color:var(--muted);">Change</span>
+                    <span id="rcpChange" style="font-weight:600;"></span>
+                </div>
+                <div class="receipt-row" id="rcpDueRow" style="display:none;">
+                    <span style="color:var(--muted);">Due</span>
+                    <span id="rcpDue" style="font-weight:700;color:var(--danger);"></span>
+                </div>
+            </div>
+            <div class="receipt-foot">
+                <a id="rcpPrintLink" href="#" target="_blank">
+                    <i class="bi bi-printer me-1"></i>Print
+                </a>
+                <button onclick="newSale()">
+                    <i class="bi bi-plus-circle me-1"></i>New Sale
                 </button>
             </div>
         </div>
     </div>
-</div>
 
-<!-- ══ Customer Modal ════════════════════════════════════════════════ -->
-<div class="cust-search-modal" id="custModal">
-    <div class="cust-modal-box">
-        <div class="cust-modal-hdr">
-            <input type="text" id="custSearchInput"
-                   placeholder="Search by name or phone..."
-                   oninput="filterCustomers(this.value)" autofocus />
-            <button onclick="closeCustModal()"
-                    style="background:transparent;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-        <div class="cust-modal-body" id="custList">
-            <div class="pos-loading" style="height:120px;">
-                <div class="spinner"></div>
-                Loading...
-            </div>
-        </div>
-    </div>
-</div>
+    @Html.AntiForgeryToken()
 
-<!-- ══ Receipt Modal ══════════════════════════════════════════════════ -->
-<div class="receipt-overlay" id="receiptOverlay">
-    <div class="receipt-box">
-        <div class="receipt-top">
-            <i class="bi bi-check-circle-fill"></i>
-            <h5>Sale Complete!</h5>
-            <p id="rcpNum">—</p>
-        </div>
-        <div class="receipt-body">
-            <div class="receipt-row">
-                <span style="color:var(--muted);">Total</span>
-                <span id="rcpTotal" style="font-weight:700;"></span>
-            </div>
-            <div class="receipt-row">
-                <span style="color:var(--muted);">Paid</span>
-                <span id="rcpPaid" style="font-weight:600;color:var(--success);"></span>
-            </div>
-            <div class="receipt-row" id="rcpChangeRow">
-                <span style="color:var(--muted);">Change</span>
-                <span id="rcpChange" style="font-weight:600;"></span>
-            </div>
-            <div class="receipt-row" id="rcpDueRow" style="display:none;">
-                <span style="color:var(--muted);">Due</span>
-                <span id="rcpDue" style="font-weight:700;color:var(--danger);"></span>
-            </div>
-        </div>
-        <div class="receipt-foot">
-            <a id="rcpPrintLink" href="#" target="_blank">
-                <i class="bi bi-printer me-1"></i>Print
-            </a>
-            <button onclick="newSale()">
-                <i class="bi bi-plus-circle me-1"></i>New Sale
-            </button>
-        </div>
-    </div>
-</div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-@Html.AntiForgeryToken()
+    <script>
+        /* ══════════════════════════════════════════════════════════════════════
+        CLOZEY POS — Main Script
+        ══════════════════════════════════════════════════════════════════════ */
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        /* ── Config ─────────────────────────────────────────────────────────── */
+        const RATE_BDT   = @rateBDT;
+        const RATE_MVR   = @rateMVR;
+        const PAGE_SIZE  = 10;
 
-<script>
-/* ══════════════════════════════════════════════════════════════════════
-   CLOZEY POS — Main Script
-══════════════════════════════════════════════════════════════════════ */
+        /* ── Formatters ─────────────────────────────────────────────────────── */
+        const fUSD = v => '$'  + parseFloat(v||0).toFixed(2);
+        const fBDT = v => '৳'  + (parseFloat(v||0) * RATE_BDT).toFixed(0);
+        const fMVR = v => 'Rf' + (parseFloat(v||0) * RATE_MVR).toFixed(2);
+        const tok  = () => document.querySelector('[name=__RequestVerificationToken]').value;
 
-/* ── Config ─────────────────────────────────────────────────────────── */
-const RATE_BDT   = @rateBDT;
-const RATE_MVR   = @rateMVR;
-const PAGE_SIZE  = 10;
+        /* ── State ──────────────────────────────────────────────────────────── */
+        const state = {
+        activePanel: 'products',
+        products:   [],      // all products from server
+        filtered:   [],      // after search filter
+        page:       1,       // current page
+        bundles:    [],      // all bundles from server
+        bundleFiltered: [],  // after search filter
+        bundlePage: 1,       // current bundle page
+        customers:  [],      // all customers
+        custFilter: [],      // filtered customers
+        cart:       [],      // cart items
+        customerId: null,
+        customerName: null,
+        payMethod:  1,
+        isCredit:   false,
+        // Loyalty fields
+        loyaltyPointsToRedeem: 0,
+        loyaltyDiscountValue:  0
+        };
 
-/* ── Formatters ─────────────────────────────────────────────────────── */
-const fUSD = v => '$'  + parseFloat(v||0).toFixed(2);
-const fBDT = v => '৳'  + (parseFloat(v||0) * RATE_BDT).toFixed(0);
-const fMVR = v => 'Rf' + (parseFloat(v||0) * RATE_MVR).toFixed(2);
-const tok  = () => document.querySelector('[name=__RequestVerificationToken]').value;
+        /* ── Init ───────────────────────────────────────────────────────────── */
+        document.getElementById('posDate').textContent =
+        new Date().toLocaleDateString('en-US', { weekday:'short', day:'numeric', month:'short' });
 
-/* ── State ──────────────────────────────────────────────────────────── */
-const state = {
-    activePanel: 'products',
-    products:   [],      // all products from server
-    filtered:   [],      // after search filter
-    page:       1,       // current page
-    bundles:    [],      // all bundles from server
-    bundleFiltered: [],  // after search filter
-    bundlePage: 1,       // current bundle page
-    customers:  [],      // all customers
-    custFilter: [],      // filtered customers
-    cart:       [],      // cart items
-    customerId: null,
-    customerName: null,
-    payMethod:  1,
-    isCredit:   false,
-    // Loyalty fields
-    loyaltyPointsToRedeem: 0,
-    loyaltyDiscountValue:  0
-};
+        toastr.options = { positionClass:'toast-top-right', timeOut:2500, closeButton:true };
 
-/* ── Init ───────────────────────────────────────────────────────────── */
-document.getElementById('posDate').textContent =
-    new Date().toLocaleDateString('en-US', { weekday:'short', day:'numeric', month:'short' });
+        document.getElementById('searchInput').addEventListener('input', e => {
+        const val = e.target.value.trim();
+        if (state.activePanel === 'bundles') filterBundles(val);
+        else filterProducts(val);
+        });
 
-toastr.options = { positionClass:'toast-top-right', timeOut:2500, closeButton:true };
+        document.getElementById('searchInput').addEventListener('keydown', async e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const val = e.target.value.trim();
+        if (!val) return;
 
-document.getElementById('searchInput').addEventListener('input', e => {
-    const val = e.target.value.trim();
-    if (state.activePanel === 'bundles') filterBundles(val);
-    else filterProducts(val);
-});
-
-document.getElementById('searchInput').addEventListener('keydown', async e => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    const val = e.target.value.trim();
-    if (!val) return;
-
-    if (state.activePanel === 'bundles') {
+        if (state.activePanel === 'bundles') {
         filterBundles(val);
         return;
-    }
+        }
 
-    // Try barcode first
-    try {
+        // Try barcode first
+        try {
         const res = await fetch(`/Sales/SearchByBarcode?barcode=${encodeURIComponent(val)}`);
         const data = await res.json();
         if (data) {
-            addToCart(data);
-            e.target.value = '';
-            return;
+        addToCart(data);
+        e.target.value = '';
+        return;
         }
-    } catch {}
+        } catch {}
 
-    // Fall through to keyword filter
-    filterProducts(val);
-});
+        // Fall through to keyword filter
+        filterProducts(val);
+        });
 
-/* ── Load Products / Bundles ───────────────────────────────────────── */
-async function loadProducts() {
-    try {
+        /* ── Load Products / Bundles ───────────────────────────────────────── */
+        async function loadProducts() {
+        try {
         const res  = await fetch('/Sales/GetAllProducts');
         const data = await res.json();
         state.products = data;
         state.filtered = data;
         renderProductGrid();
-    } catch (err) {
+        } catch (err) {
         document.getElementById('productGrid').innerHTML = `
-            <div class="pos-loading" style="color:#dc2626;">
-                <i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>
-                <span>Failed to load products</span>
-                <button onclick="loadProducts()"
-                        style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:.78rem;margin-top:4px;">
-                    Retry
-                </button>
-            </div>`;
-    }
-}
+        <div class="pos-loading" style="color:#dc2626;">
+        <i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>
+        <span>Failed to load products</span>
+        <button onclick="loadProducts()"
+        style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:.78rem;margin-top:4px;">
+        Retry
+        </button>
+        </div>`;
+        }
+        }
 
-async function loadBundles() {
-    try {
+        async function loadBundles() {
+        try {
         const res = await fetch('/Sales/GetAllBundles');
         const data = await res.json();
         state.bundles = data || [];
         state.bundleFiltered = state.bundles;
         renderBundleGrid();
-    } catch (err) {
+        } catch (err) {
         const grid = document.getElementById('bundleGrid');
         grid.style.display = 'block';
         grid.innerHTML = `
-            <div class="pos-loading" style="color:#dc2626;min-height:120px;">
-                <i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>
-                <span>Failed to load bundles</span>
-                <button onclick="loadBundles()"
-                        style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:.78rem;margin-top:4px;">
-                    Retry
-                </button>
-            </div>`;
-    }
-}
+        <div class="pos-loading" style="color:#dc2626;min-height:120px;">
+        <i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>
+        <span>Failed to load bundles</span>
+        <button onclick="loadBundles()"
+        style="padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:.78rem;margin-top:4px;">
+        Retry
+        </button>
+        </div>`;
+        }
+        }
 
-/* ── Filter Products / Bundles ──────────────────────────────────────── */
-function filterProducts(keyword) {
-    if (!keyword) {
+        /* ── Filter Products / Bundles ──────────────────────────────────────── */
+        function filterProducts(keyword) {
+        if (!keyword) {
         state.filtered = state.products;
-    } else {
+        } else {
         const kw = keyword.toLowerCase();
         state.filtered = state.products.filter(v =>
-            v.productName.toLowerCase().includes(kw) ||
-            v.sizeName.toLowerCase().includes(kw)    ||
-            v.colorName.toLowerCase().includes(kw)   ||
-            v.barcode.toLowerCase().includes(kw)     ||
-            v.sku.toLowerCase().includes(kw)
+        v.productName.toLowerCase().includes(kw) ||
+        v.sizeName.toLowerCase().includes(kw)    ||
+        v.colorName.toLowerCase().includes(kw)   ||
+        v.barcode.toLowerCase().includes(kw)     ||
+        v.sku.toLowerCase().includes(kw)
         );
-    }
-    state.page = 1;
-    renderProductGrid();
-}
+        }
+        state.page = 1;
+        renderProductGrid();
+        }
 
-function filterBundles(keyword) {
-    if (!keyword) {
+        function filterBundles(keyword) {
+        if (!keyword) {
         state.bundleFiltered = state.bundles;
-    } else {
+        } else {
         const kw = keyword.toLowerCase();
         state.bundleFiltered = state.bundles.filter(b => {
-            const summary = (b.itemsSummary || []).join(' ').toLowerCase();
-            return (b.name || '').toLowerCase().includes(kw) ||
-                   summary.includes(kw) ||
-                   String(b.bundlePrice ?? '').includes(kw) ||
-                   String(b.regularPrice ?? '').includes(kw);
+        const summary = (b.itemsSummary || []).join(' ').toLowerCase();
+        return (b.name || '').toLowerCase().includes(kw) ||
+        summary.includes(kw) ||
+        String(b.bundlePrice ?? '').includes(kw) ||
+        String(b.regularPrice ?? '').includes(kw);
         });
-    }
-    state.bundlePage = 1;
-    renderBundleGrid();
-}
+        }
+        state.bundlePage = 1;
+        renderBundleGrid();
+        }
 
 
-/* ── Render Product / Bundle Grids ─────────────────────────────────── */
-function renderProductGrid() {
-    const total = state.filtered.length;
-    const pages = Math.ceil(total / PAGE_SIZE) || 1;
-    const start = (state.page - 1) * PAGE_SIZE;
-    const items = state.filtered.slice(start, start + PAGE_SIZE);
+        /* ── Render Product / Bundle Grids ─────────────────────────────────── */
+        function renderProductGrid() {
+        const total = state.filtered.length;
+        const pages = Math.ceil(total / PAGE_SIZE) || 1;
+        const start = (state.page - 1) * PAGE_SIZE;
+        const items = state.filtered.slice(start, start + PAGE_SIZE);
 
-    document.getElementById('productCount').textContent =
+        document.getElementById('productCount').textContent =
         total + ' product' + (total !== 1 ? 's' : '');
 
-    const grid = document.getElementById('productGrid');
+        const grid = document.getElementById('productGrid');
 
-    if (!items.length) {
+        if (!items.length) {
         grid.innerHTML = `
-            <div class="pos-loading" style="min-height:120px;">
-                <i class="bi bi-search" style="font-size:2rem;opacity:.3;"></i>
-                <span>No products found</span>
-            </div>`;
+        <div class="pos-loading" style="min-height:120px;">
+        <i class="bi bi-search" style="font-size:2rem;opacity:.3;"></i>
+        <span>No products found</span>
+        </div>`;
         document.getElementById('pagination').style.display = 'none';
         return;
-    }
+        }
 
-    grid.innerHTML = `<div class="product-grid">${items.map(v => productCard(v)).join('')}</div>`;
+        grid.innerHTML = `<div class="product-grid">${items.map(v => productCard(v)).join('')}</div>`;
 
-    const pgEl = document.getElementById('pagination');
-    if (pages <= 1) {
+        const pgEl = document.getElementById('pagination');
+        if (pages <= 1) {
         pgEl.style.display = 'none';
         return;
-    }
+        }
 
-    pgEl.style.display = 'flex';
-    let pgHtml = `<button class="pg-btn" onclick="changePage(${state.page-1})" ${state.page===1?'disabled':''}>‹</button>`;
+        pgEl.style.display = 'flex';
+        let pgHtml = `<button class="pg-btn" onclick="changePage(${state.page-1})" ${state.page===1?'disabled':''}>‹</button>`;
 
-    let pStart = Math.max(1, state.page - 2);
-    let pEnd   = Math.min(pages, pStart + 4);
-    pStart     = Math.max(1, pEnd - 4);
+        let pStart = Math.max(1, state.page - 2);
+        let pEnd   = Math.min(pages, pStart + 4);
+        pStart     = Math.max(1, pEnd - 4);
 
-    if (pStart > 1) pgHtml += `<span class="pg-info">…</span>`;
+        if (pStart > 1) pgHtml += `<span class="pg-info">…</span>`;
 
-    for (let i = pStart; i <= pEnd; i++) {
+        for (let i = pStart; i <= pEnd; i++) {
         pgHtml += `<button class="pg-btn ${i===state.page?'active':''}" onclick="changePage(${i})">${i}</button>`;
-    }
+        }
 
-    if (pEnd < pages) pgHtml += `<span class="pg-info">…</span>`;
+        if (pEnd < pages) pgHtml += `<span class="pg-info">…</span>`;
 
-    pgHtml += `<button class="pg-btn" onclick="changePage(${state.page+1})" ${state.page===pages?'disabled':''}>›</button>`;
-    pgHtml += `<span class="pg-info">${state.page}/${pages}</span>`;
-    pgEl.innerHTML = pgHtml;
-}
+        pgHtml += `<button class="pg-btn" onclick="changePage(${state.page+1})" ${state.page===pages?'disabled':''}>›</button>`;
+        pgHtml += `<span class="pg-info">${state.page}/${pages}</span>`;
+        pgEl.innerHTML = pgHtml;
+        }
 
-function renderBundleGrid() {
-    const total = state.bundleFiltered.length;
-    const pages = Math.ceil(total / PAGE_SIZE) || 1;
-    const start = (state.bundlePage - 1) * PAGE_SIZE;
-    const items = state.bundleFiltered.slice(start, start + PAGE_SIZE);
+        function renderBundleGrid() {
+        const total = state.bundleFiltered.length;
+        const pages = Math.ceil(total / PAGE_SIZE) || 1;
+        const start = (state.bundlePage - 1) * PAGE_SIZE;
+        const items = state.bundleFiltered.slice(start, start + PAGE_SIZE);
 
-    document.getElementById('bundleCount').textContent =
+        document.getElementById('bundleCount').textContent =
         total + ' bundle' + (total !== 1 ? 's' : '');
 
-    const grid = document.getElementById('bundleGrid');
-    grid.style.display = 'block';
+        const grid = document.getElementById('bundleGrid');
+        grid.style.display = 'block';
 
-    if (!items.length) {
+        if (!items.length) {
         grid.innerHTML = `
-            <div class="pos-loading" style="min-height:120px;">
-                <i class="bi bi-gift" style="font-size:2rem;opacity:.3;"></i>
-                <span>No bundles found</span>
-            </div>`;
+        <div class="pos-loading" style="min-height:120px;">
+        <i class="bi bi-gift" style="font-size:2rem;opacity:.3;"></i>
+        <span>No bundles found</span>
+        </div>`;
         document.getElementById('bundlePagination').style.display = 'none';
         return;
-    }
+        }
 
-    grid.innerHTML = `<div class="bundle-grid">${items.map(b => bundleCard(b)).join('')}</div>`;
+        grid.innerHTML = `<div class="bundle-grid">${items.map(b => bundleCard(b)).join('')}</div>`;
 
-    const pgEl = document.getElementById('bundlePagination');
-    if (pages <= 1) {
+        const pgEl = document.getElementById('bundlePagination');
+        if (pages <= 1) {
         pgEl.style.display = 'none';
         return;
-    }
+        }
 
-    pgEl.style.display = 'flex';
-    let pgHtml = `<button class="pg-btn" onclick="changeBundlePage(${state.bundlePage-1})" ${state.bundlePage===1?'disabled':''}>‹</button>`;
+        pgEl.style.display = 'flex';
+        let pgHtml = `<button class="pg-btn" onclick="changeBundlePage(${state.bundlePage-1})" ${state.bundlePage===1?'disabled':''}>‹</button>`;
 
-    let pStart = Math.max(1, state.bundlePage - 2);
-    let pEnd   = Math.min(pages, pStart + 4);
-    pStart     = Math.max(1, pEnd - 4);
+        let pStart = Math.max(1, state.bundlePage - 2);
+        let pEnd   = Math.min(pages, pStart + 4);
+        pStart     = Math.max(1, pEnd - 4);
 
-    if (pStart > 1) pgHtml += `<span class="pg-info">…</span>`;
+        if (pStart > 1) pgHtml += `<span class="pg-info">…</span>`;
 
-    for (let i = pStart; i <= pEnd; i++) {
+        for (let i = pStart; i <= pEnd; i++) {
         pgHtml += `<button class="pg-btn ${i===state.bundlePage?'active':''}" onclick="changeBundlePage(${i})">${i}</button>`;
-    }
+        }
 
-    if (pEnd < pages) pgHtml += `<span class="pg-info">…</span>`;
+        if (pEnd < pages) pgHtml += `<span class="pg-info">…</span>`;
 
-    pgHtml += `<button class="pg-btn" onclick="changeBundlePage(${state.bundlePage+1})" ${state.bundlePage===pages?'disabled':''}>›</button>`;
-    pgHtml += `<span class="pg-info">${state.bundlePage}/${pages}</span>`;
-    pgEl.innerHTML = pgHtml;
-}
+        pgHtml += `<button class="pg-btn" onclick="changeBundlePage(${state.bundlePage+1})" ${state.bundlePage===pages?'disabled':''}>›</button>`;
+        pgHtml += `<span class="pg-info">${state.bundlePage}/${pages}</span>`;
+        pgEl.innerHTML = pgHtml;
+        }
 
-function bundleCard(b) {
-    const outOfStock = !b.isActive || b.availableStock <= 0;
-    const summary = (b.itemsSummary || []).join(' • ');
-    return `
-    <div class="bundle-card ${outOfStock?'out-of-stock':''}"
-         onclick="${outOfStock?'toastr.error(\'Bundle unavailable: '+String(b.name).replace(/'/g,"\\'")+'\')':'addBundleToCart('+b.id+')'}">
+        function bundleCard(b) {
+        const outOfStock = !b.isActive || b.availableStock <= 0;
+        const summary = (b.itemsSummary || []).join(' • ');
+        return `
+        <div class="bundle-card ${outOfStock?'out-of-stock':''}"
+        onclick="${outOfStock?'toastr.error(\'Bundle unavailable: '+String(b.name).replace(/'/g,"\\'")+'\')':'addBundleToCart('+b.id+')'}">
         <span class="bc-stock ${outOfStock?'out':'in'}">${outOfStock?'Out':b.availableStock}</span>
         <div class="bc-icon"><i class="bi bi-gift"></i></div>
         <div class="bc-name">${b.name}</div>
         <div class="bc-meta">
-            <span style="background:#f0ebe0;color:#555;border-radius:3px;padding:1px 4px;font-size:.6rem;">
-                ${b.itemCount} item${b.itemCount !== 1 ? 's' : ''}
-            </span>
+        <span style="background:#f0ebe0;color:#555;border-radius:3px;padding:1px 4px;font-size:.6rem;">
+        ${b.itemCount} item${b.itemCount !== 1 ? 's' : ''}
+        </span>
         </div>
         <div class="bundle-summary">${summary}</div>
         <div class="bc-price">${fUSD(b.bundlePrice)}</div>
         <div class="bc-price-sub">Regular ${fUSD(b.regularPrice)} · Save ${fUSD(b.savingsAmount)}</div>
         ${!outOfStock ? `<button class="bc-add"><i class="bi bi-plus"></i> Add Bundle</button>` : ''}
-    </div>`;
-}
+        </div>`;
+        }
 
-function productCard(v) {
-    const outOfStock = v.stock <= 0;
-    const initials   = v.productName.charAt(0).toUpperCase();
-    const color      = v.colorHex || '#333';
+        function productCard(v) {
+        const outOfStock = v.stock <= 0;
+        const initials   = v.productName.charAt(0).toUpperCase();
+        const color      = v.colorHex || '#333';
 
-    return `
-    <div class="product-card ${outOfStock?'out-of-stock':''}"
-         onclick="${outOfStock?'toastr.error(\'Out of stock: '+v.productName.replace(/'/g,"\\'")+'\')'
-                              :'addToCart('+JSON.stringify(v).replace(/"/g,'&quot;')+')'}">
+        return `
+        <div class="product-card ${outOfStock?'out-of-stock':''}"
+        onclick="${outOfStock?'toastr.error(\'Out of stock: '+v.productName.replace(/'/g,"\\'")+'\')'
+        :'addToCart('+JSON.stringify(v).replace(/"/g,'&quot;')+')'}">
         <span class="pc-stock ${outOfStock?'out':'in'}">${outOfStock?'Out':v.stock}</span>
         <div class="pc-icon">${initials}</div>
         <div class="pc-name">${v.productName}</div>
         <div class="pc-variant">
-            <span style="background:#f0ebe0;color:#555;border-radius:3px;padding:1px 4px;font-size:.6rem;">
-                ${v.sizeName}
-            </span>
-            <span class="pc-color-dot" style="background:${color};"></span>
-            ${v.colorName}
+        <span style="background:#f0ebe0;color:#555;border-radius:3px;padding:1px 4px;font-size:.6rem;">
+        ${v.sizeName}
+        </span>
+        <span class="pc-color-dot" style="background:${color};"></span>
+        ${v.colorName}
         </div>
         <div class="pc-price">${fUSD(v.retailPrice)}</div>
         <div class="pc-price-sub">${fBDT(v.retailPrice)} · ${fMVR(v.retailPrice)}</div>
         ${!outOfStock ? `<button class="pc-add"><i class="bi bi-plus"></i> Add</button>` : ''}
-    </div>`;
-}
+        </div>`;
+        }
 
-function changePage(p) {
-    const pages = Math.ceil(state.filtered.length / PAGE_SIZE) || 1;
-    if (p < 1 || p > pages) return;
-    state.page = p;
-    renderProductGrid();
-    document.getElementById('productGrid').scrollTop = 0;
-}
+        function changePage(p) {
+        const pages = Math.ceil(state.filtered.length / PAGE_SIZE) || 1;
+        if (p < 1 || p > pages) return;
+        state.page = p;
+        renderProductGrid();
+        document.getElementById('productGrid').scrollTop = 0;
+        }
 
-function changeBundlePage(p) {
-    const pages = Math.ceil(state.bundleFiltered.length / PAGE_SIZE) || 1;
-    if (p < 1 || p > pages) return;
-    state.bundlePage = p;
-    renderBundleGrid();
-    document.getElementById('bundleGrid').scrollTop = 0;
-}
+        function changeBundlePage(p) {
+        const pages = Math.ceil(state.bundleFiltered.length / PAGE_SIZE) || 1;
+        if (p < 1 || p > pages) return;
+        state.bundlePage = p;
+        renderBundleGrid();
+        document.getElementById('bundleGrid').scrollTop = 0;
+        }
 
-async function addBundleToCart(bundleId) {
-    const bundle = state.bundles.find(b => b.id === bundleId);
-    if (!bundle || bundle.availableStock <= 0) { toastr.error('Bundle unavailable.'); return; }
+        async function addBundleToCart(bundleId) {
+        const bundle = state.bundles.find(b => b.id === bundleId);
+        if (!bundle || bundle.availableStock <= 0) { toastr.error('Bundle unavailable.'); return; }
 
-    const detail = await fetch(`/Bundle/Details/${bundleId}`).then(r => r.json()).catch(() => null);
-    const fullBundle = detail || bundle;
-    const bundleName = fullBundle.name || bundle.name;
-    const items = fullBundle.items || [];
+        const detail = await fetch(`/Bundle/Details/${bundleId}`).then(r => r.json()).catch(() => null);
+        const fullBundle = detail || bundle;
+        const bundleName = fullBundle.name || bundle.name;
+        const items = fullBundle.items || [];
 
-    if (!items.length) {
+        if (!items.length) {
         toastr.error('Bundle details not available.');
         return;
-    }
+        }
 
-    items.forEach(item => {
+        items.forEach(item => {
         addToCart({
-            variantId: item.productVariantId,
-            productName: item.productName,
-            sizeName: item.sizeName,
-            colorName: item.colorName,
-            colorHex: '#333',
-            barcode: item.barcode,
-            retailPrice: item.unitPrice,
-            costPrice: 0,
-            stock: item.availableStock
+        variantId: item.productVariantId,
+        productName: item.productName,
+        sizeName: item.sizeName,
+        colorName: item.colorName,
+        colorHex: '#333',
+        barcode: item.barcode,
+        retailPrice: item.unitPrice,
+        costPrice: 0,
+        stock: item.availableStock
         }, { bundleId: fullBundle.id || bundle.id, bundleName }, item.quantity);
-    });
+        });
 
-    toastr.success(`${bundleName} bundle cart এ যোগ হলো — ${fUSD(fullBundle.bundlePrice || bundle.bundlePrice)}`);
-}
+        toastr.success(`${bundleName} bundle cart এ যোগ হলো — ${fUSD(fullBundle.bundlePrice || bundle.bundlePrice)}`);
+        }
 
-/* ── Cart ───────────────────────────────────────────────────────────── */
-function addToCart(v, bundleMeta = null, qtyDelta = 1) {
-    if (v.stock <= 0) { toastr.error('Out of stock: ' + v.productName); return; }
+        /* ── Cart ───────────────────────────────────────────────────────────── */
+        function addToCart(v, bundleMeta = null, qtyDelta = 1) {
+        if (v.stock <= 0) { toastr.error('Out of stock: ' + v.productName); return; }
 
-    const existing = state.cart.find(i => i.variantId === v.variantId && (i.bundleId || null) === (bundleMeta?.bundleId || null));
-    const currentQty = existing ? existing.qty : 0;
-    if (currentQty + qtyDelta > v.stock) { toastr.warning('Max stock reached!'); return; }
+        const existing = state.cart.find(i => i.variantId === v.variantId && (i.bundleId || null) === (bundleMeta?.bundleId || null));
+        const currentQty = existing ? existing.qty : 0;
+        if (currentQty + qtyDelta > v.stock) { toastr.warning('Max stock reached!'); return; }
 
-    if (existing) {
+        if (existing) {
         existing.qty += qtyDelta;
         if (bundleMeta?.bundleId) {
-            existing.bundleId = bundleMeta.bundleId;
-            existing.bundleName = bundleMeta.bundleName;
+        existing.bundleId = bundleMeta.bundleId;
+        existing.bundleName = bundleMeta.bundleName;
         }
-    } else {
+        } else {
         state.cart.push({
-            variantId:   v.variantId,
-            productName: v.productName,
-            sizeName:    v.sizeName,
-            colorName:   v.colorName,
-            colorHex:    v.colorHex || '#333',
-            barcode:     v.barcode,
-            qty:         qtyDelta,
-            unitPrice:   v.retailPrice,
-            costPrice:   v.costPrice || 0,
-            stock:       v.stock,
-            bundleId:    bundleMeta?.bundleId || null,
-            bundleName:  bundleMeta?.bundleName || null
+        variantId:   v.variantId,
+        productName: v.productName,
+        sizeName:    v.sizeName,
+        colorName:   v.colorName,
+        colorHex:    v.colorHex || '#333',
+        barcode:     v.barcode,
+        qty:         qtyDelta,
+        unitPrice:   v.retailPrice,
+        costPrice:   v.costPrice || 0,
+        stock:       v.stock,
+        bundleId:    bundleMeta?.bundleId || null,
+        bundleName:  bundleMeta?.bundleName || null
         });
         toastr.success(v.productName + ' added', '', { timeOut: 1200 });
-    }
+        }
 
-    renderCart();
-    updateCartBadge();
-}
+        renderCart();
+        updateCartBadge();
+        }
 
-function removeFromCart(idx) {
-    state.cart.splice(idx, 1);
-    renderCart();
-    updateCartBadge();
-}
+        function removeFromCart(idx) {
+        state.cart.splice(idx, 1);
+        renderCart();
+        updateCartBadge();
+        }
 
-function setQty(idx, val) {
-    const item = state.cart[idx];
-    const qty  = Math.max(1, Math.min(parseInt(val) || 1, item.stock));
-    item.qty   = qty;
-    renderCart();
-}
+        function setQty(idx, val) {
+        const item = state.cart[idx];
+        const qty  = Math.max(1, Math.min(parseInt(val) || 1, item.stock));
+        item.qty   = qty;
+        renderCart();
+        }
 
-function renderCart() {
-    const empty = document.getElementById('cartEmpty');
-    const table = document.getElementById('cartTable');
-    const body  = document.getElementById('cartBody');
-    const cnt   = document.getElementById('cartCount');
-    const info  = document.getElementById('cartItemInfo');
+        function renderCart() {
+        const empty = document.getElementById('cartEmpty');
+        const table = document.getElementById('cartTable');
+        const body  = document.getElementById('cartBody');
+        const cnt   = document.getElementById('cartCount');
+        const info  = document.getElementById('cartItemInfo');
 
-    const totalItems = state.cart.reduce((s, i) => s + i.qty, 0);
-    cnt.textContent  = state.cart.length;
-    info.textContent = totalItems + ' item' + (totalItems !== 1 ? 's' : '');
+        const totalItems = state.cart.reduce((s, i) => s + i.qty, 0);
+        cnt.textContent  = state.cart.length;
+        info.textContent = totalItems + ' item' + (totalItems !== 1 ? 's' : '');
 
-    if (!state.cart.length) {
+        if (!state.cart.length) {
         empty.style.display = '';
         table.style.display = 'none';
         recalculate();
         return;
-    }
+        }
 
-    empty.style.display = 'none';
-    table.style.display = '';
+        empty.style.display = 'none';
+        table.style.display = '';
 
-    body.innerHTML = state.cart.map((item, i) => `
+        body.innerHTML = state.cart.map((item, i) => `
         <tr>
-            <td>
-                <div class="ci-name">${item.productName}</div>
-                <div class="ci-meta">
-                    <span style="background:#f0ebe0;border-radius:3px;padding:1px 4px;font-size:.6rem;">
-                        ${item.sizeName}
-                    </span>
-                    ${item.colorName}
-                    ${item.bundleName ? `<span style="background:#fff3cd;color:#8a6d3b;border-radius:3px;padding:1px 4px;font-size:.6rem;">${item.bundleName}</span>` : ''}
-                </div>
-            </td>
-            <td class="text-center">
-                <div style="display:flex;align-items:center;justify-content:center;gap:3px;">
-                    <button class="qty-btn" onclick="setQty(${i},${item.qty-1})">−</button>
-                    <input class="qty-input" type="number" value="${item.qty}"
-                           min="1" max="${item.stock}"
-                           onchange="setQty(${i},this.value)" />
-                    <button class="qty-btn" onclick="setQty(${i},${item.qty+1})">+</button>
-                </div>
-            </td>
-            <td class="text-end">
-                <input type="number" style="width:56px;text-align:right;border:1px solid var(--border);border-radius:5px;padding:1px 4px;font-size:.78rem;"
-                       value="${item.unitPrice.toFixed(2)}" step="0.01" min="0"
-                       onchange="state.cart[${i}].unitPrice=parseFloat(this.value)||0;recalculate();" />
-            </td>
-            <td class="text-end" style="font-size:.78rem;font-weight:600;">
-                ${fBDT(item.qty * item.unitPrice)}
-            </td>
-            <td>
-                <button class="rm-btn" onclick="removeFromCart(${i})">
-                    <i class="bi bi-x"></i>
-                </button>
-            </td>
+        <td>
+        <div class="ci-name">${item.productName}</div>
+        <div class="ci-meta">
+        <span style="background:#f0ebe0;border-radius:3px;padding:1px 4px;font-size:.6rem;">
+        ${item.sizeName}
+        </span>
+        ${item.colorName}
+        ${item.bundleName ? `<span style="background:#fff3cd;color:#8a6d3b;border-radius:3px;padding:1px 4px;font-size:.6rem;">${item.bundleName}</span>` : ''}
+        </div>
+        </td>
+        <td class="text-center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px;">
+        <button class="qty-btn" onclick="setQty(${i},${item.qty-1})">−</button>
+        <input class="qty-input" type="number" value="${item.qty}"
+        min="1" max="${item.stock}"
+        onchange="setQty(${i},this.value)" />
+        <button class="qty-btn" onclick="setQty(${i},${item.qty+1})">+</button>
+        </div>
+        </td>
+        <td class="text-end">
+        <input type="number" style="width:56px;text-align:right;border:1px solid var(--border);border-radius:5px;padding:1px 4px;font-size:.78rem;"
+        value="${item.unitPrice.toFixed(2)}" step="0.01" min="0"
+        onchange="state.cart[${i}].unitPrice=parseFloat(this.value)||0;recalculate();" />
+        </td>
+        <td class="text-end" style="font-size:.78rem;font-weight:600;">
+        ${fBDT(item.qty * item.unitPrice)}
+        </td>
+        <td>
+        <button class="rm-btn" onclick="removeFromCart(${i})">
+        <i class="bi bi-x"></i>
+        </button>
+        </td>
         </tr>`).join('');
 
-    recalculate();
-}
+        recalculate();
+        }
 
-function updateCartBadge() {
-    const n   = state.cart.length;
-    const el  = document.getElementById('cartBadge');
-    el.textContent    = n;
-    el.style.display  = n ? '' : 'none';
-}
+        function updateCartBadge() {
+        const n   = state.cart.length;
+        const el  = document.getElementById('cartBadge');
+        el.textContent    = n;
+        el.style.display  = n ? '' : 'none';
+        }
 
-/* ── Totals ─────────────────────────────────────────────────────────── */
-function getTotal() {
-    const sub  = state.cart.reduce((s,i) => s + i.qty * i.unitPrice, 0);
-    const disc = parseFloat(document.getElementById('discountInput').value) || 0;
-    const tax  = parseFloat(document.getElementById('taxInput').value)      || 0;
-    return Math.max(0, sub - disc + tax);
-}
+        /* ── Totals ─────────────────────────────────────────────────────────── */
+        function getTotal() {
+        const sub  = state.cart.reduce((s,i) => s + i.qty * i.unitPrice, 0);
+        const disc = parseFloat(document.getElementById('discountInput').value) || 0;
+        const tax  = parseFloat(document.getElementById('taxInput').value)      || 0;
+        return Math.max(0, sub - disc + tax);
+        }
 
-function recalculate() {
-    const sub   = state.cart.reduce((s,i) => s + i.qty * i.unitPrice, 0);
-    const disc  = parseFloat(document.getElementById('discountInput').value) || 0;
-    const tax   = parseFloat(document.getElementById('taxInput').value)      || 0;
-    const total = Math.max(0, sub - disc + tax);
+        function recalculate() {
+        const sub   = state.cart.reduce((s,i) => s + i.qty * i.unitPrice, 0);
+        const disc  = parseFloat(document.getElementById('discountInput').value) || 0;
+        const tax   = parseFloat(document.getElementById('taxInput').value)      || 0;
+        const total = Math.max(0, sub - disc + tax);
 
-    document.getElementById('totSubtotal').textContent = fUSD(sub);
-    document.getElementById('totDiscount').textContent = fUSD(disc);
-    document.getElementById('totTax').textContent      = fUSD(tax);
-    document.getElementById('totTotal').textContent    = fUSD(total);
-    document.getElementById('totCurrency').textContent =
+        document.getElementById('totSubtotal').textContent = fUSD(sub);
+        document.getElementById('totDiscount').textContent = fUSD(disc);
+        document.getElementById('totTax').textContent      = fUSD(tax);
+        document.getElementById('totTotal').textContent    = fUSD(total);
+        document.getElementById('totCurrency').textContent =
         fBDT(total) + ' / ' + fMVR(total);
 
-    // Quick amount buttons
-    const amts = [
+        // Quick amount buttons
+        const amts = [
         total,
         Math.ceil(total / 5)  * 5,
         Math.ceil(total / 10) * 10,
         Math.ceil(total / 50) * 50
-    ].filter((v,i,a) => v > 0 && a.indexOf(v) === i).slice(0,4);
+        ].filter((v,i,a) => v > 0 && a.indexOf(v) === i).slice(0,4);
 
-    document.getElementById('quickAmts').innerHTML =
+        document.getElementById('quickAmts').innerHTML =
         amts.map(a => `<button class="quick-amt-btn"
-                                onclick="document.getElementById('payAmount').value=${a.toFixed(2)};calcChange();">
-                            $${a.toFixed(0)}
-                        </button>`).join('');
+        onclick="document.getElementById('payAmount').value=${a.toFixed(2)};calcChange();">
+        $${a.toFixed(0)}
+        </button>`).join('');
 
-    calcChange();
-}
+        calcChange();
+        }
 
-function calcChange() {
-    const total    = getTotal();
-    const received = parseFloat(document.getElementById('payAmount').value) || 0;
-    const change   = received - total;
+        function calcChange() {
+        const total    = getTotal();
+        const received = parseFloat(document.getElementById('payAmount').value) || 0;
+        const change   = received - total;
 
-    document.getElementById('chgReceived').textContent = fUSD(received);
+        document.getElementById('chgReceived').textContent = fUSD(received);
 
-    const chgEl = document.getElementById('chgChange');
-    if (change >= 0) {
+        const chgEl = document.getElementById('chgChange');
+        if (change >= 0) {
         chgEl.textContent = fUSD(change) + ' (' + fBDT(change) + ')';
         chgEl.style.color = 'var(--success)';
-    } else {
+        } else {
         chgEl.textContent = 'Short: ' + fUSD(Math.abs(change));
         chgEl.style.color = 'var(--danger)';
-    }
-}
+        }
+        }
 
-/* ── Payment ────────────────────────────────────────────────────────── */
-let giftCardValidated = null;
+        /* ── Payment ────────────────────────────────────────────────────────── */
+        let giftCardValidated = null;
 
-function setPayMethod(method, btn) {
-    state.payMethod = method;
-    document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('giftCardInputRow').style.display = method === 6 ? '' : 'none';
-}
+        function setPayMethod(method, btn) {
+        state.payMethod = method;
+        document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('giftCardInputRow').style.display = method === 6 ? '' : 'none';
+        }
 
-async function checkGiftCard() {
-    const code = document.getElementById('giftCardCode').value.trim();
-    if (!code) return;
-    const result = await fetch(`/GiftCard/Lookup?code=${encodeURIComponent(code)}`).then(r => r.json());
-    const balDiv = document.getElementById('giftCardBalance');
+        async function checkGiftCard() {
+        const code = document.getElementById('giftCardCode').value.trim();
+        if (!code) return;
+        const result = await fetch(`/GiftCard/Lookup?code=${encodeURIComponent(code)}`).then(r => r.json());
+        const balDiv = document.getElementById('giftCardBalance');
 
-    if (!result.found || !result.isUsable) {
+        if (!result.found || !result.isUsable) {
         balDiv.innerHTML = `<span class="text-danger">${result.message || 'Card not found.'}</span>`;
         giftCardValidated = null;
         return;
-    }
+        }
 
-    giftCardValidated = result;
-    balDiv.innerHTML = `<span class="text-success">Balance: $${result.currentBalance.toFixed(2)}</span>`;
+        giftCardValidated = result;
+        balDiv.innerHTML = `<span class="text-success">Balance: $${result.currentBalance.toFixed(2)}</span>`;
 
-    // Amount field এ balance বসিয়ে দাও (max total পর্যন্ত)
-    const total = getTotal();
-    const useAmount = Math.min(result.currentBalance, total);
-    document.getElementById('payAmount').value = useAmount.toFixed(2);
-    calcChange();
-}
+        // Amount field এ balance বসিয়ে দাও (max total পর্যন্ত)
+        const total = getTotal();
+        const useAmount = Math.min(result.currentBalance, total);
+        document.getElementById('payAmount').value = useAmount.toFixed(2);
+        calcChange();
+        }
 
-function toggleCredit(checked) {
-    state.isCredit = checked;
-    const inp = document.getElementById('payAmount');
-    inp.disabled = checked;
-    if (checked) inp.value = '';
-    calcChange();
-}
+        function toggleCredit(checked) {
+        state.isCredit = checked;
+        const inp = document.getElementById('payAmount');
+        inp.disabled = checked;
+        if (checked) inp.value = '';
+        calcChange();
+        }
 
-/* ── Checkout ───────────────────────────────────────────────────────── */
-async function checkout() {
-    if (!state.cart.length) { toastr.error('Cart is empty!'); return; }
+        /* ── Checkout ───────────────────────────────────────────────────────── */
+        async function checkout() {
+        if (!state.cart.length) { toastr.error('Cart is empty!'); return; }
 
-    const total   = getTotal();
-    const amount  = parseFloat(document.getElementById('payAmount').value) || 0;
+        const total   = getTotal();
+        const amount  = parseFloat(document.getElementById('payAmount').value) || 0;
 
-    if (!state.isCredit && amount < total) {
+        if (!state.isCredit && amount < total) {
         toastr.error('Insufficient payment amount!');
         return;
-    }
+        }
 
-    const dto = {
+        const dto = {
         customerId:             state.customerId,
         discountAmount:         parseFloat(document.getElementById('discountInput').value) || 0,
         taxAmount:              parseFloat(document.getElementById('taxInput').value)      || 0,
@@ -1879,169 +2262,169 @@ async function checkout() {
         exchangeRateMVR:        RATE_MVR,
         loyaltyPointsRedeemed:  state.loyaltyPointsToRedeem || 0,
         items: state.cart.map(i => ({
-            productVariantId: i.variantId,
-            productBundleId:  i.bundleId,
-            bundleName:       i.bundleName,
-            quantity:         i.qty,
-            unitPrice:        i.unitPrice,
-            discountAmount:   0,
-            taxAmount:        0
+        productVariantId: i.variantId,
+        productBundleId:  i.bundleId,
+        bundleName:       i.bundleName,
+        quantity:         i.qty,
+        unitPrice:        i.unitPrice,
+        discountAmount:   0,
+        taxAmount:        0
         })),
         payments: state.isCredit ? [] : [{
-            paymentMethod: state.payMethod,
-            amount,
-            giftCardCode: state.payMethod === 6 ? document.getElementById('giftCardCode').value.trim() : null
+        paymentMethod: state.payMethod,
+        amount,
+        giftCardCode: state.payMethod === 6 ? document.getElementById('giftCardCode').value.trim() : null
         }]
-    };
+        };
 
-    const btn = document.getElementById('checkoutBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px;margin-right:6px;"></span>Processing...';
+        const btn = document.getElementById('checkoutBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px;margin-right:6px;"></span>Processing...';
 
-    try {
+        try {
         const resp = await fetch('/Sales/CreateInvoice', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
-            body:    JSON.stringify(dto)
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+        body:    JSON.stringify(dto)
         });
         const data = await resp.json();
 
         if (data.success) {
-            showReceipt(data.data, amount);
-            // Update stock in local cache
-            state.cart.forEach(item => {
-                const p = state.products.find(x => x.variantId === item.variantId);
-                if (p) p.stock = Math.max(0, p.stock - item.qty);
-            });
-            renderProductGrid();
+        showReceipt(data.data, amount);
+        // Update stock in local cache
+        state.cart.forEach(item => {
+        const p = state.products.find(x => x.variantId === item.variantId);
+        if (p) p.stock = Math.max(0, p.stock - item.qty);
+        });
+        renderProductGrid();
         } else {
-            toastr.error(data.message || 'Checkout failed.');
+        toastr.error(data.message || 'Checkout failed.');
         }
-    } catch {
+        } catch {
         toastr.error('Network error. Please try again.');
-    } finally {
+        } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle"></i> Checkout';
-    }
-}
+        }
+        }
 
-function showReceipt(d, paid) {
-    const change = Math.max(0, paid - d.totalAmount);
-    document.getElementById('rcpNum').textContent     = 'Invoice: ' + d.invoiceNumber;
-    document.getElementById('rcpTotal').innerHTML     = `${fUSD(d.totalAmount)} <small>(${fBDT(d.totalAmount)})</small>`;
-    document.getElementById('rcpPaid').textContent    = fUSD(paid);
-    document.getElementById('rcpChange').textContent  = fUSD(change);
-    document.getElementById('rcpPrintLink').href      = `/Sales/Print/${d.invoiceId}`;
+        function showReceipt(d, paid) {
+        const change = Math.max(0, paid - d.totalAmount);
+        document.getElementById('rcpNum').textContent     = 'Invoice: ' + d.invoiceNumber;
+        document.getElementById('rcpTotal').innerHTML     = `${fUSD(d.totalAmount)} <small>(${fBDT(d.totalAmount)})</small>`;
+        document.getElementById('rcpPaid').textContent    = fUSD(paid);
+        document.getElementById('rcpChange').textContent  = fUSD(change);
+        document.getElementById('rcpPrintLink').href      = `/Sales/Print/${d.invoiceId}`;
 
-    const hasDue = d.dueAmount > 0;
-    document.getElementById('rcpDueRow').style.display    = hasDue ? '' : 'none';
-    document.getElementById('rcpChangeRow').style.display = hasDue ? 'none' : '';
-    if (hasDue) document.getElementById('rcpDue').textContent = fUSD(d.dueAmount);
+        const hasDue = d.dueAmount > 0;
+        document.getElementById('rcpDueRow').style.display    = hasDue ? '' : 'none';
+        document.getElementById('rcpChangeRow').style.display = hasDue ? 'none' : '';
+        if (hasDue) document.getElementById('rcpDue').textContent = fUSD(d.dueAmount);
 
-    document.getElementById('receiptOverlay').classList.add('open');
-}
+        document.getElementById('receiptOverlay').classList.add('open');
+        }
 
-function newSale() {
-    document.getElementById('receiptOverlay').classList.remove('open');
-    clearCart(false);
-    document.getElementById('searchInput').focus();
-}
+        function newSale() {
+        document.getElementById('receiptOverlay').classList.remove('open');
+        clearCart(false);
+        document.getElementById('searchInput').focus();
+        }
 
-/* ── Hold ───────────────────────────────────────────────────────────── */
-async function holdCart() {
-    if (!state.cart.length) { toastr.error('Cart is empty!'); return; }
+        /* ── Hold ───────────────────────────────────────────────────────────── */
+        async function holdCart() {
+        if (!state.cart.length) { toastr.error('Cart is empty!'); return; }
 
-    const dto = {
+        const dto = {
         customerId: state.customerId, discountAmount: 0, taxAmount: 0,
         isCredit: false, exchangeRateBDT: RATE_BDT, exchangeRateMVR: RATE_MVR,
         notes: 'HOLD',
         items: state.cart.map(i => ({
-            productVariantId: i.variantId,
-            productBundleId:  i.bundleId,
-            bundleName:       i.bundleName,
-            quantity:         i.qty,
-            unitPrice:        i.unitPrice,
-            discountAmount:   0,
-            taxAmount:        0
+        productVariantId: i.variantId,
+        productBundleId:  i.bundleId,
+        bundleName:       i.bundleName,
+        quantity:         i.qty,
+        unitPrice:        i.unitPrice,
+        discountAmount:   0,
+        taxAmount:        0
         })),
         payments: []
-    };
+        };
 
-    try {
+        try {
         const resp = await fetch('/Sales/CreateInvoice', {
-            method: 'POST',
-            headers: { 'Content-Type':'application/json','RequestVerificationToken':tok() },
-            body:   JSON.stringify(dto)
+        method: 'POST',
+        headers: { 'Content-Type':'application/json','RequestVerificationToken':tok() },
+        body:   JSON.stringify(dto)
         });
         const data = await resp.json();
         if (data.success) {
-            await fetch(`/Sales/Hold?id=${data.data.invoiceId}`, {
-                method: 'POST',
-                headers: { 'RequestVerificationToken': tok(),
-                           'Content-Type': 'application/x-www-form-urlencoded' }
-            });
-            toastr.success('Invoice held: ' + data.data.invoiceNumber);
-            clearCart(false);
+        await fetch(`/Sales/Hold?id=${data.data.invoiceId}`, {
+        method: 'POST',
+        headers: { 'RequestVerificationToken': tok(),
+        'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        toastr.success('Invoice held: ' + data.data.invoiceNumber);
+        clearCart(false);
         } else {
-            toastr.error(data.message);
+        toastr.error(data.message);
         }
-    } catch { toastr.error('Network error.'); }
-}
+        } catch { toastr.error('Network error.'); }
+        }
 
-async function showHeldInvoices() {
-    try {
+        async function showHeldInvoices() {
+        try {
         const data = await fetch('/Sales/GetHeldInvoices').then(r => r.json());
         if (!data.length) { toastr.info('No held invoices.'); return; }
 
         const html = data.map(inv => `
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);">
-                <i class="bi bi-pause-circle" style="color:orange;font-size:1.3rem;"></i>
-                <div style="flex:1;">
-                    <div style="font-size:.84rem;font-weight:600;">${inv.invoiceNumber}</div>
-                    <div style="font-size:.72rem;color:var(--muted);">${inv.customerName} · ${fUSD(inv.totalAmount)}</div>
-                </div>
-                <button onclick="resumeHeld(${inv.id})"
-                        style="padding:5px 12px;border-radius:6px;border:none;background:var(--black);color:var(--gold);font-size:.75rem;cursor:pointer;">
-                    Resume
-                </button>
-            </div>`).join('');
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);">
+        <i class="bi bi-pause-circle" style="color:orange;font-size:1.3rem;"></i>
+        <div style="flex:1;">
+        <div style="font-size:.84rem;font-weight:600;">${inv.invoiceNumber}</div>
+        <div style="font-size:.72rem;color:var(--muted);">${inv.customerName} · ${fUSD(inv.totalAmount)}</div>
+        </div>
+        <button onclick="resumeHeld(${inv.id})"
+        style="padding:5px 12px;border-radius:6px;border:none;background:var(--black);color:var(--gold);font-size:.75rem;cursor:pointer;">
+        Resume
+        </button>
+        </div>`).join('');
 
         // Simple modal via SweetAlert-style div
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;';
         overlay.innerHTML = `
-            <div style="background:#fff;border-radius:14px;width:min(90vw,440px);max-height:70vh;display:flex;flex-direction:column;overflow:hidden;">
-                <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-weight:600;">Held Invoices</span>
-                    <button onclick="this.closest('div[style*=fixed]').remove()"
-                            style="background:none;border:none;font-size:1.1rem;cursor:pointer;">✕</button>
-                </div>
-                <div style="overflow-y:auto;">${html}</div>
-            </div>`;
+        <div style="background:#fff;border-radius:14px;width:min(90vw,440px);max-height:70vh;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:600;">Held Invoices</span>
+        <button onclick="this.closest('div[style*=fixed]').remove()"
+        style="background:none;border:none;font-size:1.1rem;cursor:pointer;">✕</button>
+        </div>
+        <div style="overflow-y:auto;">${html}</div>
+        </div>`;
         document.body.appendChild(overlay);
-    } catch { toastr.error('Could not load held invoices.'); }
-}
+        } catch { toastr.error('Could not load held invoices.'); }
+        }
 
-async function resumeHeld(id) {
-    try {
+        async function resumeHeld(id) {
+        try {
         const inv = await fetch(`/Sales/GetInvoice/${id}`).then(r => r.json());
         if (!inv) { toastr.error('Invoice not found.'); return; }
 
         clearCart(false);
         inv.items?.forEach(item => {
-            state.cart.push({
-                variantId: item.productVariantId, productName: item.productName || 'Product',
-                sizeName:  item.sizeName || '', colorName: item.colorName || '',
-                colorHex:  '#888', barcode: item.barcode || '',
-                qty: item.quantity, unitPrice: item.unitPrice,
-                costPrice: 0, stock: 999
-            });
+        state.cart.push({
+        variantId: item.productVariantId, productName: item.productName || 'Product',
+        sizeName:  item.sizeName || '', colorName: item.colorName || '',
+        colorHex:  '#888', barcode: item.barcode || '',
+        qty: item.quantity, unitPrice: item.unitPrice,
+        costPrice: 0, stock: 999
+        });
         });
 
         await fetch(`/Sales/Unhold?id=${id}`, {
-            method: 'POST',
-            headers: { 'RequestVerificationToken': tok(),
-                       'Content-Type': 'application/x-www-form-urlencoded' }
+        method: 'POST',
+        headers: { 'RequestVerificationToken': tok(),
+        'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
         // Close held overlay
@@ -2050,74 +2433,74 @@ async function resumeHeld(id) {
         renderCart();
         updateCartBadge();
         toastr.success('Invoice loaded: ' + inv.invoiceNumber);
-    } catch { toastr.error('Failed to load invoice.'); }
-}
+        } catch { toastr.error('Failed to load invoice.'); }
+        }
 
-/* ── Customer ───────────────────────────────────────────────────────── */
-async function openCustomerModal() {
-    document.getElementById('custModal').classList.add('open');
-    document.getElementById('custSearchInput').value = '';
-    setTimeout(() => document.getElementById('custSearchInput').focus(), 100);
+        /* ── Customer ───────────────────────────────────────────────────────── */
+        async function openCustomerModal() {
+        document.getElementById('custModal').classList.add('open');
+        document.getElementById('custSearchInput').value = '';
+        setTimeout(() => document.getElementById('custSearchInput').focus(), 100);
 
-    //  Already loaded → just show
-    if (state.customers.length > 0) {
+        //  Already loaded → just show
+        if (state.customers.length > 0) {
         filterCustomers('');
         return;
-    }
+        }
 
   
-    document.getElementById('custList').innerHTML = `
+        document.getElementById('custList').innerHTML = `
         <div class="pos-loading" style="height:120px;">
-            <div class="spinner"></div>
-            <span>Loading customers...</span>
+        <div class="spinner"></div>
+        <span>Loading customers...</span>
         </div>`;
 
-    try {
-       
+        try {
+
         const data = await fetch('/Sales/SearchCustomers')
-            .then(r => r.json());
+        .then(r => r.json());
 
         state.customers = data || [];
         filterCustomers('');
 
-    } catch (err) {
+        } catch (err) {
         console.error('Customer load error:', err);
         document.getElementById('custList').innerHTML = `
-            <div class="pos-loading" style="height:100px;">
-                <i class="bi bi-exclamation-triangle" style="font-size:1.5rem;color:#dc2626;"></i>
-                <span style="color:#dc2626;">Failed to load customers</span>
-                <button onclick="openCustomerModal()"
-                        style="padding:5px 14px;border-radius:6px;border:1px solid var(--border);
-                               background:#fff;cursor:pointer;font-size:.78rem;">
-                    Retry
-                </button>
-            </div>`;
-    }
-}
-function closeCustModal() {
-    document.getElementById('custModal').classList.remove('open');
-}
+        <div class="pos-loading" style="height:100px;">
+        <i class="bi bi-exclamation-triangle" style="font-size:1.5rem;color:#dc2626;"></i>
+        <span style="color:#dc2626;">Failed to load customers</span>
+        <button onclick="openCustomerModal()"
+        style="padding:5px 14px;border-radius:6px;border:1px solid var(--border);
+        background:#fff;cursor:pointer;font-size:.78rem;">
+        Retry
+        </button>
+        </div>`;
+        }
+        }
+        function closeCustModal() {
+        document.getElementById('custModal').classList.remove('open');
+        }
 
-function filterCustomers(kw) {
-    const list = !kw
+        function filterCustomers(kw) {
+        const list = !kw
         ? state.customers
         : state.customers.filter(c =>
-            (c.name  || '').toLowerCase().includes(kw.toLowerCase()) ||
-            (c.phoneNumber || '').includes(kw));
+        (c.name  || '').toLowerCase().includes(kw.toLowerCase()) ||
+        (c.phoneNumber || '').includes(kw));
 
-    const el = document.getElementById('custList');
+        const el = document.getElementById('custList');
 
-    if (!list.length) {
+        if (!list.length) {
         el.innerHTML = `
-            <div class="pos-loading" style="height:100px;color:var(--muted);">
-                <i class="bi bi-person-x" style="font-size:1.5rem;opacity:.4;"></i>
-                <span>No customers found</span>
-            </div>`;
+        <div class="pos-loading" style="height:100px;color:var(--muted);">
+        <i class="bi bi-person-x" style="font-size:1.5rem;opacity:.4;"></i>
+        <span>No customers found</span>
+        </div>`;
         return;
-    }
+        }
 
-    el.innerHTML = list.slice(0, 40).map(c => {
-       
+        el.innerHTML = list.slice(0, 40).map(c => {
+
         const name    = c.name    || 'Unknown';
         const phone   = c.phoneNumber || '';
         const group   = c.groupName  || '';
@@ -2129,48 +2512,48 @@ function filterCustomers(kw) {
         const safePhone = phone.replace(/'/g, "\\'");
 
         return `
-            <div class="cust-item"
-                 onclick="selectCustomer(${c.id},'${safeName}','${safePhone}',${balance})">
-                <div class="cust-avatar">${initial}</div>
-                <div style="flex:1;">
-                    <div class="cust-item-name">${name}</div>
-                    <div class="cust-item-sub">
-                        ${phone ? phone + ' · ' : ''}${group}
-                    </div>
-                </div>
-                ${balance > 0
-                    ? `<span class="cust-due">Due: ${fUSD(balance)}</span>`
-                    : ''}
-            </div>`;
-    }).join('');
-}
+        <div class="cust-item"
+        onclick="selectCustomer(${c.id},'${safeName}','${safePhone}',${balance})">
+        <div class="cust-avatar">${initial}</div>
+        <div style="flex:1;">
+        <div class="cust-item-name">${name}</div>
+        <div class="cust-item-sub">
+        ${phone ? phone + ' · ' : ''}${group}
+        </div>
+        </div>
+        ${balance > 0
+        ? `<span class="cust-due">Due: ${fUSD(balance)}</span>`
+        : ''}
+        </div>`;
+        }).join('');
+        }
 
-function selectCustomer(id, name, phone, balance) {
-    state.customerId = id;
-    document.getElementById('customerId').value = id;
-    document.getElementById('custName').innerHTML = `<i class="bi bi-person-check me-1" style="color:var(--success);"></i>${name}`;
-    document.getElementById('custSub').textContent = (phone ? phone + ' · ' : '') + 'Due: ' + fUSD(balance);
-    document.getElementById('custSub').style.display = '';
-    document.getElementById('clearCustBtn').style.display = '';
-    loadLoyaltyInfo(id);
-    closeCustModal();
-}
+        function selectCustomer(id, name, phone, balance) {
+        state.customerId = id;
+        document.getElementById('customerId').value = id;
+        document.getElementById('custName').innerHTML = `<i class="bi bi-person-check me-1" style="color:var(--success);"></i>${name}`;
+        document.getElementById('custSub').textContent = (phone ? phone + ' · ' : '') + 'Due: ' + fUSD(balance);
+        document.getElementById('custSub').style.display = '';
+        document.getElementById('clearCustBtn').style.display = '';
+        loadLoyaltyInfo(id);
+        closeCustModal();
+        }
 
-function clearCustomer() {
-    state.customerId = null;
-    document.getElementById('customerId').value = '';
-    document.getElementById('custName').innerHTML = '<i class="bi bi-plus-circle me-1" style="color:var(--muted);"></i>Walk-in Customer';
-    document.getElementById('custSub').style.display = 'none';
-    document.getElementById('clearCustBtn').style.display = 'none';
-    document.getElementById('loyaltyPanel').style.display = 'none';
-    state.loyaltyPointsToRedeem = 0;
-}
+        function clearCustomer() {
+        state.customerId = null;
+        document.getElementById('customerId').value = '';
+        document.getElementById('custName').innerHTML = '<i class="bi bi-plus-circle me-1" style="color:var(--muted);"></i>Walk-in Customer';
+        document.getElementById('custSub').style.display = 'none';
+        document.getElementById('clearCustBtn').style.display = 'none';
+        document.getElementById('loyaltyPanel').style.display = 'none';
+        state.loyaltyPointsToRedeem = 0;
+        }
 
-/* ── Loyalty ────────────────────────────────────────────────────────── */
-let currentLoyalty = null;
+        /* ── Loyalty ────────────────────────────────────────────────────────── */
+        let currentLoyalty = null;
 
-async function loadLoyaltyInfo(customerId) {
-    try {
+        async function loadLoyaltyInfo(customerId) {
+        try {
         const info = await fetch(`/Loyalty/GetCustomerLoyalty?customerId=${customerId}`).then(r => r.json());
         currentLoyalty = info;
 
@@ -2181,116 +2564,243 @@ async function loadLoyaltyInfo(customerId) {
         const hint = document.getElementById('redeemHint');
 
         if (info.canRedeem) {
-            redeemRow.style.display = 'flex';
-            hint.textContent = `Redeemable up to $${info.redeemableValueUSD.toFixed(2)}`;
+        redeemRow.style.display = 'flex';
+        hint.textContent = `Redeemable up to $${info.redeemableValueUSD.toFixed(2)}`;
         } else {
-            redeemRow.style.display = 'none';
-            hint.textContent = info.currentPoints > 0
-                ? `Need more points to redeem`
-                : 'No points yet';
+        redeemRow.style.display = 'none';
+        hint.textContent = info.currentPoints > 0
+        ? `Need more points to redeem`
+        : 'No points yet';
         }
-    } catch {
+        } catch {
         document.getElementById('loyaltyPanel').style.display = 'none';
-    }
-}
+        }
+        }
 
-async function applyRedeem() {
-    const points = parseInt(document.getElementById('redeemPointsInput').value) || 0;
-    if (!points || !state.customerId) return;
+        async function applyRedeem() {
+        const points = parseInt(document.getElementById('redeemPointsInput').value) || 0;
+        if (!points || !state.customerId) return;
 
-    const preview = await fetch(`/Loyalty/PreviewRedeem?customerId=${state.customerId}&points=${points}`)
+        const preview = await fetch(`/Loyalty/PreviewRedeem?customerId=${state.customerId}&points=${points}`)
         .then(r => r.json());
 
-    if (!preview.success) { toastr.error(preview.message); return; }
+        if (!preview.success) { toastr.error(preview.message); return; }
 
-    state.loyaltyPointsToRedeem = points;
-    state.loyaltyDiscountValue  = preview.discountValue;
+        state.loyaltyPointsToRedeem = points;
+        state.loyaltyDiscountValue  = preview.discountValue;
 
-    const currentDiscount = parseFloat(document.getElementById('discountInput').value) || 0;
-    document.getElementById('discountInput').value = (currentDiscount + preview.discountValue).toFixed(2);
-    recalculate();
+        const currentDiscount = parseFloat(document.getElementById('discountInput').value) || 0;
+        document.getElementById('discountInput').value = (currentDiscount + preview.discountValue).toFixed(2);
+        recalculate();
 
-    toastr.success(`$${preview.discountValue.toFixed(2)} discount applied from ${points} points!`);
-    document.getElementById('redeemPointsInput').value = '';
-}
+        toastr.success(`$${preview.discountValue.toFixed(2)} discount applied from ${points} points!`);
+        document.getElementById('redeemPointsInput').value = '';
+        }
 
-/* ── Clear Cart ─────────────────────────────────────────────────────── */
-function clearCart(showToast = true) {
-    state.cart = [];
-    document.getElementById('discountInput').value = '0';
-    document.getElementById('taxInput').value      = '0';
-    document.getElementById('notesInput').value    = '';
-    document.getElementById('payAmount').value     = '';
-    document.getElementById('payAmount').disabled  = false;
-    document.getElementById('creditToggle').checked= false;
-    state.isCredit = false;
-    clearCustomer();
-    renderCart();
-    updateCartBadge();
-    if (showToast) toastr.info('Cart cleared.');
-}
+        /* ── Clear Cart ─────────────────────────────────────────────────────── */
+        function clearCart(showToast = true) {
+        state.cart = [];
+        document.getElementById('discountInput').value = '0';
+        document.getElementById('taxInput').value      = '0';
+        document.getElementById('notesInput').value    = '';
+        document.getElementById('payAmount').value     = '';
+        document.getElementById('payAmount').disabled  = false;
+        document.getElementById('creditToggle').checked= false;
+        state.isCredit = false;
+        clearCustomer();
+        renderCart();
+        updateCartBadge();
+        if (showToast) toastr.info('Cart cleared.');
+        }
 
-/* ── Panel Switches ─────────────────────────────────────────────────── */
-function switchPanel(tab) {
-    state.activePanel = tab;
+        /* ── Panel Switches ─────────────────────────────────────────────────── */
+        function switchPanel(tab) {
+        state.activePanel = tab;
 
-    document.getElementById('productsSection').classList.toggle('active', tab === 'products');
-    document.getElementById('bundlesSection').classList.toggle('active', tab === 'bundles');
-    document.getElementById('bundleGrid').style.display = tab === 'bundles' ? 'block' : 'none';
+        document.getElementById('productsSection').classList.toggle('active', tab === 'products');
+        document.getElementById('bundlesSection').classList.toggle('active', tab === 'bundles');
+        document.getElementById('bundleGrid').style.display = tab === 'bundles' ? 'block' : 'none';
 
-    const productBtn = document.getElementById('tabProducts');
-    const bundleBtn  = document.getElementById('tabBundles');
-    if (productBtn) {
+        const productBtn = document.getElementById('tabProducts');
+        const bundleBtn  = document.getElementById('tabBundles');
+        if (productBtn) {
         productBtn.classList.toggle('active', tab === 'products');
         productBtn.style.background = tab === 'products' ? '#0a0a0a' : 'transparent';
         productBtn.style.color = tab === 'products' ? '#c9a96e' : '#000';
         productBtn.style.borderColor = tab === 'products' ? '#0a0a0a' : 'var(--border)';
-    }
-    if (bundleBtn) {
+        }
+        if (bundleBtn) {
         bundleBtn.classList.toggle('active', tab === 'bundles');
         bundleBtn.style.background = tab === 'bundles' ? '#0a0a0a' : 'transparent';
         bundleBtn.style.color = tab === 'bundles' ? '#c9a96e' : '#000';
         bundleBtn.style.borderColor = tab === 'bundles' ? '#0a0a0a' : 'var(--border)';
-    }
+        }
 
-    if (tab === 'products') {
+        if (tab === 'products') {
         setTimeout(() => document.getElementById('searchInput').focus(), 100);
         renderProductGrid();
-    } else {
+        } else {
         renderBundleGrid();
-    }
-}
+        }
+        }
+        // ══════════════════════════════════════════════════════════════════════
+        // DIGITAL PAYMENT (bKash/Nagad) INTEGRATION
+        // ══════════════════════════════════════════════════════════════════════
+        let digitalPaymentId = null;
+        let pollInterval = null;
 
-/* ── Mobile Tab Switch ──────────────────────────────────────────────── */
-function switchTab(tab) {
-    ['products','cart','pay'].forEach(t => {
+        function setPayMethod(method, btn) {
+        state.payMethod = method;
+        document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+
+        const isDigital = method === 7 || method === 8;
+        document.getElementById('digitalPayPanel').style.display = isDigital ? '' : 'none';
+        document.getElementById('payAmount').closest('.pay-input-wrap')?.classList.toggle('d-none', isDigital);
+
+        if (isDigital) {
+        document.getElementById('digitalPayBtnLabel').textContent = method === 7 ? 'Pay with bKash' : 'Pay with Nagad';
+        document.getElementById('initiatePayBtn').style.background = method === 7 ? '#e2136e' : '#f6921e';
+        }
+        }
+
+        async function initiateDigitalPayment() {
+        const provider = state.payMethod === 7 ? 'bKash' : 'Nagad';
+        const msisdn   = document.getElementById('customerMsisdn').value.trim();
+
+        if (provider === 'Nagad' && (!msisdn || msisdn.length !== 11)) {
+        toastr.error('Nagad পেমেন্টের জন্য সঠিক মোবাইল নম্বর দিন।');
+        return;
+        }
+
+        const total = getTotal();
+        const btn = document.getElementById('initiatePayBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        try {
+        const result = await fetch('/Payment/Initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+        body: JSON.stringify({ provider, amountUSD: total, customerMsisdn: msisdn })
+        }).then(r => r.json());
+
+        if (!result.success) {
+        toastr.error(result.message);
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-phone me-1"></i>${provider === 'bKash' ? 'Pay with bKash' : 'Pay with Nagad'}`;
+        return;
+        }
+
+        digitalPaymentId = result.gatewayPaymentId;
+
+        const statusBox = document.getElementById('paymentStatusBox');
+        statusBox.style.display = '';
+        statusBox.innerHTML = `<i class="bi bi-hourglass-split"></i> Customer এর কনফার্মেশনের জন্য অপেক্ষা করা হচ্ছে... (৳${result.amountBDT})`;
+
+        // ── bKash/Nagad checkout popup window এ খোলো ──────────────────────────
+        if (result.redirectUrl) {
+        window.open(result.redirectUrl, 'paymentWindow', 'width=480,height=720');
+        }
+
+        startPollingPaymentStatus();
+        } catch {
+        toastr.error('Payment শুরু করতে সমস্যা হয়েছে।');
+        btn.disabled = false;
+        }
+        }
+
+        function startPollingPaymentStatus() {
+        if (pollInterval) clearInterval(pollInterval);
+
+        pollInterval = setInterval(async () => {
+        if (!digitalPaymentId) return;
+
+        const status = await fetch(`/Payment/Status?paymentId=${digitalPaymentId}`).then(r => r.json());
+        const statusBox = document.getElementById('paymentStatusBox');
+
+        if (status.status === 'Completed') {
+        clearInterval(pollInterval);
+        statusBox.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Payment সফল! Checkout করা হচ্ছে...</span>`;
+
+        // ── digital payment সফল — এখন আসল invoice তৈরি করো ───────────────
+        await completeCheckoutAfterDigitalPayment();
+        } else if (status.isFinal) {
+        clearInterval(pollInterval);
+        statusBox.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> Payment ব্যর্থ: ${status.failureReason || 'Unknown'}</span>`;
+        document.getElementById('initiatePayBtn').disabled = false;
+        }
+        // Pending থাকলে polling চলতে থাকবে
+        }, 3000);   // প্রতি ৩ সেকেন্ডে চেক করো
+        }
+
+        // ── postMessage থেকেও listen করো (popup বন্ধ হলে তাড়াতাড়ি জানার জন্য) ───────
+        window.addEventListener('message', (event) => {
+        if (event.data?.type === 'PAYMENT_CALLBACK' && event.data.success) {
+        // Polling নিজেই detect করবে, কিন্তু এটা UX আরো দ্রুত করে
+        }
+        });
+
+        async function completeCheckoutAfterDigitalPayment() {
+        const total = getTotal();
+        const dto = {
+        customerId:      state.customerId,
+        discountAmount:  parseFloat(document.getElementById('discountInput').value) || 0,
+        taxAmount:       parseFloat(document.getElementById('taxInput').value)      || 0,
+        isCredit:        false,
+        notes:           document.getElementById('notesInput').value,
+        exchangeRateBDT: RATE_BDT,
+        exchangeRateMVR: RATE_MVR,
+        items: state.cart.map(i => ({
+        productVariantId: i.variantId, quantity: i.qty, unitPrice: i.unitPrice, discountAmount: 0, taxAmount: 0
+        })),
+        payments: [{ paymentMethod: state.payMethod, amount: total, gatewayPaymentId: digitalPaymentId }]
+        };
+
+        const resp = await fetch('/Sales/CreateInvoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': tok() },
+        body: JSON.stringify(dto)
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+        showReceipt(data.data, total);
+        digitalPaymentId = null;
+        } else {
+        toastr.error(data.message);
+        }
+        }
+        /* ── Mobile Tab Switch ──────────────────────────────────────────────── */
+        function switchTab(tab) {
+        ['products','cart','pay'].forEach(t => {
         const panelId = t === 'pay' ? 'panel-pay' : `panel-${t}`;
         const panel   = document.getElementById(panelId);
         const btn     = document.getElementById(`tab-${t}`);
         if (panel) panel.classList.toggle('mob-active', t === tab);
         if (btn)   btn.classList.toggle('active', t === tab);
-    });
+        });
 
-    // Focus search on products tab
-    if (tab === 'products')
+        // Focus search on products tab
+        if (tab === 'products')
         setTimeout(() => document.getElementById('searchInput').focus(), 100);
-}
+        }
 
-/* ── Close overlays ─────────────────────────────────────────────────── */
-document.getElementById('custModal').addEventListener('click', function(e) {
-    if (e.target === this) closeCustModal();
-});
+        /* ── Close overlays ─────────────────────────────────────────────────── */
+        document.getElementById('custModal').addEventListener('click', function(e) {
+        if (e.target === this) closeCustModal();
+        });
 
-document.getElementById('receiptOverlay').addEventListener('click', function(e) {
-    if (e.target === this) newSale();
-});
+        document.getElementById('receiptOverlay').addEventListener('click', function(e) {
+        if (e.target === this) newSale();
+        });
 
-/* ── Start ──────────────────────────────────────────────────────────── */
-loadProducts();
-loadBundles();
-switchPanel('products');
-document.getElementById('searchInput').focus();
-     
+        /* ── Start ──────────────────────────────────────────────────────────── */
+        loadProducts();
+        loadBundles();
+        switchPanel('products');
+        document.getElementById('searchInput').focus();
+
         document.addEventListener('rt:stockUpdated', e => {
         const { variantId, quantity, productName } = e.detail;
 
@@ -2319,8 +2829,8 @@ document.getElementById('searchInput').focus();
         });
 
         document.addEventListener('rt:saleCompleted', e => {
-        
+
         });
-</script>
+    </script>
 </body>
 </html>

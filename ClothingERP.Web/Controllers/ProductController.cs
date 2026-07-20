@@ -11,12 +11,14 @@ public class ProductController : BaseController
     private readonly IWebHostEnvironment _env;
     private readonly IConfiguration _config;
     private readonly IProductService _productSvc;
+    private readonly IExchangeRateService _rateSvc;
     public ProductController(IProductService products, ICategoryService cats,
-        IBrandService brands, IProductAttributeService attrs, IWebHostEnvironment env, IConfiguration config, IProductService productSvc)
+        IBrandService brands, IProductAttributeService attrs, IWebHostEnvironment env, IConfiguration config, IProductService productSvc, IExchangeRateService rateSvc)
     {
         _products = products; _cats = cats; _brands = brands; _attrs = attrs; _env = env;
         _config = config;
         _productSvc = productSvc;
+        _rateSvc = rateSvc;
     }
 
     // ── Index ─────────────────────────────────────────────────────────────
@@ -216,10 +218,10 @@ public class ProductController : BaseController
         ViewBag.Brands = await _brands.GetAllAsync();
         ViewBag.Sizes = await _attrs.GetSizesAsync();
         ViewBag.Colors = await _attrs.GetColorsAsync();
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
 
-      
-        ViewBag.RateBDT = _config.GetValue<decimal>("ExchangeRates:USD_TO_BDT", 110m);
-        ViewBag.RateMVR = _config.GetValue<decimal>("ExchangeRates:USD_TO_MVR", 15.42m);
     }
 
     private async Task<string> SaveFile(IFormFile file, string folder)

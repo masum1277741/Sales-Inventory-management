@@ -1,4 +1,4 @@
-﻿using ClothingERP.Application.Interfaces.Services;   
+﻿using ClothingERP.Application.Interfaces.Services;
 
 namespace ClothingERP.Application.Services;
 
@@ -12,12 +12,13 @@ public class SalesService : ISalesService
     private readonly ICommissionService _commissionSvc;
     private readonly INotificationService _notificationSvc;
     private readonly IRealtimeNotifier _realtime;
+    private readonly ICurrentBranchProvider _branchProvider;
 
     public SalesService(IUnitOfWork uow, IMapper mapper, ILoyaltyService loyaltySvc, IStockService stock,
         IGiftCardService giftCardService, ICommissionService commissionSvc, INotificationService notificationSvc,
-        IRealtimeNotifier realtime)
-        => (_uow, _mapper, _loyaltySvc, _stock, _giftCardSvc, _commissionSvc, _notificationSvc, _realtime)
-            = (uow, mapper, loyaltySvc, stock, giftCardService, commissionSvc, notificationSvc, realtime);
+        IRealtimeNotifier realtime, ICurrentBranchProvider branchProvider)
+        => (_uow, _mapper, _loyaltySvc, _stock, _giftCardSvc, _commissionSvc, _notificationSvc, _realtime, _branchProvider)
+            = (uow, mapper, loyaltySvc, stock, giftCardService, commissionSvc, notificationSvc, realtime, branchProvider);
 
     public async Task<IEnumerable<SalesInvoiceListDto>> GetAllAsync()
     {
@@ -35,18 +36,44 @@ public class SalesService : ISalesService
 
     public async Task<ServiceResult<SalesInvoiceDto>> CreateAsync(CreateSalesInvoiceDto dto, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         await _uow.BeginTransactionAsync();
         try
         {
-            // 1. Stock validation
+            // 1. Branch-aware stock validation + decrement
+            var decrementedVariants = new List<(int variantId, int qty)>();
+            var conflicts = new List<ConflictItemDto>();
+
             foreach (var item in dto.Items)
             {
-                var stock = await _uow.Stocks.GetByVariantIdAsync(item.ProductVariantId);
-                if (stock == null || stock.Quantity < item.Quantity)
+                var success = await _uow.Stocks.TryDecrementAsync(item.ProductVariantId, branchId, (int)item.Quantity);
+                if (!success)
                 {
-                    await _uow.RollbackTransactionAsync();
-                    return ServiceResult<SalesInvoiceDto>.Fail($"Insufficient stock for variant #{item.ProductVariantId}.");
+                    var stock = await _uow.Stocks.GetByVariantAndBranchAsync(item.ProductVariantId, branchId);
+                    var variant = await _uow.ProductVariants.GetByIdAsync(item.ProductVariantId);
+                    conflicts.Add(new ConflictItemDto
+                    {
+                        ProductVariantId = item.ProductVariantId,
+                        ProductName = variant?.Product?.Name ?? "Unknown",
+                        RequestedQty = (int)item.Quantity,
+                        AvailableQty = (int)(stock?.Quantity ?? 0)
+                    });
+                    continue;
                 }
+                decrementedVariants.Add(((int variantId, int qty))(item.ProductVariantId, item.Quantity));
+            }
+
+            if (conflicts.Any())
+            {
+                // Roll back whatever was already decremented before we knew about the conflicts
+                foreach (var (vid, qty) in decrementedVariants)
+                    await _uow.Stocks.IncrementAsync(vid, branchId, qty);
+
+                await _uow.RollbackTransactionAsync();
+
+                var conflictResult = ServiceResult<SalesInvoiceDto>.Fail("পর্যাপ্ত stock নেই এই branch এ।");
+                conflictResult.Conflicts = conflicts;
+                return conflictResult;
             }
 
             decimal loyaltyDiscount = 0;
@@ -59,6 +86,9 @@ public class SalesService : ISalesService
 
                 if (!redeemResult.Success)
                 {
+                    foreach (var (vid, qty) in decrementedVariants)
+                        await _uow.Stocks.IncrementAsync(vid, branchId, qty);
+
                     await _uow.RollbackTransactionAsync();
                     return ServiceResult<SalesInvoiceDto>.Fail(redeemResult.Message!);
                 }
@@ -79,6 +109,7 @@ public class SalesService : ISalesService
                 TaxAmount = dto.TaxAmount,
                 IsCredit = dto.IsCredit,
                 Notes = dto.Notes,
+                BranchId = branchId,
                 CreatedBy = userId
             };
 
@@ -105,6 +136,7 @@ public class SalesService : ISalesService
 
             await _uow.SalesInvoices.AddAsync(invoice);
             await _uow.SaveChangesAsync();
+
             if (invoice.TotalAmount >= 200 && !invoice.IsHold)
             {
                 await _notificationSvc.CreateAsync(new CreateNotificationDto
@@ -118,14 +150,14 @@ public class SalesService : ISalesService
                     ActionUrl = $"/Sales/Details/{invoice.Id}"
                 });
             }
-         
+
             if (!invoice.IsHold && invoice.Status != InvoiceStatus.Cancelled)
             {
                 await _commissionSvc.CalculateAndRecordCommissionAsync(
                     userId, invoice.Id, invoice.TotalAmount, userId);
             }
 
-            // 3. Payments
+            // 4. Payments
             decimal totalPaid = 0;
             foreach (var payDto in dto.Payments)
             {
@@ -161,13 +193,11 @@ public class SalesService : ISalesService
             _uow.SalesInvoices.Update(invoice);
             await _uow.SaveChangesAsync();
 
-            // 4. Reduce stock + realtime broadcast
+            // 5. Stock already decremented in step 1 — just read the current
+            //    branch-specific quantity for the realtime/low-stock broadcasts.
             foreach (var item in invoice.Items)
             {
-                await _stock.UpdateStockAsync(item.ProductVariantId, -item.Quantity,
-                    StockMovementType.Sale, invoice.InvoiceNumber, userId);
-
-                var updatedStock = await _uow.Stocks.GetByVariantIdAsync(item.ProductVariantId);
+                var updatedStock = await _uow.Stocks.GetByVariantAndBranchAsync(item.ProductVariantId, branchId);
                 var variant = await _uow.ProductVariants.GetByIdAsync(item.ProductVariantId);
 
                 await _realtime.NotifyStockUpdatedAsync(
@@ -184,7 +214,7 @@ public class SalesService : ISalesService
                 }
             }
 
-            // 5. Customer ledger if credit sale
+            // 6. Customer ledger if credit sale
             if (dto.IsCredit && dto.CustomerId.HasValue)
             {
                 var due = invoice.TotalAmount - totalPaid;
@@ -193,7 +223,7 @@ public class SalesService : ISalesService
                     $"Invoice {invoice.InvoiceNumber}", userId);
             }
 
-            // 6. Update customer total purchase and award loyalty points
+            // 7. Update customer total purchase and award loyalty points
             if (dto.CustomerId.HasValue)
             {
                 var customer = await _uow.Customers.GetByIdAsync(dto.CustomerId.Value);
@@ -212,7 +242,7 @@ public class SalesService : ISalesService
             await _uow.SaveChangesAsync();
             await _uow.CommitTransactionAsync();
 
-            // ── সেল সম্পন্ন হওয়ার broadcast (commit এর পরে) ────────────────
+
             await _realtime.NotifySaleCompletedAsync(invoice.TotalAmount, invoice.InvoiceNumber);
 
             var result = await _uow.SalesInvoices.GetWithDetailsAsync(invoice.Id);
@@ -224,7 +254,6 @@ public class SalesService : ISalesService
             return ServiceResult<SalesInvoiceDto>.Fail($"Failed: {ex.Message}");
         }
     }
-
     public async Task<ServiceResult> CancelAsync(int id, string reason, int userId)
     {
         var inv = await _uow.SalesInvoices.GetWithDetailsAsync(id);
@@ -239,13 +268,12 @@ public class SalesService : ISalesService
             inv.UpdatedBy = userId;
             _uow.SalesInvoices.Update(inv);
 
-            // Restore stock + realtime broadcast
+            // Restore stock to the branch the sale was made from + realtime broadcast
             foreach (var item in inv.Items)
             {
-                await _stock.UpdateStockAsync(item.ProductVariantId, item.Quantity,
-                    StockMovementType.Adjustment, $"CANCEL-{inv.InvoiceNumber}", userId);
+                await _uow.Stocks.IncrementAsync(item.ProductVariantId, inv.BranchId, (int)item.Quantity);
 
-                var updatedStock = await _uow.Stocks.GetByVariantIdAsync(item.ProductVariantId);
+                var updatedStock = await _uow.Stocks.GetByVariantAndBranchAsync(item.ProductVariantId, inv.BranchId);
                 var variant = await _uow.ProductVariants.GetByIdAsync(item.ProductVariantId);
 
                 await _realtime.NotifyStockUpdatedAsync(
@@ -320,12 +348,12 @@ public class SalesService : ISalesService
         return ServiceResult.Ok("Payment recorded.");
     }
 
-    public async Task<decimal> GetTodaySalesAsync()
-        => await _uow.SalesInvoices.GetTodaySalesAmountAsync();
-    public async Task<decimal> GetTodayProfitAsync()
-        => await _uow.SalesInvoices.GetTodayProfitAsync();
-    public async Task<int> GetTodayInvoiceCountAsync()
-        => await _uow.SalesInvoices.GetTodayInvoiceCountAsync();
+    public async Task<decimal> GetTodaySalesAsync(int? branchId = null)
+        => await _uow.SalesInvoices.GetTodaySalesAmountAsync(branchId);
+    public async Task<decimal> GetTodayProfitAsync(int? branchId = null)
+        => await _uow.SalesInvoices.GetTodayProfitAsync(branchId);
+    public async Task<int> GetTodayInvoiceCountAsync(int? branchId = null)
+        => await _uow.SalesInvoices.GetTodayInvoiceCountAsync(branchId);
 
     // ── Private Helpers ───────────────────────────────────────────────────
     private async Task AddCustomerLedgerEntry(int customerId, LedgerEntryType type,

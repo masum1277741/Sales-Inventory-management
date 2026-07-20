@@ -21,7 +21,8 @@ public class SalesInvoice : BaseEntity
 
     [NotMapped]
     public decimal DueAmount => TotalAmount - PaidAmount;
-
+    public int BranchId { get; set; }
+    public Branch Branch { get; set; } = null!;
     public virtual Customer? Customer { get; set; }
     public virtual ICollection<SalesInvoiceItem> Items { get; set; } = new List<SalesInvoiceItem>();
     public virtual ICollection<SalesPayment> Payments { get; set; } = new List<SalesPayment>();

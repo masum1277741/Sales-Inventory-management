@@ -2,5 +2,5 @@
 
 public interface IDashboardService
 {
-    Task<DashboardDto> GetDashboardDataAsync();
+    Task<DashboardDto> GetDashboardDataAsync(int? branchId = null);
 }

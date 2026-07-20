@@ -11,4 +11,6 @@ public class AccountTransaction : BaseEntity
     public PaymentMethod PaymentMethod { get; set; }
     public string? ReferenceNumber { get; set; }
     public string? Notes { get; set; }
+    public int? BranchId { get; set; }  
+    public Branch? Branch { get; set; }
 }

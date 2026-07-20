@@ -1,0 +1,58 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Payment Result</title>
+    <style>
+            body {
+                font-family: 'Segoe UI', sans-serif;
+                background: #faf8f5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+            }
+
+            .box {
+                text-align: center;
+                padding: 40px;
+            }
+
+            .icon {
+                font-size: 4rem;
+                margin-bottom: 16px;
+            }
+
+            h3 {
+                margin: 0 0 8px;
+            }
+
+            p {
+                color: #888;
+            }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="icon">@(ViewBag.Success ? "✅" : "❌")</div>
+        <h3>@(ViewBag.Success ? "Payment Successful!" : "Payment Failed")</h3>
+        <p>@ViewBag.Message</p>
+        <p style="font-size:.8rem;">এই উইন্ডো বন্ধ হয়ে যাবে...</p>
+    </div>
+
+    <script>
+       
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'PAYMENT_CALLBACK',
+                    success: @Html.Raw(ViewBag.Success ? "true" : "false")
+                }, '*');
+                setTimeout(() => window.close(), 2000);
+            }
+    </script>
+</body>
+</html>

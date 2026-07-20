@@ -25,12 +25,16 @@ public interface IUnitOfWork : IDisposable
     // --- Stock ---
     IStockRepository Stocks { get; }
     IRepository<StockMovement> StockMovements { get; }
-
+    IRepository<ForecastSettings> ForecastSettings { get; }
     // --- Customers ---
     IRepository<CustomerGroup> CustomerGroups { get; }
     ICustomerRepository Customers { get; }
     ICustomerLedgerRepository CustomerLedgers { get; }
     IRepository<CustomerPayment> CustomerPayments { get; }
+    IRepository<OnlineOrder> OnlineOrders { get; }
+    IRepository<OnlineOrderItem> OnlineOrderItems { get; }
+    IRepository<StorefrontSettings> StorefrontSettings { get; }
+    IRepository<DigitalPaymentTransaction> DigitalPaymentTransactions { get; }
 
     // --- Suppliers ---
     ISupplierRepository Suppliers { get; }
@@ -38,6 +42,7 @@ public interface IUnitOfWork : IDisposable
 
     // --- Purchase ---
     IPurchaseOrderRepository PurchaseOrders { get; }
+    IRepository<PurchaseOrderItem> PurchaseOrderItems { get; }
     IGoodsReceiptNoteRepository GoodsReceiptNotes { get; }
 
     // --- Sales ---
@@ -51,10 +56,16 @@ public interface IUnitOfWork : IDisposable
     IRepository<DashboardLayout> DashboardLayouts { get; }
     // --- Accounts ---
     IAccountTransactionRepository AccountTransactions { get; }
+    IRepository<ExchangeRateSnapshot> ExchangeRateSnapshots { get; }
+    IRepository<ExchangeRateSettings> ExchangeRateSettings { get; }
     IRepository<Notification> Notifications { get; }
+    IRepository<ReorderSettings> ReorderSettings { get; }
     // --- Security ---
     IAuditLogRepository AuditLogs { get; }
-
+    IRepository<Branch> Branches { get; }
+    IRepository<UserBranch> UserBranches { get; }
+    IRepository<StockTransfer> StockTransfers { get; }
+    IRepository<StockTransferItem> StockTransferItems { get; }
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();

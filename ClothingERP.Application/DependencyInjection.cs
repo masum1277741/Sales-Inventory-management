@@ -35,6 +35,15 @@ public static class DependencyInjection
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IDashboardLayoutService, DashboardLayoutService>();
+        services.AddScoped<IExchangeRateService, ExchangeRateService>();
+        services.AddScoped<IReorderService, ReorderService>();
+        services.AddScoped<IDemandForecastService, DemandForecastService>();
+        services.AddScoped<IStorefrontService, StorefrontService>();
+        services.AddScoped<IOnlineOrderService, OnlineOrderService>();
+        services.AddScoped<IBranchService, BranchService>();
+        services.AddScoped<ICustomerAuthService, CustomerAuthService>();
+        services.AddScoped<IStockTransferService, StockTransferService>();
+        //services.AddScoped<IAppModuleService, AppModuleService>();
         return services;
     }
 }

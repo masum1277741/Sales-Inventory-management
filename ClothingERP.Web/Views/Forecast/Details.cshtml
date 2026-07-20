@@ -1,0 +1,135 @@
+﻿@model DemandForecastDto
+@{
+    ViewData["Title"] = "Demand Forecast";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>@Model.ProductName</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Forecasting</a></li>
+                <li class="breadcrumb-item active">@Model.SizeName · @Model.ColorName</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+@if (!Model.HasSufficientData)
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-bar-chart d-block mb-3 text-muted" style="font-size:2.5rem;"></i>
+            <h6 class="fw-bold">যথেষ্ট ডাটা নেই</h6>
+            <p class="text-muted small">এই প্রোডাক্টের নির্ভরযোগ্য forecast তৈরি করার জন্য আরো বিক্রির ইতিহাস প্রয়োজন।</p>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Trend & Confidence -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-3">
+            <div class="stat-card border-start border-3 @(Model.TrendDirection == "Growing" ? "border-success" : Model.TrendDirection == "Declining" ? "border-danger" : "border-secondary")">
+                <div class="text-muted small">Trend</div>
+                <h5 class="fw-bold mb-0" style="color:@(Model.TrendDirection == "Growing" ? "#065f46" : Model.TrendDirection == "Declining" ? "#7f1d1d" : "#334155");">
+                    @(Model.TrendDirection == "Growing" ? "📈" : Model.TrendDirection == "Declining" ? "📉" : "➖") @Model.TrendDirection
+                </h5>
+                <small class="text-muted">@(Model.TrendPercentage >= 0 ? "+" : "")@Model.TrendPercentage.ToString("N1")%</small>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="stat-card">
+                <div class="text-muted small">Confidence</div>
+                <h5 class="fw-bold mb-0">@Model.ConfidenceLevel</h5>
+                <div class="progress mt-1" style="height:5px;">
+                    <div class="progress-bar @(Model.ConfidenceLevel == "High" ? "bg-success" : Model.ConfidenceLevel == "Medium" ? "bg-warning" : "bg-danger")"
+                         style="width:@Model.ConfidenceScore%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="stat-card">
+                <div class="text-muted small">Predicted (Next 30 Days)</div>
+                <h5 class="fw-bold mb-0">@Model.PredictedDemandNext30Days.ToString("N0") pcs</h5>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="stat-card">
+                <div class="text-muted small">Current Stock vs Recommended</div>
+                <h5 class="fw-bold mb-0">@Model.CurrentStock <span class="text-muted">/</span> @Model.RecommendedStockLevel</h5>
+                @if (Model.CurrentStock < Model.RecommendedStockLevel)
+                {
+                    <small class="text-danger">⚠ Reorder বিবেচনা করুন</small>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <span class="fw-semibold"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Historical বিক্রি vs Forecasted চাহিদা</span>
+        </div>
+        <div class="card-body">
+            <canvas id="forecastChart" style="max-height:340px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Breakdown -->
+    <div class="row g-3">
+        <div class="col-sm-4">
+            <div class="stat-card text-center">
+                <div class="text-muted small">পরবর্তী ৭ দিন</div>
+                <h4 class="fw-bold mb-0">@Model.PredictedDemandNext7Days.ToString("N1") pcs</h4>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card text-center">
+                <div class="text-muted small">পরবর্তী ১৪ দিন</div>
+                <h4 class="fw-bold mb-0">@Model.PredictedDemandNext14Days.ToString("N1") pcs</h4>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card text-center">
+                <div class="text-muted small">পরবর্তী ৩০ দিন</div>
+                <h4 class="fw-bold mb-0">@Model.PredictedDemandNext30Days.ToString("N1") pcs</h4>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @if (Model.HasSufficientData)
+    {
+        <script>
+            const histLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.HistoricalSeries.Select(h => h.Date.ToString("dd MMM"))));
+            const histData    = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.HistoricalSeries.Select(h => h.Value)));
+            const fcLabels    = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ForecastSeries.Select(f => f.Date.ToString("dd MMM"))));
+            const fcData       = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ForecastSeries.Select(f => f.Value)));
+
+            // historical এর শেষে null padding দিয়ে forecast আলাদা লাইনে দেখাও
+            const allLabels = [...histLabels, ...fcLabels];
+            const histPadded = [...histData, ...new Array(fcData.length).fill(null)];
+            const fcPadded    = [...new Array(histData.length - 1).fill(null), histData[histData.length-1], ...fcData];
+
+            new Chart(document.getElementById('forecastChart'), {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [
+                        { label: 'প্রকৃত বিক্রি (ঐতিহাসিক)', data: histPadded, borderColor: '#0a0a0a', backgroundColor: 'rgba(10,10,10,.05)', borderWidth: 1.5, pointRadius: 0, tension: .3 },
+                        { label: 'Forecast (Holt-Winters)', data: fcPadded, borderColor: '#c9a96e', backgroundColor: 'rgba(201,169,110,.1)', borderWidth: 2, borderDash: [6,4], pointRadius: 0, tension: .3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'দৈনিক বিক্রির পরিমাণ' } } }
+                }
+            });
+        </script>
+    }
+}

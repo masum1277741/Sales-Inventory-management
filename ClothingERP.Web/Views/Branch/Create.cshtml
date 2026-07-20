@@ -1,0 +1,70 @@
+﻿@model ClothingERP.Application.DTOs.CreateBranchDto
+@{
+    ViewData["Title"] = "Add Branch";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-shop-window me-2 text-primary"></i>Add Branch</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Branches</a></li>
+                <li class="breadcrumb-item active">Add</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Branch Code <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control text-uppercase" placeholder="MAIN" />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Branch Name <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" placeholder="Gulshan Branch" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Address</label>
+                            <input asp-for="Address" class="form-control" placeholder="House 12, Road 5, Gulshan-1" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phone</label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="01XXXXXXXXX" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Country</label>
+                            <select asp-for="Country" class="form-select">
+                                <option value="Bangladesh">Bangladesh</option>
+                                <option value="Maldives">Maldives</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive" checked />
+                                <label class="form-check-label">Active immediately</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i>Save Branch
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

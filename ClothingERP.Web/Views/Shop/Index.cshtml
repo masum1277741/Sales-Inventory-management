@@ -1,0 +1,83 @@
+﻿@model IEnumerable<ClothingERP.Application.DTOs.StorefrontProductDto>
+@{
+    Layout = "_ShopLayout"; ViewData["Title"] = "Home"; var settings = ViewBag.Settings;
+}
+<script>window.__rates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Rates));</script>
+
+<!-- Announcement Banner -->
+@if (settings != null && !string.IsNullOrEmpty((string?)settings.AnnouncementText))
+{
+    <div style="background:#0a0a0a;color:#c9a96e;text-align:center;padding:10px;font-size:.85rem;font-weight:600;">
+        @settings.AnnouncementText
+    </div>
+}
+
+<!-- Hero -->
+<div style="background:linear-gradient(135deg,#0a0a0a,#1a1a1a);padding:80px 5%;text-align:center;">
+    <p style="color:#c9a96e;font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;">
+        @(settings?.StoreTagline ?? "Attractive Beauty")
+    </p>
+    <h1 style="font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:700;color:#fff;margin-bottom:20px;line-height:1.15;">
+        Fashion That Speaks<br />For Itself
+    </h1>
+    <a href="/Shop/Catalog" class="btn-shop-primary d-inline-block text-decoration-none"
+       style="padding:14px 36px;font-size:.88rem;">
+        Shop Now
+    </a>
+</div>
+
+<!-- Featured Products -->
+<div class="container py-5">
+    <h2 class="serif fw-bold mb-4 text-center">New Arrivals</h2>
+    <div class="row g-4">
+        @foreach (var p in Model)
+        {
+            <div class="col-6 col-md-3">
+                <a href="/Shop/Product/@p.ProductId" class="text-decoration-none text-dark">
+                    <div class="ratio ratio-1x1 mb-2"
+                         style="background:#f7f5f1;border-radius:8px;overflow:hidden;position:relative;">
+                        @if (!string.IsNullOrEmpty(p.ImagePath))
+                        {
+                            <img src="@p.ImagePath" class="w-100 h-100" style="object-fit:cover;" />
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <i class="bi bi-image text-muted" style="font-size:2rem;"></i>
+                            </div>
+                        }
+                        @if (!p.InStock)
+                        {
+                            <span class="badge bg-dark position-absolute top-0 end-0 m-2">Sold Out</span>
+                        }
+                    </div>
+                    <div class="small text-muted">@p.CategoryName</div>
+                    <div class="fw-semibold">@p.Name</div>
+                    <div class="fw-bold price-display" data-usd="@p.MinPriceUSD">
+                        $@p.MinPriceUSD.ToString("N2")
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-bag d-block mb-2" style="font-size:2.5rem;"></i>
+            <p>Products আসছে — শীঘ্রই আমাদের collection দেখুন।</p>
+        </div>
+    }
+    <div class="text-center mt-4">
+        <a href="/Shop/Catalog" class="btn-shop-outline d-inline-block text-decoration-none">
+            View All Products
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.price-display').forEach(el => {
+        el.textContent = fmtPrice(parseFloat(el.dataset.usd));
+        });
+    </script>
+}

@@ -17,7 +17,8 @@ public class PurchaseOrder : BaseEntity
 
     [NotMapped]
     public decimal DueAmount => TotalAmount - PaidAmount;
-
+    public int BranchId { get; set; }
+    public Branch Branch { get; set; } = null!;
     public virtual Supplier Supplier { get; set; } = null!;
     public virtual ICollection<PurchaseOrderItem> Items { get; set; } = new List<PurchaseOrderItem>();
     public virtual ICollection<GoodsReceiptNote> GRNs { get; set; } = new List<GoodsReceiptNote>();

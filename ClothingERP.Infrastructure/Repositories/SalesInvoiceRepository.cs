@@ -38,46 +38,63 @@ public class SalesInvoiceRepository : GenericRepository<SalesInvoice>, ISalesInv
         return $"INV-{today:yyyyMMdd}-{count:D4}";
     }
 
-    public async Task<decimal> GetTodaySalesAmountAsync()
+    public async Task<decimal> GetTodaySalesAmountAsync(int? branchId = null)
     {
         var today = DateTime.UtcNow.Date;
-        return await _dbSet
-            .Where(i => i.InvoiceDate >= today && i.Status != InvoiceStatus.Cancelled && !i.IsHold)
-            .SumAsync(i => i.TotalAmount);
+        var query = _dbSet
+            .Where(i => i.InvoiceDate >= today && i.Status != InvoiceStatus.Cancelled && !i.IsHold);
+
+        if (branchId.HasValue)
+            query = query.Where(i => i.BranchId == branchId.Value);
+
+        return await query.SumAsync(i => i.TotalAmount);
     }
 
-    public async Task<decimal> GetTodayProfitAsync()
+    public async Task<decimal> GetTodayProfitAsync(int? branchId = null)
     {
         var today = DateTime.UtcNow.Date;
-        var items = await _context.Set<SalesInvoiceItem>()
+        var query = _context.Set<SalesInvoiceItem>()
             .Include(x => x.SalesInvoice)
             .Include(x => x.ProductVariant).ThenInclude(v => v.Product)
             .Where(x => !x.IsDeleted &&
                         !x.SalesInvoice.IsDeleted &&
                         x.SalesInvoice.InvoiceDate >= today &&
                         x.SalesInvoice.Status != InvoiceStatus.Cancelled &&
-                        !x.SalesInvoice.IsHold)
-            .ToListAsync();
+                        !x.SalesInvoice.IsHold);
+
+        if (branchId.HasValue)
+            query = query.Where(x => x.SalesInvoice.BranchId == branchId.Value);
+
+        var items = await query.ToListAsync();
 
         return items.Sum(x =>
             (x.UnitPrice - (x.ProductVariant.CostPriceOverride ?? x.ProductVariant.Product.CostPrice))
             * x.Quantity - x.DiscountAmount);
     }
 
-    public async Task<int> GetTodayInvoiceCountAsync()
+    public async Task<int> GetTodayInvoiceCountAsync(int? branchId = null)
     {
         var today = DateTime.UtcNow.Date;
-        return await _dbSet.CountAsync(i => i.InvoiceDate >= today &&
-                                            i.Status != InvoiceStatus.Cancelled && !i.IsHold);
+        var query = _dbSet.Where(i => i.InvoiceDate >= today &&
+                                       i.Status != InvoiceStatus.Cancelled && !i.IsHold);
+
+        if (branchId.HasValue)
+            query = query.Where(i => i.BranchId == branchId.Value);
+
+        return await query.CountAsync();
     }
 
-    public async Task<List<MonthlySalesData>> GetMonthlySalesAsync(int year)
+    public async Task<List<MonthlySalesData>> GetMonthlySalesAsync(int year, int? branchId = null)
     {
-        var invoices = await _dbSet
+        var query = _dbSet
             .Include(i => i.Items.Where(x => !x.IsDeleted))
                 .ThenInclude(x => x.ProductVariant).ThenInclude(v => v.Product)
-            .Where(i => i.InvoiceDate.Year == year && i.Status != InvoiceStatus.Cancelled && !i.IsHold)
-            .ToListAsync();
+            .Where(i => i.InvoiceDate.Year == year && i.Status != InvoiceStatus.Cancelled && !i.IsHold);
+
+        if (branchId.HasValue)
+            query = query.Where(i => i.BranchId == branchId.Value);
+
+        var invoices = await query.ToListAsync();
 
         return invoices
             .GroupBy(i => i.InvoiceDate.Month)

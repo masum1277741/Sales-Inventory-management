@@ -31,7 +31,26 @@ public class NotificationService : INotificationService
         });
         await _uow.SaveChangesAsync();
     }
+    public async Task CheckCriticalReorderAlertsAsync(IReorderService reorderSvc)
+    {
+        var suggestions = await reorderSvc.GetSuggestionsAsync();
+        var critical = suggestions.Where(s => s.Urgency == "Critical").ToList();
 
+        foreach (var item in critical)
+        {
+            await CreateAsync(new CreateNotificationDto
+            {
+                UserId = null,
+                Title = "Urgent Reorder Needed",
+                Message = $"{item.ProductName} ({item.SizeName}/{item.ColorName}) — মাত্র {item.DaysUntilStockout} দিনের stock বাকি!",
+                Type = "LowStock",
+                Severity = "danger",
+                Icon = "bi-exclamation-octagon",
+                ActionUrl = "/Reorder",
+                DedupeKey = $"reorder-critical-{item.ProductVariantId}"
+            });
+        }
+    }
     public async Task<NotificationFeedDto> GetFeedAsync(int userId, int take = 20)
     {
         var notifications = await _uow.Notifications.GetQueryable()

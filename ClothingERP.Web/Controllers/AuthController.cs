@@ -6,8 +6,13 @@ namespace ClothingERP.Web.Controllers;
 public class AuthController : Controller
 {
     private readonly IAuthService _auth;
+    private readonly IBranchService _branchSvc;  
 
-    public AuthController(IAuthService auth) => _auth = auth;
+    public AuthController(IAuthService auth, IBranchService branchSvc)   
+    {
+        _auth = auth;
+        _branchSvc = branchSvc;
+    }
 
     // ── GET Login ─────────────────────────────────────────────────────────
     [HttpGet]
@@ -39,13 +44,16 @@ public class AuthController : Controller
 
         var user = result.Data!;
 
+        var defaultBranch = await _branchSvc.GetUserDefaultBranchIdAsync(user.Id);   
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name,           user.Username),
             new(ClaimTypes.GivenName,      user.FullName),
             new("RoleId",                  user.RoleId.ToString()),
-            new(ClaimTypes.Role,           user.RoleName)
+            new(ClaimTypes.Role,           user.RoleName),
+            new("DefaultBranchId",         defaultBranch.ToString()) 
         };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -86,7 +94,7 @@ public class AuthController : Controller
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 
-        await _auth.LogoutAsync(userId, ip);  
+        await _auth.LogoutAsync(userId, ip);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
         return RedirectToAction("Login");

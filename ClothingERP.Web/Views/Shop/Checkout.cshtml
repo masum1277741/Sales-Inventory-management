@@ -1,0 +1,102 @@
+﻿@{
+    Layout = "_ShopLayout"; ViewData["Title"] = "Checkout"; var settings = ViewBag.Settings;
+}
+<script>window.__rates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Rates));</script>
+
+<div class="container py-5">
+    <h2 class="serif fw-bold mb-4">Checkout</h2>
+    <div class="row g-5">
+        <div class="col-md-7">
+            <h6 class="fw-bold mb-3">Shipping Information</h6>
+            <div class="row g-3">
+                <div class="col-md-6"><label class="form-label small">Full Name</label><input id="ckName" class="form-control" /></div>
+                <div class="col-md-6"><label class="form-label small">Phone</label><input id="ckPhone" class="form-control" placeholder="01XXXXXXXXX" /></div>
+                <div class="col-md-12"><label class="form-label small">Email (optional)</label><input id="ckEmail" type="email" class="form-control" /></div>
+                <div class="col-md-12"><label class="form-label small">Address</label><textarea id="ckAddress" class="form-control" rows="2"></textarea></div>
+                <div class="col-md-6"><label class="form-label small">City</label><input id="ckCity" class="form-control" /></div>
+                <div class="col-md-12"><label class="form-label small">Order Notes (optional)</label><textarea id="ckNotes" class="form-control" rows="2"></textarea></div>
+            </div>
+
+            <h6 class="fw-bold mt-4 mb-3">Payment Method</h6>
+            <div class="d-flex gap-2 flex-wrap">
+                @if ((bool)settings.CodEnabled)
+                {
+                    <button type="button" class="btn btn-outline-dark pay-opt active" data-method="COD" onclick="selectPayMethod(this)">Cash on Delivery</button>
+                }
+                @if ((bool)settings.BkashEnabled)
+                {
+                    <button type="button" class="btn btn-outline-dark pay-opt" data-method="bKash" onclick="selectPayMethod(this)">bKash</button>
+                }
+                @if ((bool)settings.NagadEnabled)
+                {
+                    <button type="button" class="btn btn-outline-dark pay-opt" data-method="Nagad" onclick="selectPayMethod(this)">Nagad</button>
+                }
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="border rounded p-4" id="checkoutSummary"><div class="text-muted small">Loading...</div></div>
+            <button class="btn-shop-primary w-100 mt-3" onclick="placeOrder()" id="placeOrderBtn">Place Order</button>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="selectedPayMethod" value="COD" />
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        let cartPricing = null;
+        async function loadSummary() {
+        const cart = ShopCart.get();
+        if (!cart.length) { window.location.href = '/Shop/Cart'; return; }
+        cartPricing = await fetch('/Shop/PriceCart', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ items: cart }) }).then(r=>r.json());
+
+        document.getElementById('checkoutSummary').innerHTML = `
+        ${cartPricing.lines.map(l => `<div class="d-flex justify-content-between small mb-1"><span>${l.productName} x${l.quantity}</span><span>${fmtPrice(l.lineTotalUSD)}</span></div>`).join('')}
+        <hr/>
+        <div class="d-flex justify-content-between mb-1"><span>Subtotal</span><span>${fmtPrice(cartPricing.subtotalUSD)}</span></div>
+        <div class="d-flex justify-content-between mb-1"><span>Shipping</span><span>${cartPricing.shippingFeeUSD===0?'FREE':fmtPrice(cartPricing.shippingFeeUSD)}</span></div>
+        <div class="d-flex justify-content-between fw-bold fs-5"><span>Total</span><span>${fmtPrice(cartPricing.totalUSD)}</span></div>`;
+        }
+        loadSummary();
+
+        function selectPayMethod(btn) {
+        document.querySelectorAll('.pay-opt').forEach(b => b.classList.remove('active','btn-dark','text-white'));
+        btn.classList.add('active','btn-dark','text-white');
+        document.getElementById('selectedPayMethod').value = btn.dataset.method;
+        }
+
+        async function placeOrder() {
+        const dto = {
+        items: ShopCart.get(),
+        name: document.getElementById('ckName').value, phone: document.getElementById('ckPhone').value,
+        email: document.getElementById('ckEmail').value, shippingAddress: document.getElementById('ckAddress').value,
+        shippingCity: document.getElementById('ckCity').value, shippingNotes: document.getElementById('ckNotes').value,
+        paymentMethod: document.getElementById('selectedPayMethod').value,
+        currency: localStorage.getItem('clozey-currency') || 'USD'
+        };
+
+        if (!dto.name || !dto.phone || !dto.shippingAddress || !dto.shippingCity) {
+        toastr.error('সব প্রয়োজনীয় তথ্য পূরণ করুন।'); return;
+        }
+
+        const btn = document.getElementById('placeOrderBtn');
+        btn.disabled = true; btn.textContent = 'Processing...';
+
+        const result = await fetch('/Shop/PlaceOrder', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': $('[name=__RequestVerificationToken]').val() },
+        body: JSON.stringify(dto)
+        }).then(r => r.json());
+
+        if (result.success) {
+        ShopCart.clear();
+        if (result.data.digitalPaymentRedirectUrl) window.open(result.data.digitalPaymentRedirectUrl, '_blank');
+        window.location.href = `/Shop/OrderConfirmation?orderNumber=${result.data.orderNumber}`;
+        } else {
+        toastr.error(result.message);
+        btn.disabled = false; btn.textContent = 'Place Order';
+        }
+        }
+    </script>
+}

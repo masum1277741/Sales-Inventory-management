@@ -1,0 +1,198 @@
+﻿@model IEnumerable<ExchangeRateHistoryDto>
+@{
+    ViewData["Title"] = "Exchange Rate Settings";
+    var rates = (CurrentRatesDto)ViewBag.CurrentRates;
+    var settings = (ExchangeRateSettingsDto)ViewBag.Settings;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-currency-exchange me-2 text-primary"></i>Exchange Rate Settings</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Exchange Rates</li>
+            </ol>
+        </nav>
+    </div>
+    <button class="btn btn-primary" onclick="refreshRatesNow()" id="refreshBtn">
+        <i class="bi bi-arrow-repeat me-1"></i>Refresh Now
+    </button>
+</div>
+
+<!-- Current Rates -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card @(rates.IsStale ? "border-start border-3 border-warning" : "")">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small">1 USD =</div>
+                    <h3 class="fw-bold mb-0">৳@rates.UsdToBdt.ToString("N4")</h3>
+                    <div class="text-muted small">Bangladeshi Taka</div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openOverrideModal('BDT', @rates.UsdToBdt)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card @(rates.IsStale ? "border-start border-3 border-warning" : "")">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small">1 USD =</div>
+                    <h3 class="fw-bold mb-0">Rf@rates.UsdToMvr.ToString("N4")</h3>
+                    <div class="text-muted small">Maldivian Rufiyaa</div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openOverrideModal('MVR', @rates.UsdToMvr)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="text-muted small">Last Updated</div>
+            <h5 class="fw-bold mb-0">@rates.LastUpdated.ToString("dd MMM yyyy, HH:mm")</h5>
+            <span class="badge @(rates.Source == "Manual" ? "bg-info" : "bg-success") mt-1">
+                @rates.Source
+            </span>
+            @if (rates.IsStale)
+            {
+                <span class="badge bg-warning text-dark mt-1">⚠ Stale — Refresh করুন</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Settings -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3"><span class="fw-semibold">Auto-Update Settings</span></div>
+            <div class="card-body p-4">
+                <form id="settingsForm">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoUpdateToggle" @(settings.AutoUpdateEnabled ? "checked" : "") />
+                        <label class="form-check-label fw-semibold">Automatic Daily Update</label>
+                        <div class="text-muted small">চালু থাকলে নির্দিষ্ট সময় পরপর স্বয়ংক্রিয়ভাবে rate আপডেট হবে।</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Update Interval (hours)</label>
+                        <input type="number" id="intervalInput" class="form-control" min="1" max="168" value="@settings.UpdateIntervalHours" />
+                        <small class="text-muted">যেমন: 24 = দিনে একবার, 168 = সপ্তাহে একবার</small>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveSettings()">
+                        <i class="bi bi-check-lg me-1"></i>Save Settings
+                    </button>
+                </form>
+
+                @if (settings.LastErrorMessage != null)
+                {
+                    <div class="alert alert-warning mt-3 small mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        সর্বশেষ auto-update ব্যর্থ হয়েছিল (@settings.LastFailedAttemptAt?.ToString("dd MMM, HH:mm")):
+                        <br />@settings.LastErrorMessage
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3"><span class="fw-semibold">Rate History</span></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light"><tr><th class="ps-4">Date</th><th>Currency</th><th class="text-end">Rate</th><th class="text-center pe-4">Source</th></tr></thead>
+                    <tbody>
+                        @foreach (var h in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 small">@h.FetchedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                                <td><span class="badge bg-secondary">@h.TargetCurrency</span></td>
+                                <td class="text-end fw-bold">@h.Rate.ToString("N4")</td>
+                                <td class="text-center pe-4">
+                                    <span class="badge @(h.Source == "Manual" ? "bg-info" : "bg-success")">@h.Source</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Override Modal -->
+<div class="modal fade" id="overrideModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold">Manual Rate Override — <span id="ovCurrency"></span></h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label fw-semibold">1 USD =</label>
+                <input type="number" id="ovRate" class="form-control" step="0.0001" />
+                <small class="text-muted">এটা manually বসালে auto-update চালু থাকলেও এটাই ব্যবহার হবে যতক্ষণ না পরের refresh হয়।</small>
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary px-4" onclick="submitOverride()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+@section Scripts {
+    <script>
+        const tok = () => $('[name=__RequestVerificationToken]').val();
+
+        function refreshRatesNow() {
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Refreshing...';
+
+            $.post('/ExchangeRate/RefreshNow', { __RequestVerificationToken: tok() }, d => {
+                if (d.success) { toastr.success(d.message); }
+                else toastr.warning(d.message);
+                setTimeout(() => location.reload(), 800);
+            }).fail(() => {
+                toastr.error('Network error হয়েছে।');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Refresh Now';
+            });
+        }
+
+        let ovCur = '';
+        function openOverrideModal(currency, currentRate) {
+            ovCur = currency;
+            document.getElementById('ovCurrency').textContent = currency;
+            document.getElementById('ovRate').value = currentRate;
+            new bootstrap.Modal('#overrideModal').show();
+        }
+
+        function submitOverride() {
+            const rate = parseFloat(document.getElementById('ovRate').value);
+            if (!rate || rate <= 0) { toastr.error('সঠিক rate দিন।'); return; }
+
+            $.post('/ExchangeRate/SetManualRate', { TargetCurrency: ovCur, Rate: rate, __RequestVerificationToken: tok() }, d => {
+                if (d.success) { toastr.success(d.message); setTimeout(() => location.reload(), 600); }
+                else toastr.error(d.message);
+            });
+        }
+
+        function saveSettings() {
+            const dto = {
+                AutoUpdateEnabled:   document.getElementById('autoUpdateToggle').checked,
+                UpdateIntervalHours: parseInt(document.getElementById('intervalInput').value) || 24
+            };
+            $.post('/ExchangeRate/UpdateSettings', { ...dto, __RequestVerificationToken: tok() }, d => {
+                if (d.success) toastr.success(d.message); else toastr.error(d.message);
+            });
+        }
+    </script>
+}

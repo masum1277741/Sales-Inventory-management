@@ -1,0 +1,11 @@
+﻿@model string
+@{
+    Layout = "_ShopLayout"; ViewData["Title"] = "Order Confirmed";
+}
+<div class="container py-5 text-center">
+    <i class="bi bi-check-circle-fill text-success" style="font-size:4rem;"></i>
+    <h2 class="serif fw-bold mt-3">ধন্যবাদ! আপনার অর্ডার নিশ্চিত হয়েছে।</h2>
+    <p class="text-muted">Order Number: <strong>@Model</strong></p>
+    <p class="text-muted">আমরা শীঘ্রই আপনার ফোনে যোগাযোগ করবো অর্ডার confirm করার জন্য।</p>
+    <a href="/Shop/Catalog" class="btn-shop-primary mt-3 d-inline-block">Continue Shopping</a>
+</div>

@@ -9,16 +9,17 @@ public class ReportController : BaseController
     private readonly ICustomerService _customerSvc;
     private readonly ISupplierService _supplierSvc;
     private readonly IAccountService _accountSvc;
+    private readonly IExchangeRateService _rateSvc;   
 
     public ReportController(IReportService reportSvc, ISalesService salesSvc,
         IPurchaseService purchaseSvc, IStockService stockSvc,
         ICustomerService customerSvc, ISupplierService supplierSvc,
-        IAccountService accountSvc)
+        IAccountService accountSvc, IExchangeRateService rateSvc)
     {
         _reportSvc = reportSvc; _salesSvc = salesSvc;
         _purchaseSvc = purchaseSvc; _stockSvc = stockSvc;
         _customerSvc = customerSvc; _supplierSvc = supplierSvc;
-        _accountSvc = accountSvc;
+        _accountSvc = accountSvc; _rateSvc = rateSvc;
     }
 
     // ── Hub ───────────────────────────────────────────────────────────────
@@ -60,6 +61,10 @@ public class ReportController : BaseController
         ViewBag.ChartLabels = System.Text.Json.JsonSerializer.Serialize(dailyData.Select(d => d.date));
         ViewBag.ChartData = System.Text.Json.JsonSerializer.Serialize(dailyData.Select(d => d.total));
 
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
+
         return View(invoices);
     }
 
@@ -82,6 +87,10 @@ public class ReportController : BaseController
         ViewBag.TotalDue = orders.Sum(o => o.DueAmount);
         ViewBag.OrderCount = orders.Count;
         ViewBag.ReceivedCount = orders.Count(o => o.Status is "FullyReceived" or "PartiallyReceived");
+
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
 
         return View(orders);
     }
@@ -108,6 +117,10 @@ public class ReportController : BaseController
         ViewBag.ChartLabels = System.Text.Json.JsonSerializer.Serialize(categoryBreakdown.Select(c => c.Category));
         ViewBag.ChartData = System.Text.Json.JsonSerializer.Serialize(categoryBreakdown.Select(c => c.Value));
 
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
+
         return View(stock.OrderBy(s => s.Status == "Out of Stock" ? 0 : s.Status == "Low Stock" ? 1 : 2)
                          .ThenBy(s => s.Quantity).ToList());
     }
@@ -126,6 +139,10 @@ public class ReportController : BaseController
         ViewBag.Above1k = customers.Count(c => c.CurrentBalance is > 1000 and <= 5000);
         ViewBag.Below1k = customers.Count(c => c.CurrentBalance <= 1000);
 
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
+
         return View(customers);
     }
 
@@ -139,6 +156,10 @@ public class ReportController : BaseController
 
         ViewBag.TotalDue = suppliers.Sum(s => s.CurrentBalance);
         ViewBag.TotalCount = suppliers.Count;
+
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
 
         return View(suppliers);
     }
@@ -203,6 +224,10 @@ public class ReportController : BaseController
         ViewBag.NetProfit = netProfit;
         ViewBag.NetProfitMargin = netRevenue > 0 ? (netProfit / netRevenue) * 100 : 0;
         ViewBag.InvoiceCount = invoices.Count;
+
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
 
         return View();
     }

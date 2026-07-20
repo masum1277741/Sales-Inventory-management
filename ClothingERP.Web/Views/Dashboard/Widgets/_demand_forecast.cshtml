@@ -1,0 +1,30 @@
+﻿<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between">
+        <span class="fw-semibold"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Demand Trends</span>
+        <a asp-controller="Forecast" asp-action="Index" class="small">সব দেখুন →</a>
+    </div>
+    <div class="card-body" id="forecastWidgetBody">
+        <div class="text-center text-muted py-3">Loading...</div>
+    </div>
+</div>
+
+<script>
+    fetch('/Forecast/GetSummary').then(r => r.json()).then(d => {
+        const body = document.getElementById('forecastWidgetBody');
+        if (!d.topGrowing.length && !d.topDeclining.length) {
+            body.innerHTML = `<div class="text-center text-muted py-3 small">যথেষ্ট ডাটা জমা হয়নি — আরো বিক্রি হলে trend দেখানো শুরু হবে।</div>`;
+            return;
+        }
+        const growing = d.topGrowing.slice(0,3).map(g => `
+            <div class="d-flex justify-content-between small py-1">
+                <span>📈 ${g.productName}</span>
+                <span class="text-success fw-bold">+${g.trendPercentage.toFixed(0)}%</span>
+            </div>`).join('');
+        const declining = d.topDeclining.slice(0,2).map(g => `
+            <div class="d-flex justify-content-between small py-1">
+                <span>📉 ${g.productName}</span>
+                <span class="text-danger fw-bold">${g.trendPercentage.toFixed(0)}%</span>
+            </div>`).join('');
+        body.innerHTML = growing + (declining ? `<hr class="my-2"/>` + declining : '');
+    });
+</script>

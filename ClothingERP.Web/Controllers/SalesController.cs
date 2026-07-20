@@ -7,15 +7,16 @@ public class SalesController : BaseController
     private readonly IProductService _productSvc;
     private readonly IConfiguration _config;
     private readonly IBundleService _bundleSvc;
-
+    private readonly IExchangeRateService _rateSvc;
     public SalesController(ISalesService salesSvc, ICustomerService customerSvc,
-        IProductService productSvc, IConfiguration config, IBundleService bundleSvc)
+        IProductService productSvc, IConfiguration config, IBundleService bundleSvc, IExchangeRateService rateSvc)
     {
         _salesSvc = salesSvc;
         _customerSvc = customerSvc;
         _productSvc = productSvc;
         _config = config;
         _bundleSvc = bundleSvc;
+        _rateSvc = rateSvc;
     }
     // ── All Products for POS Grid ─────────────────────────────────────────
     [HttpGet]
@@ -37,12 +38,13 @@ public class SalesController : BaseController
         }));
     }
     [HttpGet]
-    public IActionResult POS()
+    public async Task<IActionResult> POS()
     {
         ViewData["Title"] = "Point of Sale";
-      
-        ViewBag.RateBDT = _config.GetValue<decimal>("ExchangeRates:USD_TO_BDT", 110m);
-        ViewBag.RateMVR = _config.GetValue<decimal>("ExchangeRates:USD_TO_MVR", 15.42m);
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
+        ViewBag.RateIsStale = rates.IsStale;    
         return View();
     }
     [HttpGet]

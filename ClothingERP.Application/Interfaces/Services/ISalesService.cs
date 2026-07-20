@@ -12,7 +12,7 @@ public interface ISalesService
     Task<ServiceResult> AddPaymentAsync(int invoiceId, CreateSalesPaymentDto dto, int userId);
 
     // Dashboard stats
-    Task<decimal> GetTodaySalesAsync();
-    Task<decimal> GetTodayProfitAsync();
-    Task<int> GetTodayInvoiceCountAsync();
+    Task<decimal> GetTodaySalesAsync(int? branchId = null);
+    Task<decimal> GetTodayProfitAsync(int? branchId = null);
+    Task<int> GetTodayInvoiceCountAsync(int? branchId = null);
 }

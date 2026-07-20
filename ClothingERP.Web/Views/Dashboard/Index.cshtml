@@ -3,32 +3,65 @@
     ViewData["Title"] = "Dashboard";
     var today = DateTime.Now.ToString("dddd, dd MMMM yyyy");
 
-    var layout     = (List<WidgetConfigDto>)ViewBag.WidgetLayout;
+    var layout = (List<WidgetConfigDto>)ViewBag.WidgetLayout;
     var allWidgets = (List<WidgetDefinitionDto>)ViewBag.AvailableWidgets;
 
     string SizeClass(string size) => size switch
     {
-        "Small"  => "col-6 col-md-3",
+        "Small" => "col-6 col-md-3",
         "Medium" => "col-md-6",
-        "Large"  => "col-lg-8",
-        "Full"   => "col-12",
-        _        => "col-md-6"
+        "Large" => "col-lg-8",
+        "Full" => "col-12",
+        _ => "col-md-6"
     };
+
+    var showAllBranches = (bool)(ViewBag.ShowAllBranches ?? false);
+    var selectedBranchId = ViewBag.SelectedBranch as int?;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header d-flex justify-content-between align-items-center">
     <div>
-        <h4 class="fw-bold mb-0">Dashboard</h4>
-        <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>@today</small>
+        <h4 class="mb-0">
+            Welcome back, @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+        </h4>
+        <p class="text-muted mb-0">Here's what's happening with your store today.</p>
     </div>
-    <div class="d-flex gap-2">
+    @if ((bool)(ViewBag.AllBranches ?? false))
+    {
+        <!-- Branch Filter — Only for Admin -->
+        <div class="d-flex gap-2 align-items-center">
+            <form asp-action="Index" method="get" class="d-flex gap-2 align-items-center m-0">
+                <select name="branchId" class="form-select form-select-sm" style="width:180px;"
+                        onchange="this.form.submit()">
+                    <option value="" selected="@(showAllBranches)">
+                        All Branches
+                    </option>
+                    @foreach (var b in (IEnumerable<BranchDto>)ViewBag.Branches)
+                    {
+                        <option value="@b.Id" selected="@(selectedBranchId == b.Id)">
+                            @b.Name @(b.IsMainBranch ? "⭐" : "")
+                        </option>
+                    }
+                </select>
+                @if (!showAllBranches)
+                {
+                    <a asp-action="Index" asp-route-allBranches="true"
+                       class="btn btn-sm btn-light border">
+                        All Branches
+                    </a>
+                }
+            </form>
+            <button class="btn btn-light border" onclick="openCustomizeModal()">
+                <i class="bi bi-grid-3x3-gap me-1"></i>Customize
+            </button>
+        </div>
+    }
+    else
+    {
         <button class="btn btn-light border" onclick="openCustomizeModal()">
             <i class="bi bi-grid-3x3-gap me-1"></i>Customize Dashboard
         </button>
-        <a asp-controller="Sales" asp-action="POS" class="btn btn-primary">
-            <i class="bi bi-cart-plus me-1"></i>New Sale
-        </a>
-    </div>
+    }
 </div>
 
 <div class="row g-3" id="widgetContainer">
@@ -71,10 +104,10 @@
                             @if (def.AllowResize)
                             {
                                 <select class="form-select form-select-sm size-select" style="width:90px;">
-                                    <option value="Small"  selected="@(w.Size == "Small")">Small</option>
+                                    <option value="Small" selected="@(w.Size == "Small")">Small</option>
                                     <option value="Medium" selected="@(w.Size == "Medium")">Medium</option>
-                                    <option value="Large"  selected="@(w.Size == "Large")">Large</option>
-                                    <option value="Full"   selected="@(w.Size == "Full")">Full</option>
+                                    <option value="Large" selected="@(w.Size == "Large")">Large</option>
+                                    <option value="Full" selected="@(w.Size == "Full")">Full</option>
                                 </select>
                             }
                             <div class="form-check form-switch m-0">
@@ -102,11 +135,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.css" />
     <style>
         .widget-config-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 8px; border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
         }
-        .widget-config-row .drag-handle { cursor: grab; color: #bbb; }
-        .widget-config-row:last-child { border-bottom: none; }
+
+            .widget-config-row .drag-handle {
+                cursor: grab;
+                color: #bbb;
+            }
+
+            .widget-config-row:last-child {
+                border-bottom: none;
+            }
     </style>
 }
 
@@ -126,18 +169,18 @@
         }
 
         function collectLayoutFromModal() {
-            const rows = document.querySelectorAll('#widgetConfigList .widget-config-row');
-            const widgets = [];
-            rows.forEach((row, index) => {
-                const sizeSelect = row.querySelector('.size-select');
-                widgets.push({
-                    widgetKey: row.dataset.key,
-                    order: index,
-                    size: sizeSelect ? sizeSelect.value : row.dataset.size,
-                    isVisible: row.querySelector('.visibility-toggle').checked
-                });
-            });
-            return { widgets };
+        const rows = document.querySelectorAll('#widgetConfigList .widget-config-row');
+        const widgets = [];
+        rows.forEach((row, index) => {
+        const sizeSelect = row.querySelector('.size-select');
+        widgets.push({
+        widgetKey: row.dataset.key,
+        order: index,
+        size: sizeSelect ? sizeSelect.value : row.dataset.size,
+        isVisible: row.querySelector('.visibility-toggle').checked
+        });
+        });
+        return { widgets };
         }
 
         async function saveLayout() {

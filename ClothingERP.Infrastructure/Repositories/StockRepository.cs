@@ -7,12 +7,21 @@ public class StockRepository : GenericRepository<Stock>, IStockRepository
 {
     public StockRepository(ApplicationDbContext context) : base(context) { }
 
+
     public async Task<Stock?> GetByVariantIdAsync(int variantId)
         => await _dbSet
             .Include(s => s.ProductVariant).ThenInclude(v => v.Product)
             .Include(s => s.ProductVariant).ThenInclude(v => v.Size)
             .Include(s => s.ProductVariant).ThenInclude(v => v.Color)
             .FirstOrDefaultAsync(s => s.ProductVariantId == variantId && !s.IsDeleted);
+
+    // ── Branch-specific Lookup ────────────────────────────────────────────
+    public async Task<Stock?> GetByVariantAndBranchAsync(int variantId, int branchId)
+        => await _dbSet
+            .Include(s => s.ProductVariant).ThenInclude(v => v.Product)
+            .Include(s => s.ProductVariant).ThenInclude(v => v.Size)
+            .Include(s => s.ProductVariant).ThenInclude(v => v.Color)
+            .FirstOrDefaultAsync(s => s.ProductVariantId == variantId && s.BranchId == branchId && !s.IsDeleted);
 
     public async Task<Stock?> GetWithMovementsAsync(int stockId)
         => await _dbSet
@@ -30,47 +39,93 @@ public class StockRepository : GenericRepository<Stock>, IStockRepository
             .OrderBy(s => s.ProductVariant.Product.Name)
             .ToListAsync();
 
-    public async Task<IEnumerable<Stock>> GetLowStockAsync()
-        => await _dbSet
+    public async Task<IEnumerable<Stock>> GetLowStockAsync(int? branchId = null)
+    {
+        var query = _dbSet
             .Include(s => s.ProductVariant).ThenInclude(v => v.Product).ThenInclude(p => p.Category)
             .Include(s => s.ProductVariant).ThenInclude(v => v.Size)
             .Include(s => s.ProductVariant).ThenInclude(v => v.Color)
-            .Where(s => s.Quantity > 0 && s.Quantity <= s.ProductVariant.Product.ReorderPoint)
-            .ToListAsync();
+            .Where(s => s.Quantity > 0 && s.Quantity <= s.ProductVariant.Product.ReorderPoint);
 
-    public async Task<IEnumerable<Stock>> GetOutOfStockAsync()
-        => await _dbSet
+        if (branchId.HasValue)
+            query = query.Where(s => s.BranchId == branchId.Value);
+
+        return await query.ToListAsync();
+    }
+
+    public async Task<IEnumerable<Stock>> GetOutOfStockAsync(int? branchId = null)
+    {
+        var query = _dbSet
             .Include(s => s.ProductVariant).ThenInclude(v => v.Product)
             .Include(s => s.ProductVariant).ThenInclude(v => v.Size)
             .Include(s => s.ProductVariant).ThenInclude(v => v.Color)
-            .Where(s => s.Quantity <= 0)
+            .Where(s => s.Quantity <= 0);
+
+        if (branchId.HasValue)
+            query = query.Where(s => s.BranchId == branchId.Value);
+
+        return await query.ToListAsync();
+    }
+
+    public async Task<decimal> GetTotalStockValueAsync(int? branchId = null)
+    {
+        var query = _dbSet.Where(s => s.Quantity > 0);
+
+        if (branchId.HasValue)
+            query = query.Where(s => s.BranchId == branchId.Value);
+
+        return await query
+            .SumAsync(s => s.Quantity * (s.ProductVariant.CostPriceOverride ?? s.ProductVariant.Product.CostPrice));
+    }
+
+    // ── Branch-aware Stock Listing ───────────────────────────────────────
+    public async Task<List<Stock>> GetAllForBranchAsync(int branchId)
+        => await _dbSet
+            .Include(s => s.ProductVariant).ThenInclude(v => v.Product)
+            .Where(s => s.BranchId == branchId && !s.IsDeleted)
             .ToListAsync();
 
-    public async Task<decimal> GetTotalStockValueAsync()
+    public async Task<List<Stock>> GetAllVariantStockAcrossBranchesAsync(int variantId)
         => await _dbSet
-            .Where(s => s.Quantity > 0)
-            .SumAsync(s => s.Quantity * (s.ProductVariant.CostPriceOverride ?? s.ProductVariant.Product.CostPrice));
+            .Include(s => s.Branch)
+            .Where(s => s.ProductVariantId == variantId && !s.IsDeleted)
+            .ToListAsync();
 
-    public async Task<bool> TryDecrementAsync(int variantId, int quantity)
+
+    public async Task<bool> TryDecrementAsync(int variantId, int branchId, int quantity)
     {
         var rows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
             UPDATE Stocks
             SET Quantity = Quantity - {quantity}, UpdatedAt = {DateTime.UtcNow}
             WHERE ProductVariantId = {variantId}
+              AND BranchId = {branchId}
               AND Quantity >= {quantity}
               AND IsDeleted = 0");
-
-        return rows > 0;  
+        return rows > 0;
     }
 
-    public async Task<bool> IncrementAsync(int variantId, int quantity)
+    public async Task<bool> IncrementAsync(int variantId, int branchId, int quantity)
     {
+        
+        var existing = await GetByVariantAndBranchAsync(variantId, branchId);
+        if (existing == null)
+        {
+            await _context.Stocks.AddAsync(new Stock
+            {
+                ProductVariantId = variantId,
+                BranchId = branchId,
+                Quantity = quantity
+            });
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         var rows = await _context.Database.ExecuteSqlInterpolatedAsync($@"
             UPDATE Stocks
             SET Quantity = Quantity + {quantity}, UpdatedAt = {DateTime.UtcNow}
             WHERE ProductVariantId = {variantId}
+              AND BranchId = {branchId}
               AND IsDeleted = 0");
-
         return rows > 0;
     }
 }

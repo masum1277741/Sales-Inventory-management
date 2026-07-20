@@ -5,14 +5,37 @@ public class DashboardController : BaseController
     private readonly IDashboardService _dashboard;
     private readonly ICommissionService _commissionSvc;
     private readonly IDashboardLayoutService _layoutSvc;
+    private readonly ICurrentBranchProvider _branchProvider;
+    private readonly IBranchService _branchSvc;
 
-    public DashboardController(IDashboardService dashboard, ICommissionService commissionSvc, IDashboardLayoutService layoutSvc)
-        => (_dashboard, _commissionSvc, _layoutSvc) = (dashboard, commissionSvc, layoutSvc);
+    public DashboardController(
+        IDashboardService dashboard,
+        ICommissionService commissionSvc,
+        IDashboardLayoutService layoutSvc,
+        ICurrentBranchProvider branchProvider,
+        IBranchService branchSvc)
+        => (_dashboard, _commissionSvc, _layoutSvc, _branchProvider, _branchSvc)
+            = (dashboard, commissionSvc, layoutSvc, branchProvider, branchSvc);
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? branchId = null, bool allBranches = false)
     {
         ViewData["Title"] = "Dashboard";
-        var data = await _dashboard.GetDashboardDataAsync();
+
+        // ── Branch filter logic ────────────────────────────────────────────
+        var myBranchId = _branchProvider.GetCurrentBranchId();
+        var roleName = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+        var isAdmin = roleName.Equals("Administrator", StringComparison.OrdinalIgnoreCase);
+
+
+        int? filterBranchId;
+        if (isAdmin && allBranches)
+            filterBranchId = null;  // null = all branches
+        else if (isAdmin && branchId.HasValue)
+            filterBranchId = branchId;
+        else
+            filterBranchId = myBranchId;
+
+        var data = await _dashboard.GetDashboardDataAsync(filterBranchId);
 
         var monthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         var commissionSummary = await _commissionSvc.GetSummaryAsync(monthStart, DateTime.Today);
@@ -23,6 +46,12 @@ public class DashboardController : BaseController
         var layout = await _layoutSvc.GetLayoutAsync(CurrentUserId);
         ViewBag.WidgetLayout = layout.Widgets.OrderBy(w => w.Order).ToList();
         ViewBag.AvailableWidgets = _layoutSvc.GetAvailableWidgets();
+
+  
+        ViewBag.AllBranches = isAdmin;
+        ViewBag.Branches = isAdmin ? await _branchSvc.GetAllAsync() : null;
+        ViewBag.SelectedBranch = filterBranchId;
+        ViewBag.ShowAllBranches = allBranches && isAdmin;
 
         return View(data);
     }

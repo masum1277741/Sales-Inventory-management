@@ -15,4 +15,5 @@ public interface INotificationService
 
 
     Task CheckLowStockAlertsAsync();
+    Task CheckCriticalReorderAlertsAsync(IReorderService reorderSvc);
 }

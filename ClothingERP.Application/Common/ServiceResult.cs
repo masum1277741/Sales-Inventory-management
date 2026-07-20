@@ -19,6 +19,7 @@ public class ServiceResult
 public class ServiceResult<T> : ServiceResult
 {
     public T? Data { get; private set; }
+    public List<ConflictItemDto>? Conflicts { get; set; }
 
     public static ServiceResult<T> Ok(T data, string? message = null) =>
         new() { Success = true, Data = data, Message = message };

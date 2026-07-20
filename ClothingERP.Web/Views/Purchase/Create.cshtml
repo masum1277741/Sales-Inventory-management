@@ -44,6 +44,29 @@
                             <label class="form-label fw-semibold">Expected Delivery</label>
                             <input type="date" name="ExpectedDeliveryDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
                         </div>
+
+                        @if (ViewBag.Branches != null)
+                        {
+                          
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Receiving Branch</label>
+                                <select name="BranchId" class="form-select">
+                                    @foreach (var b in (IEnumerable<BranchDto>)ViewBag.Branches)
+                                    {
+                                        <option value="@b.Id" selected="@(b.Id == (int)ViewBag.CurrentBranchId)">
+                                            @b.Name @(b.IsMainBranch ? "(Main)" : "")
+                                        </option>
+                                    }
+                                </select>
+                                <small class="text-muted">এই branch এ মাল receive হবে এবং stock যাবে।</small>
+                            </div>
+                        }
+                        else
+                        {
+                          
+                            <input type="hidden" name="BranchId" value="@ViewBag.CurrentBranchId" />
+                        }
+
                         <div class="col-12">
                             <label class="form-label fw-semibold">Notes</label>
                             <textarea name="Notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>

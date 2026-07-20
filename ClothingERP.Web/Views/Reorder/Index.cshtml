@@ -1,0 +1,178 @@
+﻿@model List<ReorderSuggestionDto>
+@{
+    ViewData["Title"] = "Smart Reorder Suggestions";
+    var summary = (ReorderSummaryDto)ViewBag.Summary;
+    var suppliers = (IEnumerable<SupplierListDto>)ViewBag.Suppliers;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-magic me-2 text-primary"></i>Smart Reorder Suggestions</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Reorder Suggestions</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Settings" class="btn btn-light border">
+        <i class="bi bi-sliders me-1"></i>Settings
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="stat-card border-start border-3 border-danger">
+            <div class="text-muted small">Critical</div>
+            <h4 class="fw-bold mb-0" style="color:#7f1d1d;">@summary.CriticalCount</h4>
+            <small class="text-muted">Lead time এর অর্ধেকের মধ্যে শেষ হবে</small>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card border-start border-3 border-warning">
+            <div class="text-muted small">High Priority</div>
+            <h4 class="fw-bold mb-0" style="color:#78350f;">@summary.HighCount</h4>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card border-start border-3 border-info">
+            <div class="text-muted small">Medium Priority</div>
+            <h4 class="fw-bold mb-0" style="color:#1e3a8a;">@summary.MediumCount</h4>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="stat-card">
+            <div class="text-muted small">আনুমানিক মোট খরচ</div>
+            <h4 class="fw-bold mb-0">$@summary.TotalEstimatedCost.ToString("N2")</h4>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="bi bi-check-circle d-block mb-2" style="font-size:2.5rem;color:#16a34a;"></i>
+            এই মুহূর্তে কোনো প্রোডাক্ট জরুরি reorder এর প্রয়োজন নেই — সব ঠিক আছে!
+        </div>
+    </div>
+}
+else
+{
+    <!-- Bulk Action Bar -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-2 px-3 d-flex gap-2 align-items-center">
+            <input type="checkbox" id="selectAllSuggestions" onclick="toggleAllSuggestions(this)" />
+            <span class="text-muted small">সব সিলেক্ট করুন</span>
+            <select id="poSupplierSelect" class="form-select form-select-sm ms-auto" style="width:240px;">
+                <option value="">PO তৈরির জন্য Supplier বাছুন</option>
+                @foreach (var s in suppliers)
+                {
+                    <option value="@s.Id">@s.CompanyName</option>
+                }
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="generatePOFromSelected()">
+                <i class="bi bi-bag-plus me-1"></i>Selected থেকে PO তৈরি করুন
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="reorderTable" class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" width="40"></th>
+                            <th>Product</th>
+                            <th class="text-center">Current Stock</th>
+                            <th class="text-center">দৈনিক বিক্রি</th>
+                            <th class="text-center">Stockout</th>
+                            <th class="text-center">Urgency</th>
+                            <th class="text-center">Suggested Qty</th>
+                            <th class="text-end pe-4">আনুমানিক খরচ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model)
+                        {
+                            var urgencyBadge = s.Urgency switch
+                            {
+                                "Critical" => ("bg-danger", "🔴"),
+                                "High" => ("bg-warning text-dark", "🟠"),
+                                "Medium" => ("bg-info", "🟡"),
+                                _ => ("bg-secondary", "⚪")
+                            };
+                            <tr>
+                                <td class="ps-4">
+                                    <input type="checkbox" class="suggestionCheck"
+                                           data-variant-id="@s.ProductVariantId" data-qty="@s.SuggestedReorderQty" />
+                                </td>
+                                <td>
+                                    <div class="fw-semibold small">@s.ProductName</div>
+                                    <div class="text-muted" style="font-size:.72rem;">@s.SizeName · @s.ColorName · @s.Barcode</div>
+                                    @if (s.PreferredSupplierName != null)
+                                    {
+                                        <div class="text-muted" style="font-size:.7rem;">সাধারণত: @s.PreferredSupplierName</div>
+                                    }
+                                </td>
+                                <td class="text-center fw-bold">@s.CurrentStock</td>
+                                <td class="text-center">@s.DailyVelocity.ToString("N2")/day</td>
+                                <td class="text-center">
+                                    <span class="fw-bold @(s.DaysUntilStockout <= 3 ? "text-danger" : "")">@s.DaysUntilStockout দিন</span>
+                                    <div class="text-muted" style="font-size:.68rem;">@s.EstimatedStockoutDate.ToString("dd MMM")</div>
+                                </td>
+                                <td class="text-center"><span class="badge @urgencyBadge.Item1">@urgencyBadge.Item2 @s.Urgency</span></td>
+                                <td class="text-center fw-bold">@s.SuggestedReorderQty pcs</td>
+                                <td class="text-end pe-4">$@s.EstimatedCost.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@Html.AntiForgeryToken()
+@section Scripts {
+    <script>
+        $(function () { initDataTable('#reorderTable', { order: [[4, 'asc']], paging: false }); });
+
+        function toggleAllSuggestions(src) {
+            $('.suggestionCheck').prop('checked', src.checked);
+        }
+
+        function generatePOFromSelected() {
+            const supplierId = parseInt(document.getElementById('poSupplierSelect').value);
+            if (!supplierId) { toastr.error('প্রথমে একটা Supplier বাছুন।'); return; }
+
+            const items = $('.suggestionCheck:checked').map(function () {
+                return { productVariantId: parseInt(this.dataset.variantId), quantity: parseInt(this.dataset.qty) };
+            }).get();
+
+            if (!items.length) { toastr.error('কমপক্ষে একটা প্রোডাক্ট সিলেক্ট করুন।'); return; }
+
+            Swal.fire({
+                title: `${items.length} টা প্রোডাক্টের জন্য Draft PO তৈরি করবেন?`,
+                icon: 'question', showCancelButton: true, confirmButtonText: 'তৈরি করুন'
+            }).then(r => {
+                if (!r.isConfirmed) return;
+
+                fetch('/Reorder/GeneratePO', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': $('[name=__RequestVerificationToken]').val() },
+                    body: JSON.stringify({ supplierId, items })
+                }).then(r => r.json()).then(d => {
+                    if (d.success) {
+                        toastr.success(d.message);
+                        setTimeout(() => window.location.href = `/Purchase/Details/${d.data.poId}`, 1000);
+                    } else {
+                        toastr.error(d.message);
+                    }
+                });
+            });
+        }
+    </script>
+}

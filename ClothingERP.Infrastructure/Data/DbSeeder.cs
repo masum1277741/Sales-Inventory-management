@@ -4,6 +4,36 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
+       
+        if (!await context.Branches.AnyAsync())
+        {
+            var mainBranch = new Branch
+            {
+                Code = "MAIN",
+                Name = "Main Branch",
+                Country = "Bangladesh",
+                IsMainBranch = true,
+                IsActive = true
+            };
+            context.Branches.Add(mainBranch);
+            await context.SaveChangesAsync();
+
+            await context.Database.ExecuteSqlRawAsync(
+                $"UPDATE Stocks SET BranchId = {mainBranch.Id} WHERE BranchId = 0 OR BranchId IS NULL");
+            await context.Database.ExecuteSqlRawAsync(
+                $"UPDATE SalesInvoices SET BranchId = {mainBranch.Id} WHERE BranchId = 0 OR BranchId IS NULL");
+            await context.Database.ExecuteSqlRawAsync(
+                $"UPDATE PurchaseOrders SET BranchId = {mainBranch.Id} WHERE BranchId = 0 OR BranchId IS NULL");
+
+         
+            var allUsers = await context.Users.ToListAsync();
+            foreach (var user in allUsers)
+            {
+                context.UserBranches.Add(new UserBranch { UserId = user.Id, BranchId = mainBranch.Id, IsDefault = true });
+            }
+            await context.SaveChangesAsync();
+        }
+
         // Roles
         if (!context.Roles.Any())
         {
@@ -45,7 +75,7 @@ public static class DbSeeder
                 new() { Name = "Sales & POS",         Icon = "bi-cart3",            Controller = "Sales",      Action = "POS",         SortOrder = 8  },
                 new() { Name = "Sales History",       Icon = "bi-receipt",          Controller = "Sales",      Action = "Index",       SortOrder = 9  },
                 new() { Name = "Customers",           Icon = "bi-people",           Controller = "Customer",   Action = "Index",       SortOrder = 10 },
-                
+
                 new() { Name = "Suppliers",           Icon = "bi-truck",            Controller = "Supplier",   Action = "Index",       SortOrder = 12 },
                 new() { Name = "Purchase Orders",     Icon = "bi-bag-plus",         Controller = "Purchase",   Action = "Index",       SortOrder = 13 },
                 new() { Name = "Goods Receipt (GRN)", Icon = "bi-box-arrow-in-down",Controller = "Purchase",   Action = "GRN",         SortOrder = 14 },

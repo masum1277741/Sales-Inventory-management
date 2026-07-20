@@ -1,4 +1,6 @@
-﻿using ClothingERP.Infrastructure.Repositories;
+﻿using ClothingERP.Application.Interfaces.Services;
+using ClothingERP.Infrastructure.Repositories;
+using ClothingERP.Infrastructure.Services;
 
 namespace ClothingERP.Infrastructure;
 
@@ -15,7 +17,7 @@ public static class DependencyInjection
             ));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
+        services.AddScoped<IPaymentGatewayService, PaymentGatewayService>();
         return services;
     }
 }

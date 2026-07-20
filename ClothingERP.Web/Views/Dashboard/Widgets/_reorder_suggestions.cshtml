@@ -1,0 +1,26 @@
+﻿<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between">
+        <span class="fw-semibold"><i class="bi bi-magic me-2 text-primary"></i>Smart Reorder Alerts</span>
+        <a asp-controller="Reorder" asp-action="Index" class="small">সব দেখুন →</a>
+    </div>
+    <div class="card-body" id="reorderWidgetBody">
+        <div class="text-center text-muted py-3">Loading...</div>
+    </div>
+</div>
+
+<script>
+    fetch('/Reorder/GetSummary').then(r => r.json()).then(d => {
+        const body = document.getElementById('reorderWidgetBody');
+        if (d.criticalCount + d.highCount + d.mediumCount === 0) {
+            body.innerHTML = `<div class="text-center text-muted py-3"><i class="bi bi-check-circle text-success" style="font-size:1.8rem;"></i><p class="small mb-0 mt-1">সব stock ঠিক আছে</p></div>`;
+            return;
+        }
+        body.innerHTML = `
+            <div class="d-flex justify-content-around text-center">
+                <div><h4 class="fw-bold text-danger mb-0">${d.criticalCount}</h4><small class="text-muted">Critical</small></div>
+                <div><h4 class="fw-bold text-warning mb-0">${d.highCount}</h4><small class="text-muted">High</small></div>
+                <div><h4 class="fw-bold text-info mb-0">${d.mediumCount}</h4><small class="text-muted">Medium</small></div>
+            </div>
+            <div class="text-center mt-3 text-muted small">আনুমানিক reorder খরচ: <strong>$${d.totalEstimatedCost.toFixed(2)}</strong></div>`;
+    });
+</script>

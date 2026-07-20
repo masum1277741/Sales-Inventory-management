@@ -1,0 +1,59 @@
+﻿@{
+    Layout = "_ShopLayout"; ViewData["Title"] = "Your Cart";
+}
+<script>window.__rates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Rates));</script>
+
+<div class="container py-5">
+    <h2 class="serif fw-bold mb-4">Your Cart</h2>
+    <div id="cartContent"><div class="text-center py-5 text-muted">Loading...</div></div>
+</div>
+
+@section Scripts {
+    <script>
+        async function renderCart() {
+        const cart = ShopCart.get();
+        const container = document.getElementById('cartContent');
+
+        if (!cart.length) {
+        container.innerHTML = `<div class="text-center py-5"><i class="bi bi-bag-x" style="font-size:3rem;color:#ccc;"></i><p class="text-muted mt-2">আপনার cart খালি।</p><a href="/Shop/Catalog" class="btn-shop-primary mt-2 d-inline-block">Shop Now</a></div>`;
+        return;
+        }
+
+        const pricing = await fetch('/Shop/PriceCart', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart })
+        }).then(r => r.json());
+
+        let html = '<div class="row"><div class="col-md-8">';
+        pricing.lines.forEach(l => {
+        html += `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+        <div>
+        <div class="fw-semibold">${l.productName}</div>
+        <div class="text-muted small">${l.sizeName} / ${l.colorName}</div>
+        ${!l.isAvailable ? `<div class="text-danger small">⚠ মাত্র ${l.availableQty} টা আছে</div>` : ''}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+        <input type="number" class="form-control form-control-sm" style="width:60px;" value="${l.quantity}" min="0"
+        onchange="ShopCart.updateQty(${l.variantId}, parseInt(this.value)); renderCart();" />
+        <span class="fw-bold" style="width:80px;text-align:right;">${fmtPrice(l.lineTotalUSD)}</span>
+        <button class="btn btn-sm btn-link text-danger" onclick="ShopCart.remove(${l.variantId});renderCart();"><i class="bi bi-trash"></i></button>
+        </div>
+        </div>`;
+        });
+        if (pricing.warnings.length) html += `<div class="alert alert-warning mt-3 small">${pricing.warnings.join('<br>')}</div>`;
+        html += '</div><div class="col-md-4">';
+        html += `
+        <div class="border rounded p-4">
+        <div class="d-flex justify-content-between mb-2"><span>Subtotal</span><span>${fmtPrice(pricing.subtotalUSD)}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span>Shipping</span><span>${pricing.shippingFeeUSD === 0 ? 'FREE' : fmtPrice(pricing.shippingFeeUSD)}</span></div>
+        <hr/>
+        <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Total</span><span>${fmtPrice(pricing.totalUSD)}</span></div>
+        <a href="/Shop/Checkout" class="btn-shop-primary w-100 d-block text-center text-decoration-none">Proceed to Checkout</a>
+        </div>`;
+        html += '</div></div>';
+        container.innerHTML = html;
+        }
+        renderCart();
+    </script>
+}

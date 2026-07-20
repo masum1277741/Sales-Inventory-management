@@ -54,6 +54,7 @@ public class CreatePurchaseOrderDto
     public string? Notes { get; set; }
     [Required, MinLength(1, ErrorMessage = "At least one item is required")]
     public List<CreatePurchaseOrderItemDto> Items { get; set; } = new();
+    public int BranchId { get; set; }
 }
 
 public class CreatePurchaseOrderItemDto

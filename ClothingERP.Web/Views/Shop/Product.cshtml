@@ -1,0 +1,106 @@
+﻿@model StorefrontProductDetailDto
+@{
+    Layout = "_ShopLayout"; ViewData["Title"] = Model.Name;
+}
+<script>window.__rates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Rates));</script>
+
+<div class="container py-5">
+    <div class="row g-5">
+        <div class="col-md-6">
+            <div class="ratio ratio-1x1" style="background:#f7f5f1;border-radius:10px;overflow:hidden;">
+                @if (!string.IsNullOrEmpty(Model.ImagePath))
+                {
+                    <img src="@Model.ImagePath" class="w-100 h-100" style="object-fit:cover;" />
+                }
+                else
+                {
+
+                    <div class="d-flex align-items-center justify-content-center h-100"><i class="bi bi-image text-muted" style="font-size:4rem;"></i></div>
+                }
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="text-muted small">@Model.CategoryName</div>
+            <h2 class="serif fw-bold">@Model.Name</h2>
+            <h4 class="fw-bold mb-3" id="selectedPrice" data-usd="@Model.MinPriceUSD">$@Model.MinPriceUSD.ToString("N2")</h4>
+            <p class="text-muted">@Model.Description</p>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">SIZE</label>
+                <div class="d-flex gap-2 flex-wrap" id="sizeOptions">
+                    @foreach (var size in Model.AvailableSizes)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-dark size-opt" data-size="@size" onclick="selectVariant()">@size</button>
+                    }
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold small">COLOR</label>
+                <div class="d-flex gap-2 flex-wrap" id="colorOptions">
+                    @foreach (var color in Model.AvailableColors)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-dark color-opt" data-color="@color" onclick="selectVariant()">@color</button>
+                    }
+                </div>
+            </div>
+
+            <div id="stockMsg" class="small mb-3"></div>
+
+            <div class="d-flex gap-3 align-items-center">
+                <input type="number" id="qtyInput" class="form-control" style="width:80px;" value="1" min="1" />
+                <button class="btn-shop-primary flex-grow-1" id="addToCartBtn" onclick="addToCart()" disabled>
+                    <i class="bi bi-bag-plus me-1"></i>Add to Cart
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const variants = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Variants));
+
+        function selectVariant() {
+        document.querySelectorAll('.size-opt').forEach(b => b.classList.toggle('btn-dark', b === event?.target));
+        const size  = document.querySelector('.size-opt.btn-dark')?.dataset.size;
+        const color = document.querySelector('.color-opt.btn-dark')?.dataset.color;
+
+        if (event?.target.classList.contains('size-opt')) {
+        document.querySelectorAll('.size-opt').forEach(b => b.classList.remove('btn-dark','text-white'));
+        event.target.classList.add('btn-dark','text-white');
+        }
+        if (event?.target.classList.contains('color-opt')) {
+        document.querySelectorAll('.color-opt').forEach(b => b.classList.remove('btn-dark','text-white'));
+        event.target.classList.add('btn-dark','text-white');
+        }
+
+        const sSize  = document.querySelector('.size-opt.btn-dark')?.dataset.size;
+        const sColor = document.querySelector('.color-opt.btn-dark')?.dataset.color;
+        const match = variants.find(v => v.sizeName === sSize && v.colorName === sColor);
+
+        const btn = document.getElementById('addToCartBtn');
+        const stockMsg = document.getElementById('stockMsg');
+
+        if (match) {
+        document.getElementById('selectedPrice').textContent = fmtPrice(match.priceUSD);
+        if (match.inStock) {
+        btn.disabled = false;
+        stockMsg.innerHTML = `<span class="text-success">✓ In Stock (${match.stockQty} available)</span>`;
+        window.__selectedVariantId = match.variantId;
+        } else {
+        btn.disabled = true;
+        stockMsg.innerHTML = `<span class="text-danger">Out of stock for this combination</span>`;
+        }
+        }
+        }
+
+        function addToCart() {
+        if (!window.__selectedVariantId) { toastr.error('Size ও Color সিলেক্ট করুন।'); return; }
+        const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+        ShopCart.add(window.__selectedVariantId, qty);
+        toastr.success('Cart এ যোগ হয়েছে!');
+        }
+
+        document.getElementById('selectedPrice').textContent = fmtPrice(parseFloat(document.getElementById('selectedPrice').dataset.usd));
+    </script>
+}

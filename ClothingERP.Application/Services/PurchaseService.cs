@@ -6,11 +6,13 @@ public class PurchaseService : IPurchaseService
     private readonly IMapper _mapper;
     private readonly IStockService _stock;
     private readonly INotificationService _notificationSvc;
-    private readonly IRealtimeNotifier _realtime; 
+    private readonly IRealtimeNotifier _realtime;
+    private readonly ICurrentBranchProvider _branchProvider;
 
     public PurchaseService(IUnitOfWork uow, IMapper mapper, IStockService stock,
-        INotificationService notificationService, IRealtimeNotifier realtime)
-        => (_uow, _mapper, _stock, _notificationSvc, _realtime) = (uow, mapper, stock, notificationService, realtime);
+        INotificationService notificationService, IRealtimeNotifier realtime, ICurrentBranchProvider branchProvider)
+        => (_uow, _mapper, _stock, _notificationSvc, _realtime, _branchProvider)
+            = (uow, mapper, stock, notificationService, realtime, branchProvider);
 
     public async Task<IEnumerable<PurchaseOrderListDto>> GetAllOrdersAsync()
     {
@@ -28,6 +30,11 @@ public class PurchaseService : IPurchaseService
 
     public async Task<ServiceResult<PurchaseOrderDto>> CreateOrderAsync(CreatePurchaseOrderDto dto, int userId)
     {
+     
+        var branchId = dto.BranchId > 0
+            ? dto.BranchId
+            : _branchProvider.GetCurrentBranchId();
+
         var po = new PurchaseOrder
         {
             PONumber = await _uow.PurchaseOrders.GeneratePONumberAsync(),
@@ -39,6 +46,7 @@ public class PurchaseService : IPurchaseService
             TaxAmount = dto.TaxAmount,
             ShippingCost = dto.ShippingCost,
             Notes = dto.Notes,
+            BranchId = branchId,
             CreatedBy = userId
         };
 
@@ -168,6 +176,8 @@ public class PurchaseService : IPurchaseService
             var po = await _uow.PurchaseOrders.GetWithDetailsAsync(dto.PurchaseOrderId);
             if (po == null) return ServiceResult<GRNDto>.Fail("Purchase order not found.");
 
+            var branchId = po.BranchId;   
+
             var grn = new GoodsReceiptNote
             {
                 GRNNumber = await _uow.GoodsReceiptNotes.GenerateGRNNumberAsync(),
@@ -199,12 +209,11 @@ public class PurchaseService : IPurchaseService
                     _uow.PurchaseOrders.Update(po);
                 }
 
-                // Update stock (existing logic — keeps StockMovement/ledger bookkeeping intact)
-                await _stock.UpdateStockAsync(itemDto.ProductVariantId, itemDto.ReceivedQuantity,
-                    StockMovementType.Purchase, grn.GRNNumber, userId);
+                // ── Branch-aware stock increment ──────────────────────────
+                await _uow.Stocks.IncrementAsync(itemDto.ProductVariantId, branchId, (int)itemDto.ReceivedQuantity);
 
                 // ── Real-time stock update broadcast ──────────────────────
-                var stock = await _uow.Stocks.GetByVariantIdAsync(itemDto.ProductVariantId);
+                var stock = await _uow.Stocks.GetByVariantAndBranchAsync(itemDto.ProductVariantId, branchId);
                 var variant = await _uow.ProductVariants.GetByIdAsync(itemDto.ProductVariantId);
                 await _realtime.NotifyStockUpdatedAsync(
                     itemDto.ProductVariantId,

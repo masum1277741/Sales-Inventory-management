@@ -7,8 +7,8 @@ public interface ISalesInvoiceRepository : IRepository<SalesInvoice>
     Task<IEnumerable<SalesInvoice>> GetByDateRangeAsync(DateTime from, DateTime to);
     Task<IEnumerable<SalesInvoice>> GetHeldInvoicesAsync();
     Task<string> GenerateInvoiceNumberAsync();
-    Task<decimal> GetTodaySalesAmountAsync();
-    Task<decimal> GetTodayProfitAsync();
-    Task<int> GetTodayInvoiceCountAsync();
-    Task<List<MonthlySalesData>> GetMonthlySalesAsync(int year);
+    Task<decimal> GetTodaySalesAmountAsync(int? branchId = null);
+    Task<decimal> GetTodayProfitAsync(int? branchId = null);
+    Task<int> GetTodayInvoiceCountAsync(int? branchId = null);
+    Task<List<MonthlySalesData>> GetMonthlySalesAsync(int year, int? branchId = null);
 }

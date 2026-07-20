@@ -16,4 +16,5 @@ public class User : BaseEntity
 
     public virtual Role Role { get; set; } = null!;
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+    public ICollection<UserBranch> UserBranches { get; set; } = new List<UserBranch>();
 }

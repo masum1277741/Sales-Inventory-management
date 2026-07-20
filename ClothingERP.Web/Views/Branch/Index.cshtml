@@ -1,0 +1,111 @@
+﻿@model IEnumerable<ClothingERP.Application.DTOs.BranchDto>
+@{
+    ViewData["Title"] = "Branches"; var items = Model.ToList();
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-shop-window me-2 text-primary"></i>Branches</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                <li class="breadcrumb-item active">Branches</li>
+            </ol>
+        </nav>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Add Branch
+    </a>
+</div>
+
+<div class="row g-3">
+    @foreach (var b in items)
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 @(b.IsMainBranch ? "border-start border-3 border-primary" : "")">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0">
+                                @if (b.IsMainBranch)
+                                {
+                                    <span class="me-1">⭐</span>
+                                }
+                                @b.Name
+                            </h6>
+                            <code class="small text-muted">@b.Code</code>
+                        </div>
+                        @if (b.IsActive)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-secondary">Inactive</span>
+                        }
+                    </div>
+
+                    <div class="small text-muted mb-2">
+                        @if (!string.IsNullOrEmpty(b.Address))
+                        {
+                            <div><i class="bi bi-geo-alt me-1"></i>@b.Address</div>
+                        }
+                        @if (!string.IsNullOrEmpty(b.PhoneNumber))
+                        {
+                            <div><i class="bi bi-telephone me-1"></i>@b.PhoneNumber</div>
+                        }
+                        <div><i class="bi bi-globe me-1"></i>@(b.Country ?? "Bangladesh")</div>
+                    </div>
+
+                    <div class="d-flex gap-2 text-muted small mb-3">
+                        <span><i class="bi bi-people me-1"></i>@b.StaffCount staff</span>
+                        <span><i class="bi bi-cash-stack me-1"></i>$@b.TodaySales.ToString("N2") today</span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a asp-action="Edit" asp-route-id="@b.Id" class="btn btn-sm btn-outline-primary flex-fill">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </a>
+                        <a asp-action="StockComparison" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-boxes"></i>
+                        </a>
+                        @if (!b.IsMainBranch)
+                        {
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    onclick="toggleBranch(@b.Id)"
+                                    title="@(b.IsActive ? "Deactivate" : "Activate")">
+                                <i class="bi bi-toggle2-@(b.IsActive ? "on" : "off")"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!items.Any())
+    {
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5 text-muted">
+                    <i class="bi bi-shop-window d-block mb-2" style="font-size:2.5rem;"></i>
+                    কোনো branch পাওয়া যায়নি।
+                    <div class="mt-3"><a asp-action="Create" class="btn btn-primary btn-sm">প্রথম Branch তৈরি করুন</a></div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+@section Scripts {
+    <script>
+        function toggleBranch(id) {
+            $.post('/Branch/ToggleStatus', { id, __RequestVerificationToken: $('[name=__RequestVerificationToken]').val() }, d => {
+                if (d.success) { toastr.success(d.message); location.reload(); }
+                else toastr.error(d.message);
+            });
+        }
+    </script>
+}

@@ -6,7 +6,7 @@ public class StockService : IStockService
     private readonly IMapper _mapper;
     private readonly IRealtimeNotifier _realtime;
 
-    public StockService(IUnitOfWork uow, IMapper mapper, IRealtimeNotifier realtime) => (_uow, _mapper,_realtime) = (uow, mapper,realtime);
+    public StockService(IUnitOfWork uow, IMapper mapper, IRealtimeNotifier realtime) => (_uow, _mapper, _realtime) = (uow, mapper, realtime);
 
     public async Task<IEnumerable<StockListDto>> GetAllAsync()
         => _mapper.Map<IEnumerable<StockListDto>>(await _uow.Stocks.GetWithDetailsAsync());
@@ -17,14 +17,14 @@ public class StockService : IStockService
         return s == null ? null : _mapper.Map<StockDto>(s);
     }
 
-    public async Task<IEnumerable<StockListDto>> GetLowStockAsync()
-        => _mapper.Map<IEnumerable<StockListDto>>(await _uow.Stocks.GetLowStockAsync());
+    public async Task<IEnumerable<StockListDto>> GetLowStockAsync(int? branchId = null)
+        => _mapper.Map<IEnumerable<StockListDto>>(await _uow.Stocks.GetLowStockAsync(branchId));
 
-    public async Task<IEnumerable<StockListDto>> GetOutOfStockAsync()
-        => _mapper.Map<IEnumerable<StockListDto>>(await _uow.Stocks.GetOutOfStockAsync());
+    public async Task<IEnumerable<StockListDto>> GetOutOfStockAsync(int? branchId = null)
+        => _mapper.Map<IEnumerable<StockListDto>>(await _uow.Stocks.GetOutOfStockAsync(branchId));
 
-    public async Task<decimal> GetTotalStockValueAsync()
-        => await _uow.Stocks.GetTotalStockValueAsync();
+    public async Task<decimal> GetTotalStockValueAsync(int? branchId = null)
+        => await _uow.Stocks.GetTotalStockValueAsync(branchId);
 
     public async Task<ServiceResult> AdjustStockAsync(StockAdjustmentDto dto, int userId)
     {

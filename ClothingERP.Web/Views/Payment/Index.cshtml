@@ -1,0 +1,55 @@
+﻿@model IEnumerable<ClothingERP.Domain.Entities.DigitalPaymentTransaction>
+@{
+    ViewData["Title"] = "Digital Payment Transactions";
+}
+
+<div class="page-header">
+    <h4 class="mb-0"><i class="bi bi-phone me-2 text-primary"></i>Digital Payment Transactions</h4>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active">Digital Payments</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card border-0 shadow-sm mt-3">
+    <div class="card-body p-0">
+        <table id="paymentTable" class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Date</th>
+                    <th>Provider</th>
+                    <th>Gateway ID</th>
+                    <th class="text-end">Amount (USD)</th>
+                    <th class="text-end">Amount (BDT)</th>
+                    <th>Mobile</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td class="ps-4 small">@t.InitiatedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                        <td><span class="badge @(t.Provider == "bKash" ? "bg-danger" : "bg-warning text-dark")">@t.Provider</span></td>
+                        <td><code class="small">@t.GatewayPaymentId</code></td>
+                        <td class="text-end">$@t.Amount.ToString("N2")</td>
+                        <td class="text-end">৳@t.AmountBDT.ToString("N2")</td>
+                        <td class="small">@(t.CustomerMsisdn ?? "—")</td>
+                        <td class="text-center">
+                            @{
+                                var cls = t.Status switch { "Completed" => "bg-success", "Failed" => "bg-danger", "Cancelled" => "bg-secondary", _ => "bg-warning text-dark" };
+                            }
+                            <span class="badge @cls">@t.Status</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(function () { initDataTable('#paymentTable', { order: [[0,'desc']] }); });</script>
+}

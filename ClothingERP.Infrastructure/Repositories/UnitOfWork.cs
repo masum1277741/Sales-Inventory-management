@@ -65,9 +65,35 @@ public class UnitOfWork : IUnitOfWork
         CommissionTransactions = new GenericRepository<CommissionTransaction>(_context);
         Notifications = new GenericRepository<Notification>(_context);
         DashboardLayouts = new GenericRepository<DashboardLayout>(_context);
+        ExchangeRateSnapshots = new GenericRepository<ExchangeRateSnapshot>(_context);
+        ExchangeRateSettings = new GenericRepository<ExchangeRateSettings>(_context);
+        ReorderSettings = new GenericRepository<ReorderSettings>(_context);
+        PurchaseOrderItems = new GenericRepository<PurchaseOrderItem>(_context);
+        ForecastSettings = new GenericRepository<ForecastSettings>(_context);
+        Branches = new GenericRepository<Branch>(_context);
+        UserBranches = new GenericRepository<UserBranch>(_context);
+        StockTransfers = new GenericRepository<StockTransfer>(_context);
+        StockTransferItems = new GenericRepository<StockTransferItem>(_context);
+        OnlineOrders = new GenericRepository<OnlineOrder>(_context);
+        OnlineOrderItems = new GenericRepository<OnlineOrderItem>(_context);
+        StorefrontSettings = new GenericRepository<StorefrontSettings>(_context);
+        DigitalPaymentTransactions = new GenericRepository<DigitalPaymentTransaction>(_context);
     }
 
     // ── Properties ───────────────────────────────────────────────────
+    public IRepository<ReorderSettings> ReorderSettings { get; }
+    public IRepository<ExchangeRateSnapshot> ExchangeRateSnapshots { get; }
+    public IRepository<ExchangeRateSettings> ExchangeRateSettings { get; }
+    public IRepository<PurchaseOrderItem> PurchaseOrderItems { get; }
+    public IRepository<ForecastSettings> ForecastSettings { get; }
+    public IRepository<DigitalPaymentTransaction> DigitalPaymentTransactions { get; }
+    public IRepository<OnlineOrder> OnlineOrders { get; }
+    public IRepository<OnlineOrderItem> OnlineOrderItems { get; }
+    public IRepository<StorefrontSettings> StorefrontSettings { get; }
+    public IRepository<Branch> Branches { get; }
+    public IRepository<UserBranch> UserBranches { get; }
+    public IRepository<StockTransfer> StockTransfers { get; }
+    public IRepository<StockTransferItem> StockTransferItems { get; }
     public IUserRepository Users => _users ??= new UserRepository(_context);
     public IRoleRepository Roles => _roles ??= new RoleRepository(_context);
     public IAppModuleRepository AppModules => _appModules ??= new AppModuleRepository(_context);

@@ -9,14 +9,29 @@ public class UserService : IUserService
     public UserService(IUnitOfWork uow, IMapper mapper, IAuditLogService audit)
         => (_uow, _mapper, _audit) = (uow, mapper, audit);
 
-    public async Task<IEnumerable<UserDto>> GetAllAsync()
+    public async Task<IEnumerable<UserListDto>> GetAllAsync()
     {
         var users = await _uow.Users.GetQueryable()
             .Include(u => u.Role)
+            .Include(u => u.UserBranches).ThenInclude(ub => ub.Branch)
             .Where(u => !u.IsDeleted)
             .OrderBy(u => u.FullName)
             .ToListAsync();
-        return _mapper.Map<IEnumerable<UserDto>>(users);
+
+        return users.Select(u => new UserListDto
+        {
+            Id = u.Id,
+            FullName = u.FullName,
+            Username = u.Username,
+            RoleName = u.Role?.Name ?? "",
+            RoleId = u.RoleId,
+            IsActive = u.IsActive,
+            CreatedAt = u.CreatedAt,
+            PhoneNumber = u.PhoneNumber,
+            BranchNames = u.UserBranches.Any()
+                ? string.Join(", ", u.UserBranches.Where(ub => !ub.IsDeleted).Select(ub => ub.Branch.Name))
+                : "—"
+        });
     }
 
     public async Task<UserDto?> GetByIdAsync(int id)

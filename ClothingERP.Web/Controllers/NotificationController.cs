@@ -3,8 +3,8 @@
 public class NotificationController : BaseController
 {
     private readonly INotificationService _notificationSvc;
-
-    public NotificationController(INotificationService notificationSvc) => _notificationSvc = notificationSvc;
+    private readonly IReorderService _reorderSvc;
+    public NotificationController(INotificationService notificationSvc, IReorderService reorderSvc) => (_notificationSvc, _reorderSvc) = (notificationSvc, reorderSvc);
 
     // ── Full Page List ────────────────────────────────────────────────────
     public async Task<IActionResult> Index()
@@ -20,7 +20,7 @@ public class NotificationController : BaseController
     {
 
         await _notificationSvc.CheckLowStockAlertsAsync();
-
+        await _notificationSvc.CheckCriticalReorderAlertsAsync(_reorderSvc);
         var feed = await _notificationSvc.GetFeedAsync(CurrentUserId, take: 10);
         return Json(feed);
     }

@@ -10,20 +10,30 @@ public class DashboardService : IDashboardService
     public DashboardService(IUnitOfWork uow, IMapper mapper, ISalesService sales, IStockService stock)
         => (_uow, _mapper, _sales, _stock) = (uow, mapper, sales, stock);
 
-    public async Task<DashboardDto> GetDashboardDataAsync()
+    public async Task<DashboardDto> GetDashboardDataAsync(int? branchId = null)
     {
-        var lowStock = await _uow.Stocks.GetLowStockAsync();
-        var outOfStock = await _uow.Stocks.GetOutOfStockAsync();
-        var recentInvoices = await _uow.SalesInvoices.GetQueryable()
-            .Include(i => i.Customer).Where(i => !i.IsDeleted && !i.IsHold)
+        var lowStock = await _uow.Stocks.GetLowStockAsync(branchId);
+        var outOfStock = await _uow.Stocks.GetOutOfStockAsync(branchId);
+
+        var recentInvoicesQuery = _uow.SalesInvoices.GetQueryable()
+            .Include(i => i.Customer).Where(i => !i.IsDeleted && !i.IsHold);
+        if (branchId.HasValue)
+            recentInvoicesQuery = recentInvoicesQuery.Where(i => i.BranchId == branchId.Value);
+
+        var recentInvoices = await recentInvoicesQuery
             .OrderByDescending(i => i.InvoiceDate).Take(5).ToListAsync();
-        var monthlySalesData = await _uow.SalesInvoices.GetMonthlySalesAsync(DateTime.Now.Year);
+
+        var monthlySalesData = await _uow.SalesInvoices.GetMonthlySalesAsync(DateTime.Now.Year, branchId);
 
         // Top selling products (last 30 days)
         var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
-        var topProducts = await _uow.SalesInvoices.GetQueryable()
+        var topProductsQuery = _uow.SalesInvoices.GetQueryable()
             .Include(i => i.Items).ThenInclude(x => x.ProductVariant).ThenInclude(v => v.Product)
-            .Where(i => !i.IsDeleted && i.InvoiceDate >= thirtyDaysAgo && i.Status != InvoiceStatus.Cancelled)
+            .Where(i => !i.IsDeleted && i.InvoiceDate >= thirtyDaysAgo && i.Status != InvoiceStatus.Cancelled);
+        if (branchId.HasValue)
+            topProductsQuery = topProductsQuery.Where(i => i.BranchId == branchId.Value);
+
+        var topProducts = await topProductsQuery
             .SelectMany(i => i.Items)
             .GroupBy(item => new { item.ProductVariant.Product.Name, item.ProductVariant.Product.SKU })
             .Select(g => new TopProductDto
@@ -43,14 +53,14 @@ public class DashboardService : IDashboardService
 
         return new DashboardDto
         {
-            TodaySales = await _sales.GetTodaySalesAsync(),
-            TodayProfit = await _sales.GetTodayProfitAsync(),
-            TodayInvoiceCount = await _sales.GetTodayInvoiceCountAsync(),
+            TodaySales = await _sales.GetTodaySalesAsync(branchId),
+            TodayProfit = await _sales.GetTodayProfitAsync(branchId),
+            TodayInvoiceCount = await _sales.GetTodayInvoiceCountAsync(branchId),
             LowStockCount = lowStock.Count(),
             OutOfStockCount = outOfStock.Count(),
             TotalCustomerDue = totalCustomerDue,
             TotalSupplierDue = totalSupplierDue,
-            TotalStockValue = await _stock.GetTotalStockValueAsync(),
+            TotalStockValue = await _stock.GetTotalStockValueAsync(branchId),
             TotalActiveCustomers = totalActiveCustomers,
             MonthlySalesChart = monthlySalesData.Select(m => new MonthlySalesChartDto
             { Month = m.Month, SalesAmount = m.SalesAmount, ProfitAmount = m.ProfitAmount }).ToList(),

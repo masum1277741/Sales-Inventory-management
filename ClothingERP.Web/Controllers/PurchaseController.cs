@@ -7,9 +7,13 @@ public class PurchaseController : BaseController
     private readonly IPurchaseService _purchaseSvc;
     private readonly ISupplierService _supplierSvc;
     private readonly IProductService _productSvc;
+    private readonly ICurrentBranchProvider _branchProvider;
+    private readonly IBranchService _branchSvc;
 
-    public PurchaseController(IPurchaseService purchaseSvc, ISupplierService supplierSvc, IProductService productSvc)
-        => (_purchaseSvc, _supplierSvc, _productSvc) = (purchaseSvc, supplierSvc, productSvc);
+    public PurchaseController(IPurchaseService purchaseSvc, ISupplierService supplierSvc, IProductService productSvc,
+        ICurrentBranchProvider branchProvider, IBranchService branchSvc)
+        => (_purchaseSvc, _supplierSvc, _productSvc, _branchProvider, _branchSvc)
+            = (purchaseSvc, supplierSvc, productSvc, branchProvider, branchSvc);
 
     // ── Purchase Orders Index ─────────────────────────────────────────────
     public async Task<IActionResult> Index(DateTime? fromDate = null, DateTime? toDate = null)
@@ -38,7 +42,16 @@ public class PurchaseController : BaseController
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        ViewData["Title"] = "Create Purchase Order";
+        ViewData["Title"] = "New Purchase Order";
+     
+        var roleName = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+        var isAdmin = roleName.Equals("Administrator", StringComparison.OrdinalIgnoreCase);
+
+        if (isAdmin)
+        {
+            ViewBag.Branches = await _branchSvc.GetAllAsync();
+        }
+        ViewBag.CurrentBranchId = _branchProvider.GetCurrentBranchId();
         ViewBag.Suppliers = await _supplierSvc.GetAllAsync();
         return View(new CreatePurchaseOrderDto());
     }

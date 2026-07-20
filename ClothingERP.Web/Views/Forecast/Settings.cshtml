@@ -1,0 +1,72 @@
+﻿@model ForecastSettingsDto
+@{
+    ViewData["Title"] = "Forecast Settings";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-sliders me-2 text-primary"></i>Forecast Settings</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Demand Forecasting</a></li>
+                <li class="breadcrumb-item active">Settings</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form asp-action="Settings" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Analysis Period (দিন)</label>
+                        <input asp-for="AnalysisPeriodDays" class="form-control" type="number" min="30" max="365" />
+                        <small class="text-muted">কত দিনের ঐতিহাসিক বিক্রির ডাটা মডেল train করতে ব্যবহার হবে — বেশি দিন মানে seasonality ধরা পড়ার সম্ভাবনা বেশি।</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Forecast Horizon (দিন)</label>
+                        <input asp-for="ForecastHorizonDays" class="form-control" type="number" min="7" max="90" />
+                        <small class="text-muted">কত দিন আগে থেকে ভবিষ্যতের চাহিদা প্রজেক্ট করা হবে।</small>
+                    </div>
+
+                    <hr class="my-4" />
+                    <h6 class="fw-bold mb-3">Smoothing Parameters (Advanced)</h6>
+                    <div class="alert alert-info small">
+                        সাধারণ ব্যবহারকারীদের এগুলো পরিবর্তন করার দরকার নেই — default মান (0.3 / 0.1 / 0.3) বেশিরভাগ retail business এর জন্য ভালো কাজ করে।
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-4">
+                            <label class="form-label small">Alpha (Level)</label>
+                            <input asp-for="Alpha" class="form-control" type="number" step="0.05" min="0.01" max="1" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small">Beta (Trend)</label>
+                            <input asp-for="Beta" class="form-control" type="number" step="0.05" min="0.01" max="1" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small">Gamma (Seasonal)</label>
+                            <input asp-for="Gamma" class="form-control" type="number" step="0.05" min="0.01" max="1" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <label class="form-label fw-semibold">Minimum Data Points</label>
+                        <input asp-for="MinDataPointsRequired" class="form-control" type="number" min="7" max="60" />
+                        <small class="text-muted">Analysis period এর মধ্যে কমপক্ষে কত দিন বিক্রি হলে forecast করা হবে (নাহলে "insufficient data" দেখাবে)।</small>
+                    </div>
+
+                    <hr class="my-4" />
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i>Save Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

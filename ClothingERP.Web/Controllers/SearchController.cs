@@ -1,19 +1,31 @@
-﻿namespace ClothingERP.Web.Controllers;
+﻿using ClothingERP.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
+namespace ClothingERP.Web.Controllers;
+
+[Authorize]   
 public class SearchController : BaseController
 {
     private readonly ISearchService _searchSvc;
 
     public SearchController(ISearchService searchSvc) => _searchSvc = searchSvc;
 
-    // ── AJAX: Global Search ──────────────────────────────────────────────
     [HttpGet]
     public async Task<IActionResult> Global(string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword) || keyword.Trim().Length < 2)
-            return Json(new List<GlobalSearchResultDto>());
+            return Json(new List<object>());
 
-        var results = await _searchSvc.GlobalSearchAsync(keyword, CurrentUserId);
-        return Json(results);
+        try
+        {
+            var results = await _searchSvc.GlobalSearchAsync(keyword.Trim(), CurrentUserId);
+            return Json(results);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SearchController] Error: {ex.Message}");
+            return Json(new List<object>());
+        }
     }
 }

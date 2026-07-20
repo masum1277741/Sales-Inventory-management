@@ -72,10 +72,37 @@ public class ApplicationDbContext : DbContext
     // ── Accounts & Security ─────────────────────────────────────────
     public DbSet<AccountTransaction> AccountTransactions => Set<AccountTransaction>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    // ── Exchange Rate ─────────────────────────────────────────────── 
+    public DbSet<ExchangeRateSettings> ExchangeRateSettings => Set<ExchangeRateSettings>();
+    public DbSet<ExchangeRateSnapshot> ExchangeRateSnapshots => Set<ExchangeRateSnapshot>();
+    public DbSet<ReorderSettings> ReorderSettings => Set<ReorderSettings>();
+    public DbSet<ForecastSettings> ForecastSettings => Set<ForecastSettings>();
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<UserBranch> UserBranches => Set<UserBranch>();
+    public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
+    public DbSet<StockTransferItem> StockTransferItems => Set<StockTransferItem>();
+    public DbSet<OnlineOrder> onlineOrders => Set<OnlineOrder>();
+    public DbSet<OnlineOrderItem> OnlineOrderItems => Set<OnlineOrderItem>();
+    public DbSet<StorefrontSettings> StorefrontSettings => Set<StorefrontSettings>();
+    public DbSet<DigitalPaymentTransaction> DigitalPaymentTransactions => Set<DigitalPaymentTransaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // ── StockTransfer: prevent multiple cascade paths on Branch ──
+        modelBuilder.Entity<StockTransfer>()
+            .HasOne(st => st.FromBranch)
+            .WithMany()
+            .HasForeignKey(st => st.FromBranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<StockTransfer>()
+            .HasOne(st => st.ToBranch)
+            .WithMany()
+            .HasForeignKey(st => st.ToBranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         base.OnModelCreating(modelBuilder);
     }
 

@@ -1,9 +1,13 @@
 using ClothingERP.Application;
+using ClothingERP.Application.Interfaces.Services;
 using ClothingERP.Infrastructure;
 using ClothingERP.Infrastructure.Data;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using ClothingERP.Infrastructure.PaymentGateways;
+using ClothingERP.Web.BackgroundServices;
 using ClothingERP.Web.Hubs;
 using ClothingERP.Web.Realtime;
+using ClothingERP.Web.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,9 +20,19 @@ builder.Services.AddAntiforgery(options =>
 });
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
+// ── HttpClient for Exchange Rate API ──────────────────────────────────────
+builder.Services.AddHttpClient("ExchangeRateApi", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// ── HttpClient for bKash / Nagad Payment Gateways ──────────────────────────
+builder.Services.AddHttpClient<BkashApiClient>();
+builder.Services.AddHttpClient<NagadApiClient>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
@@ -29,6 +43,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "ClothingERP.Auth";
         options.Cookie.SameSite = SameSiteMode.Strict;
         options.Cookie.MaxAge = null;
+    })
+    .AddCookie("CustomerAuth", options =>
+    {
+        options.Cookie.Name = ".ClozeyShop.Auth";
+        options.LoginPath = "/Shop/Account/Login";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
     });
 
 builder.Services.AddSession(options =>
@@ -40,11 +61,12 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentBranchProvider, HttpContextBranchProvider>();
 
 // ── SignalR / Realtime ───────────────────────────────────────────────────
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
-
+builder.Services.AddHostedService<ExchangeRateBackgroundService>();
 // ── Pipeline ─────────────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -68,6 +90,16 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "shop",
+    pattern: "Shop/{action=Index}/{id?}",
+    defaults: new { controller = "Shop" });
+
+app.MapControllerRoute(
+    name: "shopaccount",
+    pattern: "ShopAccount/{action=Login}/{id?}",
+    defaults: new { controller = "ShopAccount" });
 
 app.MapControllerRoute(
     name: "default",

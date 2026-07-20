@@ -14,7 +14,18 @@ public class UserDto
     public string RoleName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
 }
-
+public class UserListDto
+{
+    public int Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string RoleName { get; set; } = string.Empty;
+    public int RoleId { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string? BranchNames { get; set; }  
+    public string? PhoneNumber { get; set; }
+}
 public class CreateUserDto
 {
     [Required, MaxLength(100)]

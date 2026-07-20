@@ -2,7 +2,7 @@
 
 public static class DashboardWidgetRegistry
 {
-    // সব available widget এর master list — নতুন widget যোগ করতে শুধু এখানে একটা entry বাড়ালেই হবে
+    
     public static readonly List<WidgetDefinitionDto> All = new()
     {
         new() { WidgetKey = "stat_today_sales",    Title = "Today's Sales",       Icon = "bi-cash-stack",       Category = "Stats",  AllowResize = false },
@@ -15,9 +15,11 @@ public static class DashboardWidgetRegistry
         new() { WidgetKey = "top_products",        Title = "Top Selling Products",Icon = "bi-trophy",           Category = "Lists",  AllowResize = true  },
         new() { WidgetKey = "my_commission",       Title = "My Commission",       Icon = "bi-person-badge",     Category = "Stats",  AllowResize = false },
         new() { WidgetKey = "low_stock_table",     Title = "Low Stock Detail",    Icon = "bi-box-seam",         Category = "Lists",  AllowResize = true  },
+        new() { WidgetKey = "reorder_suggestions", Title = "Smart Reorder Alerts", Icon = "bi-magic", Category = "Lists", AllowResize = true },
+        new() { WidgetKey = "demand_forecast", Title = "Demand Trends", Icon = "bi-graph-up-arrow", Category = "Charts", AllowResize = true },
     };
 
-    // Default layout — প্রথমবার login করলে এটা দেখাবে
+ 
     public static List<WidgetConfigDto> GetDefault() => new()
     {
         new() { WidgetKey = "stat_today_sales",  Order = 0, IsVisible = true,  Size = "Small" },
