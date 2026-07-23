@@ -15,7 +15,22 @@
     </div>
     <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back to Stock</a>
 </div>
-
+@if ((bool)ViewBag.IsAdmin)
+{
+    <div class="mb-3">
+        <label class="form-label fw-semibold">Branch</label>
+        <select id="branchSelect" class="form-select" style="max-width:280px;">
+            @foreach (var b in (IEnumerable<dynamic>)ViewBag.Branches)
+            {
+                <option value="@b.Id" selected="@(b.Id == (int)ViewBag.CurrentBranchId)">@b.Name</option>
+            }
+        </select>
+    </div>
+}
+else
+{
+    <input type="hidden" id="branchSelect" value="@ViewBag.CurrentBranchId" />
+}
 <div class="row g-4">
     <!-- ── Left: Adjustment Form ────────────────────────────────────────── -->
     <div class="col-lg-7">
@@ -197,7 +212,7 @@
         async function searchBarcode() {
             const barcode = $('#barcodeInput').val().trim();
             if (!barcode) return;
-            const data = await fetch(`/Stock/SearchByBarcode?barcode=${encodeURIComponent(barcode)}`).then(r => r.json());
+            const data = await fetch(`/Stock/SearchByBarcode?barcode=${encodeURIComponent(barcode)}&branchId=${$('#branchSelect').val()}`).then(r => r.json());
             if (data) { populateProduct(data); $('#barcodeInput').val(''); }
             else { toastr.error('Product not found for barcode: ' + barcode); }
         }
@@ -208,7 +223,7 @@
             clearTimeout(searchTimer);
             if (val.length < 2) { $('#searchDropdown').hide(); return; }
             searchTimer = setTimeout(async () => {
-                const data = await fetch(`/Stock/SearchVariants?keyword=${encodeURIComponent(val)}`).then(r => r.json());
+                const data = await fetch(`/Stock/SearchVariants?keyword=${encodeURIComponent(val)}&branchId=${$('#branchSelect').val()}`).then(r => r.json());
                 const dd = $('#searchDropdown');
                 if (!data.length) { dd.hide(); return; }
                 dd.html(data.map(v => `
@@ -296,6 +311,7 @@
 
             $.post('/Stock/Adjust', {
                 ProductVariantId: variantId, NewQuantity: newQty, Reason: reason,
+                BranchId: $('#branchSelect').val(),
                 __RequestVerificationToken: $('[name=__RequestVerificationToken]').val()
             }, d => {
                 if (d.success) {

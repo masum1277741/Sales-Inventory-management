@@ -5,16 +5,38 @@ public class StockService : IStockService
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
     private readonly IRealtimeNotifier _realtime;
+    private readonly ICurrentBranchProvider _branchProvider;
 
-    public StockService(IUnitOfWork uow, IMapper mapper, IRealtimeNotifier realtime) => (_uow, _mapper, _realtime) = (uow, mapper, realtime);
+    public StockService(IUnitOfWork uow, IMapper mapper, IRealtimeNotifier realtime,
+                         ICurrentBranchProvider branchProvider)
+        => (_uow, _mapper, _realtime, _branchProvider) = (uow, mapper, realtime, branchProvider);
 
-    public async Task<IEnumerable<StockListDto>> GetAllAsync()
-        => _mapper.Map<IEnumerable<StockListDto>>(await _uow.Stocks.GetWithDetailsAsync());
+    private int ResolveBranch(int? branchId)
+        => (branchId is > 0) ? branchId.Value : _branchProvider.GetCurrentBranchId();
 
-    public async Task<StockDto?> GetByVariantIdAsync(int variantId)
+
+    public async Task<IEnumerable<StockListDto>> GetAllAsync(int? branchId = null)
     {
-        var s = await _uow.Stocks.GetByVariantIdAsync(variantId);
+        var all = await _uow.Stocks.GetWithDetailsAsync();
+
+       
+        var filtered = branchId.HasValue ? all.Where(s => s.BranchId == branchId.Value) : all;
+
+        return _mapper.Map<IEnumerable<StockListDto>>(filtered);
+    }
+
+    public async Task<StockDto?> GetByVariantIdAsync(int variantId, int? branchId = null)
+    {
+        var resolvedBranch = ResolveBranch(branchId);
+        var s = await _uow.Stocks.GetByVariantAndBranchAsync(variantId, resolvedBranch);
         return s == null ? null : _mapper.Map<StockDto>(s);
+    }
+
+    public async Task<decimal> GetVariantQuantityAsync(int variantId, int? branchId = null)
+    {
+        var resolvedBranch = ResolveBranch(branchId);
+        var s = await _uow.Stocks.GetByVariantAndBranchAsync(variantId, resolvedBranch);
+        return s?.Quantity ?? 0;
     }
 
     public async Task<IEnumerable<StockListDto>> GetLowStockAsync(int? branchId = null)
@@ -26,10 +48,26 @@ public class StockService : IStockService
     public async Task<decimal> GetTotalStockValueAsync(int? branchId = null)
         => await _uow.Stocks.GetTotalStockValueAsync(branchId);
 
+    // ── Manual Adjustment (branch-aware) ───────────────────────────────────
     public async Task<ServiceResult> AdjustStockAsync(StockAdjustmentDto dto, int userId)
     {
-        var stock = await _uow.Stocks.GetByVariantIdAsync(dto.ProductVariantId);
-        if (stock == null) return ServiceResult.Fail("Stock record not found.");
+        var branchId = ResolveBranch(dto.BranchId);
+
+        var stock = await _uow.Stocks.GetByVariantAndBranchAsync(dto.ProductVariantId, branchId);
+
+        if (stock == null)
+        {
+            stock = new Stock
+            {
+                ProductVariantId = dto.ProductVariantId,
+                BranchId = branchId,
+                Quantity = 0,
+                CreatedBy = userId,
+                UpdatedBy = userId
+            };
+            await _uow.Stocks.AddAsync(stock);
+            await _uow.SaveChangesAsync(); 
+        }
 
         var prevQty = stock.Quantity;
         stock.Quantity = dto.NewQuantity;
@@ -49,6 +87,7 @@ public class StockService : IStockService
         });
 
         await _uow.SaveChangesAsync();
+
         var variant = await _uow.ProductVariants.GetByIdAsync(dto.ProductVariantId);
         await _realtime.NotifyStockUpdatedAsync(
             dto.ProductVariantId, variant?.Barcode ?? "", (int)dto.NewQuantity, variant?.Product?.Name ?? "");
@@ -56,13 +95,20 @@ public class StockService : IStockService
         return ServiceResult.Ok("Stock adjusted successfully.");
     }
 
-    public async Task UpdateStockAsync(int variantId, decimal quantity, StockMovementType type,
-                                       string referenceNumber, int userId)
+    public async Task UpdateStockAsync(int variantId, int branchId, decimal quantity,
+                                        StockMovementType type, string referenceNumber, int userId)
     {
-        var stock = await _uow.Stocks.GetByVariantIdAsync(variantId);
+        var stock = await _uow.Stocks.GetByVariantAndBranchAsync(variantId, branchId);
         if (stock == null)
         {
-            stock = new Stock { ProductVariantId = variantId, Quantity = 0, CreatedBy = userId };
+            stock = new Stock
+            {
+                ProductVariantId = variantId,
+                BranchId = branchId,
+                Quantity = 0,
+                CreatedBy = userId,
+                UpdatedBy = userId
+            };
             await _uow.Stocks.AddAsync(stock);
             await _uow.SaveChangesAsync();
         }

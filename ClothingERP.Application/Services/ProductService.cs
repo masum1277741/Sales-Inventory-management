@@ -2,12 +2,14 @@
 
 public class ProductService : IProductService
 {
+
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
     private readonly IBarcodeService _barcode;
-
-    public ProductService(IUnitOfWork uow, IMapper mapper, IBarcodeService barcode)
-        => (_uow, _mapper, _barcode) = (uow, mapper, barcode);
+    private readonly ICurrentBranchProvider _branchProvider;
+    public ProductService(IUnitOfWork uow, IMapper mapper, IBarcodeService barcode,
+                          ICurrentBranchProvider branchProvider)
+       => (_uow, _mapper, _barcode, _branchProvider) = (uow, mapper, barcode, branchProvider);
 
     // ── Get All (List) ────────────────────────────────────────────────────
     public async Task<IEnumerable<ProductListDto>> GetAllAsync()
@@ -26,7 +28,7 @@ public class ProductService : IProductService
                                               v.Product.IsActive))
         {
             var dto = _mapper.Map<ProductVariantDto>(v);
-            var stock = await _uow.Stocks.GetByVariantIdAsync(v.Id);
+            var stock = await _uow.Stocks.GetByVariantAndBranchAsync(v.Id, _branchProvider.GetCurrentBranchId());
             dto.StockQuantity = stock?.Quantity ?? 0;
             result.Add(dto);
         }
@@ -83,6 +85,13 @@ public class ProductService : IProductService
         // Variants
         if (dto.Variants?.Any() == true)
         {
+            var branches = (await _uow.Branches.GetAllAsync())
+                .Where(b => b.IsActive)
+                .ToList();
+
+            if (!branches.Any())
+                return ServiceResult<ProductDto>.Fail("No active branch found. Please create a branch first.");
+
             foreach (var varDto in dto.Variants)
             {
                 var barcode = _barcode.GenerateBarcodeNumber();
@@ -103,15 +112,19 @@ public class ProductService : IProductService
                 await _uow.ProductVariants.AddAsync(variant);
                 await _uow.SaveChangesAsync();
 
-                // Initial stock record (0)
-                var stock = new Stock
+                // Initial stock record (0) — one per active branch
+                foreach (var branch in branches)
                 {
-                    ProductVariantId = variant.Id,
-                    Quantity = 0,
-                    CreatedBy = createdBy,
-                    UpdatedBy = createdBy
-                };
-                await _uow.Stocks.AddAsync(stock);
+                    var stock = new Stock
+                    {
+                        ProductVariantId = variant.Id,
+                        BranchId = branch.Id,
+                        Quantity = 0,
+                        CreatedBy = createdBy,
+                        UpdatedBy = createdBy
+                    };
+                    await _uow.Stocks.AddAsync(stock);
+                }
                 await _uow.SaveChangesAsync();
             }
         }
@@ -312,7 +325,7 @@ public class ProductService : IProductService
 
     // ── Add Variant ───────────────────────────────────────────────────────
     public async Task<ServiceResult<ProductVariantDto>> AddVariantAsync(
-        int productId, CreateProductVariantDto dto, int createdBy)
+    int productId, CreateProductVariantDto dto, int createdBy)
     {
         // Duplicate check
         var existing = (await _uow.ProductVariants.GetAllAsync())
@@ -324,6 +337,13 @@ public class ProductService : IProductService
         if (existing != null)
             return ServiceResult<ProductVariantDto>.Fail(
                 "This Size + Color combination already exists.");
+
+        var branches = (await _uow.Branches.GetAllAsync())
+            .Where(b => b.IsActive)
+            .ToList();
+
+        if (!branches.Any())
+            return ServiceResult<ProductVariantDto>.Fail("No active branch found. Please create a branch first.");
 
         var barcode = _barcode.GenerateBarcodeNumber();
 
@@ -343,15 +363,19 @@ public class ProductService : IProductService
         await _uow.ProductVariants.AddAsync(variant);
         await _uow.SaveChangesAsync();
 
-        // Stock record
-        var stock = new Stock
+        // Stock record — one per active branch
+        foreach (var branch in branches)
         {
-            ProductVariantId = variant.Id,
-            Quantity = 0,
-            CreatedBy = createdBy,
-            UpdatedBy = createdBy
-        };
-        await _uow.Stocks.AddAsync(stock);
+            var stock = new Stock
+            {
+                ProductVariantId = variant.Id,
+                BranchId = branch.Id,
+                Quantity = 0,
+                CreatedBy = createdBy,
+                UpdatedBy = createdBy
+            };
+            await _uow.Stocks.AddAsync(stock);
+        }
         await _uow.SaveChangesAsync();
 
         return ServiceResult<ProductVariantDto>.Ok(
@@ -408,7 +432,7 @@ public class ProductService : IProductService
         var dto = _mapper.Map<ProductVariantDto>(v);
 
         // Stock populate
-        var stock = await _uow.Stocks.GetByVariantIdAsync(v.Id);
+        var stock = await _uow.Stocks.GetByVariantAndBranchAsync(v.Id, _branchProvider.GetCurrentBranchId());
         dto.StockQuantity = stock?.Quantity ?? 0;
 
         return dto;
@@ -439,7 +463,7 @@ public class ProductService : IProductService
         foreach (var v in matched)
         {
             var dto = _mapper.Map<ProductVariantDto>(v);
-            var stock = await _uow.Stocks.GetByVariantIdAsync(v.Id);
+            var stock = await _uow.Stocks.GetByVariantAndBranchAsync(v.Id, _branchProvider.GetCurrentBranchId());
             dto.StockQuantity = stock?.Quantity ?? 0;
             result.Add(dto);
         }

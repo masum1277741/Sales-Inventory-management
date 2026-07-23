@@ -246,13 +246,17 @@
                     color: #fff !important;
                 }
 
-            .panel-section {
-                display: none;
-            }
+         .panel-section {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;     
+    overflow: hidden;
+}
 
-                .panel-section.active {
-                    display: block;
-                }
+.panel-section.active {
+    display: flex;       /* block নয়, flex */
+}
 
             /* ══ Product / Bundle Grid ════════════════════════════════════════════ */
             .product-grid,

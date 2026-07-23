@@ -6,9 +6,12 @@ public class ReturnService : IReturnService
     private readonly IMapper _mapper;
     private readonly IStockService _stock;
     private readonly IGiftCardService _giftCardSvc;
+    private readonly ICurrentBranchProvider _branchProvider;
 
-    public ReturnService(IUnitOfWork uow, IMapper mapper, IStockService stock, IGiftCardService giftCardService)
-        => (_uow, _mapper, _stock, _giftCardSvc) = (uow, mapper, stock, giftCardService);
+    public ReturnService(IUnitOfWork uow, IMapper mapper, IStockService stock,
+                          IGiftCardService giftCardService, ICurrentBranchProvider branchProvider)
+        => (_uow, _mapper, _stock, _giftCardSvc, _branchProvider) =
+           (uow, mapper, stock, giftCardService, branchProvider);
 
     public async Task<IEnumerable<SalesReturnListDto>> GetAllSalesReturnsAsync()
     {
@@ -60,8 +63,8 @@ public class ReturnService : IReturnService
                 });
                 total += lineTotal;
                 // Restore stock
-                await _stock.UpdateStockAsync(itemDto.ProductVariantId, itemDto.ReturnQuantity,
-                    StockMovementType.SalesReturn, ret.ReturnNumber, userId);
+                await _stock.UpdateStockAsync(itemDto.ProductVariantId, _branchProvider.GetCurrentBranchId(),
+    itemDto.ReturnQuantity, StockMovementType.SalesReturn, ret.ReturnNumber, userId);
             }
             ret.TotalAmount = total;
             await _uow.SalesReturns.AddAsync(ret);
@@ -135,8 +138,8 @@ public class ReturnService : IReturnService
                     CreatedBy = userId
                 });
                 total += lineTotal;
-                await _stock.UpdateStockAsync(itemDto.ProductVariantId, -itemDto.ReturnQuantity,
-                    StockMovementType.PurchaseReturn, ret.ReturnNumber, userId);
+                await _stock.UpdateStockAsync(itemDto.ProductVariantId, _branchProvider.GetCurrentBranchId(),
+     -itemDto.ReturnQuantity, StockMovementType.PurchaseReturn, ret.ReturnNumber, userId);
             }
             ret.TotalAmount = total;
             await _uow.PurchaseReturns.AddAsync(ret);
