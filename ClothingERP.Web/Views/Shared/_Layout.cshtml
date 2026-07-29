@@ -1455,16 +1455,21 @@
             }
 
             /* ══ TOASTR ═══════════════════════════════════════════════════════════ */
-            .toast-success,
-            .toast-error,
-            .toast-warning,
-            .toast-info {
-                background: #1a1a1a !important;
-                border-radius: var(--radius-sm) !important;
-                box-shadow: 0 4px 16px rgba(0,0,0,.2) !important;
-                font-size: .84rem !important;
-                opacity: 1 !important;
-            }
+.toast-success,
+.toast-error,
+.toast-warning,
+.toast-info {
+    background: #1a1a1a !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,.2) !important;
+    font-size: .84rem !important;
+    opacity: 1 !important;
+  
+    background-repeat: no-repeat !important;
+    background-position: 15px center !important;
+    background-size: 20px !important;
+    padding: 15px 15px 15px 50px !important;
+}
 
             .toast-success {
                 border-left: 3px solid #16a34a !important;

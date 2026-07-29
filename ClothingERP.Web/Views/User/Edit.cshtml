@@ -1,113 +1,142 @@
-﻿@model UpdateUserDto
-@{ ViewData["Title"] = "Edit User"; var user = (UserDto)ViewBag.User; }
+﻿@model EditUserDto
+@{
+    ViewData["Title"] = "Edit User";
+    var branches = (IEnumerable<BranchDto>)ViewBag.Branches;
+    var branchList = branches.ToList();
+    var assignedIds = (List<int>)(ViewBag.AssignedBranchIds ?? new List<int>());
+    var defaultBranchId = (int)(ViewBag.DefaultBranchId ?? 0);
+}
 
 <div class="page-header d-flex justify-content-between align-items-center">
     <div>
-        <h4 class="mb-0"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit User</h4>
-        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
-            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
-            <li class="breadcrumb-item"><a asp-action="Index">Users</a></li>
-            <li class="breadcrumb-item active">Edit</li>
-        </ol></nav>
+        <h4 class="mb-0"><i class="bi bi-person-gear me-2 text-primary"></i>Edit User</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-action="Index">Users</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+            </ol>
+        </nav>
     </div>
     <a asp-action="Index" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Back</a>
 </div>
 
-<div class="row">
-    <!-- Profile Card -->
-    <div class="col-md-3 mb-4">
-        <div class="card border-0 shadow-sm text-center p-4">
-            @if (!string.IsNullOrEmpty(user.ProfileImage))
-            {
-                <img src="@user.ProfileImage" class="rounded-circle mx-auto mb-3" width="80" height="80" style="object-fit:cover;" />
-            }
-            else
-            {
-                <div class="mx-auto mb-3" style="width:80px;height:80px;border-radius:50%;background:#4f7cff;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;font-weight:700;">
-                    @user.FullName[0].ToString().ToUpper()
-                </div>
-            }
-            <h6 class="fw-bold mb-0">@user.FullName</h6>
-            <p class="text-muted small mb-2">@@@user.Username</p>
-            <span class="badge bg-primary rounded-pill px-3">@user.RoleName</span>
-            <hr />
-            <small class="text-muted">Member since<br/><strong>@user.CreatedAt.ToString("dd MMM yyyy")</strong></small>
-        </div>
-    </div>
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
 
-    <!-- Edit Form -->
-    <div class="col-md-9">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom py-3">
-                <span class="fw-semibold"><i class="bi bi-pencil me-2 text-primary"></i>Update Information</span>
-            </div>
-            <div class="card-body p-4">
-                <form asp-action="Edit" asp-route-id="@user.Id" method="post" enctype="multipart/form-data">
-                    @Html.AntiForgeryToken()
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <span class="fw-semibold"><i class="bi bi-person me-2 text-primary"></i>User Details</span>
+                </div>
+                <div class="card-body p-4">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
 
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label asp-for="FullName" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
                             <input asp-for="FullName" class="form-control" />
                             <span asp-validation-for="FullName" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-muted">Username</label>
-                            <input class="form-control bg-light" value="@user.Username" disabled />
-                            <small class="text-muted">Username cannot be changed.</small>
+                            <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+                            <input asp-for="Username" class="form-control" autocomplete="off" />
+                            <span asp-validation-for="Username" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Email" class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                            <input asp-for="Email" class="form-control" type="email" />
-                            <span asp-validation-for="Email" class="text-danger small"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="PhoneNumber" class="form-label fw-semibold">Phone</label>
-                            <input asp-for="PhoneNumber" class="form-control" placeholder="01XXXXXXXXX" />
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="RoleId" class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
-                            <select asp-for="RoleId" class="form-select select2" id="editRoleSelect">
-                                @foreach (var role in (IEnumerable<RoleDto>)ViewBag.Roles)
-                                {
-                                    @if(role.Id == Model.RoleId)
-                                    {
-                                        <option value="@role.Id" selected>@role.Name</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@role.Id">@role.Name</option>
-                                    }
-                                }
+                            <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
+                            <select asp-for="RoleId" class="form-select"
+                                    asp-items="@((SelectList)ViewBag.Roles)">
+                                <option value="">-- Select Role --</option>
                             </select>
-                            <span asp-validation-for="RoleId" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Profile Image</label>
-                            <input type="file" name="profileImage" class="form-control" accept="image/*" />
-                            <small class="text-muted">Leave blank to keep current image.</small>
+                            <label class="form-label fw-semibold">New Password</label>
+                            <input asp-for="NewPassword" class="form-control" type="password" autocomplete="new-password" placeholder="Leave blank to keep current" />
+                            <small class="text-muted">পরিবর্তন করতে না চাইলে খালি রাখুন।</small>
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
-                                <label asp-for="IsActive" class="form-check-label fw-semibold">Active Account</label>
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive" />
+                                <label class="form-check-label fw-semibold">Active</label>
                             </div>
                         </div>
                     </div>
-
-                    <hr class="my-4" />
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
-                        <a asp-action="Index" class="btn btn-light px-4 border">Cancel</a>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <!-- Branch Assignment -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <span class="fw-semibold"><i class="bi bi-shop-window me-2 text-primary"></i>Branch Access</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-2 mb-3">
+                        @foreach (var b in branchList)
+                        {
+                            <div class="col-md-6">
+                                <div class="form-check border rounded p-3 @(assignedIds.Contains(b.Id) ? "border-primary bg-light" : "")">
+                                    <input class="form-check-input branch-check"
+                                           type="checkbox" name="BranchIds" value="@b.Id"
+                                           id="branch_@b.Id"
+                                    @(assignedIds.Contains(b.Id) ? "checked" : "")
+                                           onchange="updateDefaultOptions()" />
+                                    <label class="form-check-label fw-semibold w-100" for="branch_@b.Id">
+                                        @b.Name
+                                        @if (b.IsMainBranch)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1">Main</span>
+                                        }
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div id="defaultBranchWrap">
+                        <label class="form-label fw-semibold">Default Branch</label>
+                        <select name="DefaultBranchId" id="defaultBranchSelect" class="form-select">
+                            <option value="">-- Select Default --</option>
+                            @foreach (var b in branchList.Where(b => assignedIds.Contains(b.Id)))
+                            {
+                                <option value="@b.Id" selected="@(b.Id == defaultBranchId)">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-check-lg me-1"></i>Save Changes
+            </button>
+        </form>
     </div>
 </div>
 
 @section Scripts {
-<partial name="_ValidationScriptsPartial" />
-<script>$(function () { $('#editRoleSelect').select2({ theme: 'bootstrap-5', width: '100%' }); });</script>
+    <script>
+        const allBranches = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                    branchList.Select(b => new { id = b.Id, name = b.Name })));
+
+        function updateDefaultOptions() {
+            const checked = document.querySelectorAll('.branch-check:checked');
+            const select  = document.getElementById('defaultBranchSelect');
+            const currentVal = select.value;
+
+            select.innerHTML = '<option value="">-- Select Default --</option>';
+            checked.forEach(cb => {
+                const b = allBranches.find(x => x.id === parseInt(cb.value));
+                if (b) {
+                    const opt = document.createElement('option');
+                    opt.value = b.id; opt.textContent = b.name;
+                    if (String(b.id) === currentVal) opt.selected = true;
+                    select.appendChild(opt);
+                }
+            });
+            if (checked.length === 1) select.value = checked[0].value;
+        }
+
+        document.addEventListener('DOMContentLoaded', updateDefaultOptions);
+    </script>
 }

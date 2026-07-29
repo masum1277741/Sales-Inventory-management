@@ -79,14 +79,30 @@ public class BranchService : IBranchService
         var branch = await _uow.Branches.GetByIdAsync(id);
         if (branch == null) return ServiceResult.Fail("Branch not found.");
 
-        branch.Name = dto.Name; branch.Address = dto.Address; branch.PhoneNumber = dto.PhoneNumber;
-        branch.Country = dto.Country; branch.IsActive = dto.IsActive;
-        branch.UpdatedBy = userId; branch.UpdatedAt = DateTime.UtcNow;
+
+        if (!branch.IsMainBranch)
+        {
+      
+            var codeExists = await _uow.Branches.GetQueryable()
+                .AnyAsync(b => b.Code == dto.Code.ToUpper() && b.Id != id && !b.IsDeleted);
+            if (codeExists)
+                return ServiceResult.Fail($"Branch code '{dto.Code}' ইতিমধ্যে অন্য branch এ ব্যবহার হয়েছে।");
+
+            branch.Code = dto.Code.ToUpper();
+        }
+
+        branch.Name = dto.Name;
+        branch.Address = dto.Address;
+        branch.PhoneNumber = dto.PhoneNumber;
+        branch.Country = dto.Country;
+        branch.IsActive = dto.IsActive;
+        branch.UpdatedBy = userId;
+        branch.UpdatedAt = DateTime.UtcNow;
+
         _uow.Branches.Update(branch);
         await _uow.SaveChangesAsync();
-        return ServiceResult.Ok("Branch updated successfully.");
+        return ServiceResult.Ok($"Branch '{branch.Name}' আপডেট হয়েছে।");
     }
-
     public async Task<ServiceResult> ToggleStatusAsync(int id, int userId)
     {
         var branch = await _uow.Branches.GetByIdAsync(id);

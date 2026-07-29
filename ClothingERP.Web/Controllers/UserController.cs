@@ -1,119 +1,173 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ClothingERP.Web.Controllers;
 
+[Authorize(Roles = "Administrator")]
 public class UserController : BaseController
 {
-    private readonly IUserService _users;
-    private readonly IRoleService _roles;
-    private readonly IWebHostEnvironment _env;
+    private readonly IUserService _userSvc;
+    private readonly IRoleService _roleSvc;
+    private readonly IBranchService _branchSvc;
 
-    public UserController(IUserService users, IRoleService roles, IWebHostEnvironment env)
-        => (_users, _roles, _env) = (users, roles, env);
+    public UserController(IUserService userSvc, IRoleService roleSvc, IBranchService branchSvc)
+        => (_userSvc, _roleSvc, _branchSvc) = (userSvc, roleSvc, branchSvc);
 
-    // ── Index ─────────────────────────────────────────────────────────────
+    // ── INDEX ─────────────────────────────────────────────────────────────
     public async Task<IActionResult> Index()
     {
-        ViewData["Title"] = "User Management";
-        return View(await _users.GetAllAsync());
+        ViewData["Title"] = "Users";
+        var users = await _userSvc.GetAllAsync();
+        return View(users);
     }
 
-    // ── Create ────────────────────────────────────────────────────────────
+    // ── CREATE (GET) ──────────────────────────────────────────────────────
     [HttpGet]
     public async Task<IActionResult> Create()
     {
         ViewData["Title"] = "Add User";
-        await LoadRoles();
+        await LoadDropdowns();
         return View(new CreateUserDto());
     }
 
+    // ── CREATE (POST) ─────────────────────────────────────────────────────
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateUserDto dto)
     {
-        if (!ModelState.IsValid) { await LoadRoles(); return View(dto); }
+        if (!ModelState.IsValid)
+        {
+            await LoadDropdowns();
+            return View(dto);
+        }
 
-        var result = await _users.CreateAsync(dto, CurrentUserId);
+        var result = await _userSvc.CreateAsync(dto, CurrentUserId);
         if (!result.Success)
         {
             ModelState.AddModelError("", result.Message!);
-            await LoadRoles();
+            await LoadDropdowns();
             return View(dto);
         }
-        SetSuccess(result.Message!);
+
+        // ── Branch Assignment ───────────────────────────────────────────────
+        var branches = dto.BranchIds?.Where(id => id > 0).ToList() ?? new List<int>();
+
+        if (!branches.Any())
+        {
+          
+            var main = (await _branchSvc.GetAllAsync()).FirstOrDefault(b => b.IsMainBranch);
+            if (main != null) branches = new List<int> { main.Id };
+        }
+
+        if (branches.Any())
+        {
+            await _branchSvc.AssignUserToBranchesAsync(new UserBranchAssignmentDto
+            {
+                UserId = result.Data!.Id,
+                BranchIds = branches,
+                DefaultBranchId = dto.DefaultBranchId > 0
+                                    ? dto.DefaultBranchId
+                                    : branches.First()
+            }, CurrentUserId);
+        }
+
+        SetSuccess($"User '{dto.FullName}' সফলভাবে তৈরি হয়েছে।");
         return RedirectToAction(nameof(Index));
     }
 
-    // ── Edit ──────────────────────────────────────────────────────────────
+    // ── EDIT (GET) ────────────────────────────────────────────────────────
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
         ViewData["Title"] = "Edit User";
-        var user = await _users.GetByIdAsync(id);
+        var user = await _userSvc.GetByIdAsync(id);
         if (user == null) return NotFound();
 
-        ViewBag.User = user;
-        await LoadRoles();
-        return View(new UpdateUserDto
+        var dto = new EditUserDto
         {
+            Id = user.Id,
             FullName = user.FullName,
-            Email = user.Email,
-            PhoneNumber = user.PhoneNumber,
+            Username = user.Username,
             RoleId = user.RoleId,
-            IsActive = user.IsActive,
-            ProfileImagePath = user.ProfileImage
-        });
+            IsActive = user.IsActive
+        };
+
+        await LoadDropdowns(id);
+        return View(dto);
     }
 
+    // ── EDIT (POST) ───────────────────────────────────────────────────────
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, UpdateUserDto dto, IFormFile? profileImage)
+    public async Task<IActionResult> Edit(int id, EditUserDto dto)
     {
-        if (profileImage is { Length: > 0 })
+        if (!ModelState.IsValid)
         {
-            var dir = Path.Combine(_env.WebRootPath, "uploads", "users");
-            Directory.CreateDirectory(dir);
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(profileImage.FileName)}";
-            await using var stream = new FileStream(Path.Combine(dir, fileName), FileMode.Create);
-            await profileImage.CopyToAsync(stream);
-            dto.ProfileImagePath = $"/uploads/users/{fileName}";
+            await LoadDropdowns(id);
+            return View(dto);
         }
 
-        if (!ModelState.IsValid) { await LoadRoles(); return View(dto); }
-
-        var result = await _users.UpdateAsync(id, dto, CurrentUserId);
+        var result = await _userSvc.UpdateAsync(id, dto, CurrentUserId);
         if (!result.Success)
         {
             ModelState.AddModelError("", result.Message!);
-            await LoadRoles();
+            await LoadDropdowns(id);
             return View(dto);
         }
+
+        // ── Branch Assignment Update ─────────────────────────────────────────
+        var branches = dto.BranchIds?.Where(bid => bid > 0).ToList() ?? new List<int>();
+        if (branches.Any())
+        {
+            await _branchSvc.AssignUserToBranchesAsync(new UserBranchAssignmentDto
+            {
+                UserId = id,
+                BranchIds = branches,
+                DefaultBranchId = dto.DefaultBranchId > 0
+                                    ? dto.DefaultBranchId
+                                    : branches.First()
+            }, CurrentUserId);
+        }
+
         SetSuccess(result.Message!);
         return RedirectToAction(nameof(Index));
     }
 
-    // ── Ajax Actions ──────────────────────────────────────────────────────
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var result = await _users.DeleteAsync(id);
-        return result.Success ? JsonSuccess(message: result.Message!) : JsonError(result.Message!);
-    }
-
+    // ── AJAX: Toggle Active/Inactive ─────────────────────────────────────
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleStatus(int id)
     {
-        var result = await _users.ToggleStatusAsync(id, CurrentUserId);
-        return result.Success ? JsonSuccess(message: result.Message!) : JsonError(result.Message!);
+        if (id == CurrentUserId)
+            return JsonError("নিজের account নিজে deactivate করা যাবে না।");
+
+        var r = await _userSvc.ToggleStatusAsync(id, CurrentUserId);
+        return r.Success ? JsonSuccess(message: r.Message!) : JsonError(r.Message!);
     }
 
+    // ── AJAX: Reset Password ─────────────────────────────────────────────
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetPassword(int id, string newPassword)
     {
         if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
-            return JsonError("Password must be at least 6 characters.");
-        var result = await _users.ResetPasswordAsync(id, newPassword, CurrentUserId);
-        return result.Success ? JsonSuccess(message: result.Message!) : JsonError(result.Message!);
+            return JsonError("Password কমপক্ষে ৬ অক্ষরের হতে হবে।");
+
+        var r = await _userSvc.ResetPasswordAsync(id, newPassword, CurrentUserId);
+        return r.Success ? JsonSuccess(message: r.Message!) : JsonError(r.Message!);
     }
 
-    private async Task LoadRoles()
-        => ViewBag.Roles = (await _roles.GetAllAsync()).Where(r => r.IsActive);
+    // ── Helper: Dropdowns Load ────────────────────────────────────────────
+    private async Task LoadDropdowns(int? editingUserId = null)
+    {
+        ViewBag.Roles = new SelectList(await _roleSvc.GetAllAsync(), "Id", "Name");
+        ViewBag.Branches = (await _branchSvc.GetAllAsync()).Where(b => b.IsActive).ToList();
+
+        if (editingUserId.HasValue)
+        {
+            var access = await _branchSvc.GetUserAccessAsync(editingUserId.Value, "");
+            ViewBag.AssignedBranchIds = access.AccessibleBranches.Select(b => b.Id).ToList();
+            ViewBag.DefaultBranchId = access.DefaultBranchId;
+        }
+        else
+        {
+            ViewBag.AssignedBranchIds = new List<int>();
+            ViewBag.DefaultBranchId = 0;
+        }
+    }
 }

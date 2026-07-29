@@ -1,6 +1,8 @@
 ﻿@model CreateUserDto
 @{
     ViewData["Title"] = "Add User";
+    var branches = (IEnumerable<BranchDto>)ViewBag.Branches;
+    var branchList = branches.ToList();
 }
 
 <div class="page-header d-flex justify-content-between align-items-center">
@@ -106,6 +108,55 @@
                             </select>
                             <span asp-validation-for="RoleId" class="text-danger small"></span>
                         </div>
+                        <div class="card border-0 shadow-sm mt-4">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <span class="fw-semibold"><i class="bi bi-shop-window me-2 text-primary"></i>Branch Access</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted small mb-3">
+                                    এই user কোন কোন branch এ কাজ করতে পারবে সেটা নির্ধারণ করুন।
+                                    Administrator role হলে সব branch automatically access পাবে।
+                                </p>
+
+                                <div class="row g-2 mb-3">
+                                    @foreach (var b in branchList)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="form-check border rounded p-3">
+                                                <input class="form-check-input branch-check"
+                                                       type="checkbox"
+                                                       name="BranchIds"
+                                                       value="@b.Id"
+                                                       id="branch_@b.Id"
+                                                       onchange="updateDefaultOptions()" />
+                                                <label class="form-check-label fw-semibold w-100" for="branch_@b.Id">
+                                                    @b.Name
+                                                    @if (b.IsMainBranch)
+                                                    {
+                                                        <span class="badge bg-warning text-dark ms-1">Main</span>
+                                                    }
+                                                    @if (!b.IsActive)
+                                                    {
+                                                        <span class="badge bg-secondary ms-1">Inactive</span>
+                                                    }
+                                                </label>
+                                                @if (!string.IsNullOrEmpty(b.Address))
+                                                {
+                                                    <div class="text-muted" style="font-size:.75rem;">@b.Address</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div id="defaultBranchWrap" style="display:none;">
+                                    <label class="form-label fw-semibold">Default Branch (login এ কোন branch দিয়ে শুরু হবে)</label>
+                                    <select name="DefaultBranchId" id="defaultBranchSelect" class="form-select">
+                                        <option value="">-- Select Default --</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <hr class="my-4" />
@@ -132,5 +183,46 @@
             icon.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
         }
         $(function () { $('#roleSelect').select2({ theme: 'bootstrap-5', width: '100%' }); });
+
+        function updateDefaultOptions() {
+            const checked = document.querySelectorAll('.branch-check:checked');
+            const wrap    = document.getElementById('defaultBranchWrap');
+            const select  = document.getElementById('defaultBranchSelect');
+            if (!checked.length) { wrap.style.display = 'none'; return; }
+            wrap.style.display = '';
+            const currentDefault = select.value;
+            select.innerHTML = '<option value="">-- Select Default --</option>';
+            const branches = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                            branchList.Select(b => new { id = b.Id, name = b.Name })));
+            checked.forEach(cb => {
+                const b = branches.find(x => x.id === parseInt(cb.value));
+                if (b) {
+                    const opt = document.createElement('option');
+                    opt.value       = b.id;
+                    opt.textContent = b.name;
+                    if (String(b.id) === currentDefault) opt.selected = true;
+                    select.appendChild(opt);
+                }
+            });
+      
+            if (checked.length === 1) select.value = checked[0].value;
+        }
+
+  
+        const assignedBranchIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.AssignedBranchIds ?? new List<int>()));
+        const assignedDefaultBranchId = @Html.Raw(ViewBag.DefaultBranchId != null ? ViewBag.DefaultBranchId.ToString() : "0");
+
+        document.addEventListener('DOMContentLoaded', function () {
+            assignedBranchIds.forEach(function (bid) {
+                const cb = document.getElementById('branch_' + bid);
+                if (cb) cb.checked = true;
+            });
+
+            updateDefaultOptions();
+
+            if (assignedDefaultBranchId) {
+                document.getElementById('defaultBranchSelect').value = assignedDefaultBranchId;
+            }
+        });
     </script>
 }

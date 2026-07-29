@@ -13,6 +13,7 @@ public class UserDto
     public int RoleId { get; set; }
     public string RoleName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public string? BranchNames { get; set; }
 }
 public class UserListDto
 {
@@ -25,6 +26,9 @@ public class UserListDto
     public DateTime CreatedAt { get; set; }
     public string? BranchNames { get; set; }  
     public string? PhoneNumber { get; set; }
+    public string? Email { get; set; }
+    public string? ProfileImage { get; set; }
+    public DateTime? LastLoginAt { get; set; }
 }
 public class CreateUserDto
 {
@@ -42,11 +46,29 @@ public class CreateUserDto
 
     [MaxLength(20)]
     public string? PhoneNumber { get; set; }
+    public bool IsActive { get; set; } = true;
 
     [Required]
     public int RoleId { get; set; }
+    // ── Branch Assignment ─────────────────────────────────────────────────
+    public List<int> BranchIds { get; set; } = new();   
+    public int? DefaultBranchId { get; set; }
 }
 
+
+public class EditUserDto
+{
+    public int Id { get; set; }
+    [Required, MaxLength(150)] public string FullName { get; set; } = string.Empty;
+    [Required, MaxLength(50)] public string Username { get; set; } = string.Empty;
+    [Required] public int RoleId { get; set; }
+    public string? NewPassword { get; set; }   // blank হলে পরিবর্তন হবে না
+    public bool IsActive { get; set; } = true;
+
+    // ── Branch Assignment ─────────────────────────────────────────────────
+    public List<int> BranchIds { get; set; } = new();
+    public int? DefaultBranchId { get; set; }
+}
 public class UpdateUserDto
 {
     [Required, MaxLength(100)]

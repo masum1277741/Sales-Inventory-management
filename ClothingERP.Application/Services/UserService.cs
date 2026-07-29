@@ -23,14 +23,17 @@ public class UserService : IUserService
             Id = u.Id,
             FullName = u.FullName,
             Username = u.Username,
+            Email = u.Email,                   
+            ProfileImage = u.ProfileImage,     
+            LastLoginAt = u.LastLoginAt,       
             RoleName = u.Role?.Name ?? "",
             RoleId = u.RoleId,
             IsActive = u.IsActive,
             CreatedAt = u.CreatedAt,
             PhoneNumber = u.PhoneNumber,
             BranchNames = u.UserBranches.Any()
-                ? string.Join(", ", u.UserBranches.Where(ub => !ub.IsDeleted).Select(ub => ub.Branch.Name))
-                : "—"
+         ? string.Join(", ", u.UserBranches.Where(ub => !ub.IsDeleted).Select(ub => ub.Branch.Name))
+         : "—"
         });
     }
 
@@ -106,7 +109,33 @@ public class UserService : IUserService
         await _uow.SaveChangesAsync();
         return ServiceResult.Ok(user.IsActive ? "User activated." : "User deactivated.");
     }
+    public async Task<ServiceResult<UserDto>> UpdateAsync(int id, EditUserDto dto, int userId)
+    {
+        var user = await _uow.Users.GetByIdAsync(id);
+        if (user == null) return ServiceResult<UserDto>.Fail("User not found.");
 
+   
+        var usernameExists = await _uow.Users.GetQueryable()
+            .AnyAsync(u => u.Username == dto.Username && u.Id != id && !u.IsDeleted);
+        if (usernameExists)
+            return ServiceResult<UserDto>.Fail($"Username '{dto.Username}' ইতিমধ্যে ব্যবহার হচ্ছে।");
+
+        user.FullName = dto.FullName;
+        user.Username = dto.Username;
+        user.RoleId = dto.RoleId;
+        user.IsActive = dto.IsActive;
+        user.UpdatedBy = userId;
+        user.UpdatedAt = DateTime.UtcNow;
+
+       
+        if (!string.IsNullOrWhiteSpace(dto.NewPassword))
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+        _uow.Users.Update(user);
+        await _uow.SaveChangesAsync();
+
+        return ServiceResult<UserDto>.Ok(_mapper.Map<UserDto>(user), $"User '{user.FullName}' আপডেট হয়েছে।");
+    }
     public async Task<ServiceResult> ResetPasswordAsync(int id, string newPassword, int updatedBy)
     {
         var user = await _uow.Users.GetByIdAsync(id);

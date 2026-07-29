@@ -9,5 +9,6 @@ public interface IUserService
     Task<ServiceResult> DeleteAsync(int id);
     Task<ServiceResult> ToggleStatusAsync(int id, int updatedBy);
     Task<ServiceResult> ResetPasswordAsync(int id, string newPassword, int updatedBy);
+    Task<ServiceResult<UserDto>> UpdateAsync(int id, EditUserDto dto, int userId);
 }
 
