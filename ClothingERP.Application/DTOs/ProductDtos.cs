@@ -105,6 +105,12 @@ public class ProductListDto
     public string BrandName { get; set; } = string.Empty;
     public decimal CostPrice { get; set; }
     public decimal RetailPrice { get; set; }
+
+
+    public decimal ProfitAmount => RetailPrice - CostPrice;
+    public decimal ProfitMarginPercent =>
+        RetailPrice == 0 ? 0 : Math.Round((ProfitAmount / RetailPrice) * 100, 1);
+
     public int ReorderPoint { get; set; }
     public bool IsActive { get; set; }
     public int VariantCount { get; set; }

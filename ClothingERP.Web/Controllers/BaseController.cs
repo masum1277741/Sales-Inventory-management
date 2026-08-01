@@ -1,4 +1,6 @@
-﻿namespace ClothingERP.Web.Controllers;
+﻿using ClothingERP.Web.Helpers;
+
+namespace ClothingERP.Web.Controllers;
 
 [Authorize]
 public abstract class BaseController : Controller
@@ -36,7 +38,12 @@ public abstract class BaseController : Controller
         }
         return RedirectToAction("Index");
     }
-
+    protected CurrencyDisplayModel Currency(decimal usdAmount)
+    {
+        var rateBDT = decimal.Parse(ViewBag.RateBDT?.ToString() ?? "110");
+        var rateMVR = decimal.Parse(ViewBag.RateMVR?.ToString() ?? "15.42");
+        return CurrencyHelper.FormatAll(usdAmount, rateBDT, rateMVR);
+    }
     protected JsonResult JsonSuccess(object? data = null, string message = "Success")
         => Json(new { success = true, message, data });
 

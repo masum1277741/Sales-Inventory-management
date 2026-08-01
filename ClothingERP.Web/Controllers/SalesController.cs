@@ -44,7 +44,8 @@ public class SalesController : BaseController
         var rates = await _rateSvc.GetCurrentRatesAsync();
         ViewBag.RateBDT = rates.UsdToBdt;
         ViewBag.RateMVR = rates.UsdToMvr;
-        ViewBag.RateIsStale = rates.IsStale;    
+        ViewBag.RateIsStale = rates.IsStale;
+        await LoadRatesAsync();
         return View();
     }
     [HttpGet]
@@ -60,6 +61,13 @@ public class SalesController : BaseController
         var bundles = await _bundleSvc.SearchBundlesAsync("");
         return Json(bundles);
     }
+
+    private async Task LoadRatesAsync()
+    {
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
+    }
     // ── Sales History ─────────────────────────────────────────────────────
     public async Task<IActionResult> Index(DateTime? fromDate = null, DateTime? toDate = null)
     {
@@ -67,6 +75,7 @@ public class SalesController : BaseController
 
         var from = fromDate ?? DateTime.Today.AddDays(-30);
         var to = toDate ?? DateTime.Today;
+        await LoadRatesAsync();
         var all = await _salesSvc.GetAllAsync();
         var filtered = all.Where(i => i.InvoiceDate.Date >= from && i.InvoiceDate.Date <= to)
                           .OrderByDescending(i => i.InvoiceDate).ToList();
@@ -85,6 +94,7 @@ public class SalesController : BaseController
     public async Task<IActionResult> Details(int id)
     {
         ViewData["Title"] = "Invoice Details";
+        await LoadRatesAsync();
         var invoice = await _salesSvc.GetByIdAsync(id);
         if (invoice == null) return NotFound();
         return View(invoice);

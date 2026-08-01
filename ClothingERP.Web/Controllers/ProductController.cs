@@ -21,11 +21,15 @@ public class ProductController : BaseController
         _rateSvc = rateSvc;
     }
 
-    // ── Index ─────────────────────────────────────────────────────────────
     public async Task<IActionResult> Index()
     {
         ViewData["Title"] = "Product Management";
         ViewBag.Categories = await _cats.GetCategoriesAsync();
+
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+        ViewBag.RateMVR = rates.UsdToMvr;
+
         return View(await _products.GetAllAsync());
     }
 

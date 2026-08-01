@@ -7,15 +7,17 @@ public class DashboardController : BaseController
     private readonly IDashboardLayoutService _layoutSvc;
     private readonly ICurrentBranchProvider _branchProvider;
     private readonly IBranchService _branchSvc;
+    private readonly IExchangeRateService _rateSvc;
 
     public DashboardController(
         IDashboardService dashboard,
         ICommissionService commissionSvc,
         IDashboardLayoutService layoutSvc,
         ICurrentBranchProvider branchProvider,
-        IBranchService branchSvc)
-        => (_dashboard, _commissionSvc, _layoutSvc, _branchProvider, _branchSvc)
-            = (dashboard, commissionSvc, layoutSvc, branchProvider, branchSvc);
+        IBranchService branchSvc,
+        IExchangeRateService rateSvc)
+        => (_dashboard, _commissionSvc, _layoutSvc, _branchProvider, _branchSvc, _rateSvc)
+            = (dashboard, commissionSvc, layoutSvc, branchProvider, branchSvc, rateSvc);
 
     public async Task<IActionResult> Index(int? branchId = null, bool allBranches = false)
     {
@@ -43,11 +45,14 @@ public class DashboardController : BaseController
             .FirstOrDefault(c => c.UserId == CurrentUserId)?.PendingCommission ?? 0;
 
 
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+        ViewBag.RateBDT = rates.UsdToBdt;
+
         var layout = await _layoutSvc.GetLayoutAsync(CurrentUserId);
         ViewBag.WidgetLayout = layout.Widgets.OrderBy(w => w.Order).ToList();
         ViewBag.AvailableWidgets = _layoutSvc.GetAvailableWidgets();
 
-  
+
         ViewBag.AllBranches = isAdmin;
         ViewBag.Branches = isAdmin ? await _branchSvc.GetAllAsync() : null;
         ViewBag.SelectedBranch = filterBranchId;

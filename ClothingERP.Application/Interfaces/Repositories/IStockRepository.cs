@@ -11,6 +11,7 @@ public interface IStockRepository : IRepository<Stock>
     Task<bool> TryDecrementAsync(int variantId, int branchId, int quantity);
     Task<bool> IncrementAsync(int variantId, int branchId, int quantity);
     Task<decimal> GetTotalStockValueAsync(int? branchId = null);
+    Task<decimal> GetTotalRetailStockValueAsync(int? branchId = null);
     Task<List<Stock>> GetAllForBranchAsync(int branchId);
     Task<List<Stock>> GetAllVariantStockAcrossBranchesAsync(int variantId);
     //Task IncrementAsync(int productVariantId, int branchId, decimal quantity);

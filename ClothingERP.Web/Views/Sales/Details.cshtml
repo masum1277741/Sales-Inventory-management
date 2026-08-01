@@ -9,6 +9,13 @@
         "Cancelled" => ("bg-secondary", "Cancelled"),
         _ => ("bg-light text-dark", Model.Status)
     };
+
+    var sub = CurrencyHelper.FormatAll(Model.SubTotal, (decimal)ViewBag.RateBDT, (decimal)ViewBag.RateMVR);
+    var disc = CurrencyHelper.FormatAll(Model.DiscountAmount, (decimal)ViewBag.RateBDT, (decimal)ViewBag.RateMVR);
+    var tax = CurrencyHelper.FormatAll(Model.TaxAmount, (decimal)ViewBag.RateBDT, (decimal)ViewBag.RateMVR);
+    var tot = CurrencyHelper.FormatAll(Model.TotalAmount, (decimal)ViewBag.RateBDT, (decimal)ViewBag.RateMVR);
+    var paid = CurrencyHelper.FormatAll(Model.PaidAmount, (decimal)ViewBag.RateBDT, (decimal)ViewBag.RateMVR);
+    var due = CurrencyHelper.FormatAll(Model.DueAmount, (decimal)ViewBag.RateBDT, (decimal)ViewBag.RateMVR);
 }
 
 <div class="page-header d-flex justify-content-between align-items-center">
@@ -104,25 +111,45 @@
                     <tfoot class="table-light">
                         <tr>
                             <td colspan="5" class="text-end pe-3 fw-semibold">Sub Total:</td>
-                            <td class="text-end fw-semibold pe-4">৳@Model.SubTotal.ToString("N2")</td>
+                            <td class="text-end pe-4">
+                                <div class="currency-amount-block table-currency">
+                                    <div class="currency-primary"><span class="currency-icon">$</span><span class="currency-value">@sub.USD.ToString("N2")</span></div>
+                                    <div class="currency-secondary-row"><span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">@sub.BDT.ToString("N0")</span></span><span class="currency-divider">·</span><span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">@sub.MVR.ToString("N2")</span></span></div>
+                                </div>
+                            </td>
                         </tr>
                         @if (Model.DiscountAmount > 0)
                         {
                             <tr>
                                 <td colspan="5" class="text-end pe-3 text-warning">Discount:</td>
-                                <td class="text-end text-warning pe-4">- ৳@Model.DiscountAmount.ToString("N2")</td>
+                                <td class="text-end pe-4">
+                                    <div class="currency-amount-block table-currency">
+                                        <div class="currency-primary text-warning"><span class="currency-icon">- $</span><span class="currency-value">@disc.USD.ToString("N2")</span></div>
+                                        <div class="currency-secondary-row"><span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">@disc.BDT.ToString("N0")</span></span><span class="currency-divider">·</span><span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">@disc.MVR.ToString("N2")</span></span></div>
+                                    </div>
+                                </td>
                             </tr>
                         }
                         @if (Model.TaxAmount > 0)
                         {
                             <tr>
                                 <td colspan="5" class="text-end pe-3">Tax:</td>
-                                <td class="text-end pe-4">৳@Model.TaxAmount.ToString("N2")</td>
+                                <td class="text-end pe-4">
+                                    <div class="currency-amount-block table-currency">
+                                        <div class="currency-primary"><span class="currency-icon">$</span><span class="currency-value">@tax.USD.ToString("N2")</span></div>
+                                        <div class="currency-secondary-row"><span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">@tax.BDT.ToString("N0")</span></span><span class="currency-divider">·</span><span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">@tax.MVR.ToString("N2")</span></span></div>
+                                    </div>
+                                </td>
                             </tr>
                         }
                         <tr style="border-top:2px solid #dee2e6;">
                             <td colspan="5" class="text-end pe-3 fw-bold fs-5">TOTAL:</td>
-                            <td class="text-end fw-bold fs-5 pe-4">৳@Model.TotalAmount.ToString("N2")</td>
+                            <td class="text-end pe-4">
+                                <div class="currency-amount-block stat-currency-block">
+                                    <div class="currency-primary fw-bold fs-5"><span class="currency-icon">$</span><span class="currency-value">@tot.USD.ToString("N2")</span></div>
+                                    <div class="currency-secondary-row"><span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">@tot.BDT.ToString("N0")</span></span><span class="currency-divider">·</span><span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">@tot.MVR.ToString("N2")</span></span></div>
+                                </div>
+                            </td>
                         </tr>
                     </tfoot>
                 </table>
@@ -147,20 +174,27 @@
                 <span class="fw-semibold"><i class="bi bi-cash-stack me-2 text-success"></i>Payment Summary</span>
             </div>
             <div class="card-body p-4">
-                <div class="d-flex justify-content-between mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-muted">Invoice Total</span>
-                    <span class="fw-semibold">৳@Model.TotalAmount.ToString("N2")</span>
+                    <div class="currency-amount-block table-currency">
+                        <div class="currency-primary"><span class="currency-icon">$</span><span class="currency-value">@tot.USD.ToString("N2")</span></div>
+                        <div class="currency-secondary-row"><span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">@tot.BDT.ToString("N0")</span></span><span class="currency-divider">·</span><span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">@tot.MVR.ToString("N2")</span></span></div>
+                    </div>
                 </div>
-                <div class="d-flex justify-content-between mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-muted">Amount Paid</span>
-                    <span class="fw-semibold text-success">৳@Model.PaidAmount.ToString("N2")</span>
+                    <div class="currency-amount-block table-currency">
+                        <div class="currency-primary text-success"><span class="currency-icon">$</span><span class="currency-value">@paid.USD.ToString("N2")</span></div>
+                        <div class="currency-secondary-row"><span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">@paid.BDT.ToString("N0")</span></span><span class="currency-divider">·</span><span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">@paid.MVR.ToString("N2")</span></span></div>
+                    </div>
                 </div>
                 <hr />
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
                     <span class="fw-bold">@(Model.DueAmount > 0 ? "Amount Due" : "Balance")</span>
-                    <span class="fw-bold @(Model.DueAmount > 0 ? "text-danger" : "text-success") fs-5">
-                        ৳@Model.DueAmount.ToString("N2")
-                    </span>
+                    <div class="currency-amount-block table-currency">
+                        <div class="currency-primary fw-bold fs-5 @(Model.DueAmount > 0 ? "text-danger" : "text-success")"><span class="currency-icon">$</span><span class="currency-value">@due.USD.ToString("N2")</span></div>
+                        <div class="currency-secondary-row"><span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">@due.BDT.ToString("N0")</span></span><span class="currency-divider">·</span><span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">@due.MVR.ToString("N2")</span></span></div>
+                    </div>
                 </div>
 
                 @if (Model.DueAmount > 0 && Model.Status != "Cancelled")

@@ -1,0 +1,20 @@
+﻿@* Usage: @await Html.PartialAsync("_CurrencyAmount", new CurrencyDisplayModel { USD=100, BDT=11000, INR=1200 }) *@
+@model ClothingERP.Web.Helpers.CurrencyDisplayModel
+
+<div class="currency-amount-block">
+    <div class="currency-primary">
+        <span class="currency-icon">$</span>
+        <span class="currency-value">@Model.USD.ToString("N2")</span>
+    </div>
+    <div class="currency-secondary-row">
+        <span class="currency-secondary">
+            <span class="cs-icon">৳</span>
+            <span class="cs-value">@Model.BDT.ToString("N2")</span>
+        </span>
+        <span class="currency-divider">·</span>
+        <span class="currency-secondary">
+            <span class="cs-icon">₹</span>
+            <span class="cs-value">@Model.INR.ToString("N2")</span>
+        </span>
+    </div>
+</div>

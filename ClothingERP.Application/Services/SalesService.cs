@@ -116,23 +116,33 @@ public class SalesService : ISalesService
             decimal subTotal = 0;
             foreach (var itemDto in dto.Items)
             {
-                var lineTotal = (itemDto.Quantity * itemDto.UnitPrice) - itemDto.DiscountAmount + itemDto.TaxAmount;
+              
+                var unitPrice = itemDto.UnitPrice;
+                if (unitPrice <= 0)
+                {
+                    var variant = await _uow.ProductVariants.GetByIdAsync(itemDto.ProductVariantId);
+                    unitPrice = variant?.RetailPriceOverride ?? variant?.Product.RetailPrice ?? 0;
+                }
+
+                var lineTotal = (itemDto.Quantity * unitPrice) - itemDto.DiscountAmount + itemDto.TaxAmount;
                 invoice.Items.Add(new SalesInvoiceItem
                 {
                     ProductVariantId = itemDto.ProductVariantId,
                     ProductBundleId = itemDto.ProductBundleId,
                     BundleName = itemDto.BundleName,
                     Quantity = itemDto.Quantity,
-                    UnitPrice = itemDto.UnitPrice,
+                    UnitPrice = unitPrice,
                     DiscountAmount = itemDto.DiscountAmount,
                     TaxAmount = itemDto.TaxAmount,
                     TotalAmount = lineTotal,
                     CreatedBy = userId
                 });
-                subTotal += itemDto.Quantity * itemDto.UnitPrice - itemDto.DiscountAmount;
+                subTotal += itemDto.Quantity * unitPrice - itemDto.DiscountAmount;
             }
             invoice.SubTotal = subTotal;
             invoice.TotalAmount = subTotal - totalDiscount + dto.TaxAmount;
+
+           
 
             await _uow.SalesInvoices.AddAsync(invoice);
             await _uow.SaveChangesAsync();

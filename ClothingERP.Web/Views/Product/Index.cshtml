@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Product Management";
     var categories = (IEnumerable<CategoryDto>)ViewBag.Categories;
+    
+    var rateBDT = ViewBag.RateBDT != null ? (decimal)ViewBag.RateBDT : 110m;
+    var rateMVR = ViewBag.RateMVR != null ? (decimal)ViewBag.RateMVR : 15.42m;
 }
 
 <div class="page-header d-flex justify-content-between align-items-center">
@@ -155,8 +158,27 @@
                             <td><code class="small">@p.SKU</code></td>
                             <td class="small text-muted">@p.CategoryName</td>
                             <td class="small text-muted">@p.BrandName</td>
-                            <td class="text-end small">৳@p.CostPrice.ToString("N2")</td>
-                            <td class="text-end small fw-semibold">৳@p.RetailPrice.ToString("N2")</td>
+                            <td class="text-end small">$@p.CostPrice.ToString("N2")</td>
+                           
+    <td class="text-end">
+    <div class="currency-amount-block table-currency">
+        <div class="currency-primary">
+            <span class="currency-icon">$</span>
+            <span class="currency-value">@p.RetailPrice.ToString("N2")</span>
+        </div>
+        <div class="currency-secondary-row">
+            <span class="currency-secondary">
+                <span class="cs-icon">৳</span>
+                <span class="cs-value">@((p.RetailPrice * rateBDT).ToString("N0"))</span>
+            </span>
+            <span class="currency-divider">·</span>
+            <span class="currency-secondary">
+                <span class="cs-icon">Rf</span>
+                <span class="cs-value">@((p.RetailPrice * rateMVR).ToString("N2"))</span>
+            </span>
+        </div>
+    </div>
+</td>
                             <td class="text-center">
                                 <span class="badge bg-primary bg-opacity-15 text-primary">@p.VariantCount</span>
                             </td>

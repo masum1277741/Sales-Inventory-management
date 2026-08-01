@@ -1529,15 +1529,12 @@
             <!-- Totals -->
             <div class="pcard">
                 <div class="totals-section">
-                    <div class="total-row"><span class="lbl">Subtotal</span><span class="val" id="totSubtotal">$0.00</span></div>
-                    <div class="total-row"><span class="lbl" style="color:var(--danger);">Discount</span><span class="val" style="color:var(--danger);" id="totDiscount">$0.00</span></div>
-                    <div class="total-row"><span class="lbl">Tax</span><span class="val" id="totTax">$0.00</span></div>
+                    <div class="total-row"><span class="lbl">Subtotal</span><div class="val" id="totSubtotal"></div></div>
+                    <div class="total-row"><span class="lbl" style="color:var(--danger);">Discount</span><div class="val" style="color:var(--danger);" id="totDiscount"></div></div>
+                    <div class="total-row"><span class="lbl">Tax</span><div class="val" id="totTax"></div></div>
                     <div class="total-row total-grand">
                         <span class="lbl">TOTAL</span>
-                        <div class="text-end">
-                            <div class="val" id="totTotal" style="font-size:.95rem;">$0.00</div>
-                            <div class="total-currency" id="totCurrency"></div>
-                        </div>
+                        <div class="text-end" id="totTotal"></div>
                     </div>
                 </div>
             </div>
@@ -1701,7 +1698,20 @@
         const fBDT = v => '৳'  + (parseFloat(v||0) * RATE_BDT).toFixed(0);
         const fMVR = v => 'Rf' + (parseFloat(v||0) * RATE_MVR).toFixed(2);
         const tok  = () => document.querySelector('[name=__RequestVerificationToken]').value;
-
+        function formatCurrencyBlock(usd, cls = '') {
+        return `
+        <div class="currency-amount-block ${cls}">
+        <div class="currency-primary">
+        <span class="currency-icon">$</span>
+        <span class="currency-value">${usd.toFixed(2)}</span>
+        </div>
+        <div class="currency-secondary-row">
+        <span class="currency-secondary"><span class="cs-icon">৳</span><span class="cs-value">${(usd * RATE_BDT).toFixed(0)}</span></span>
+        <span class="currency-divider">·</span>
+        <span class="currency-secondary"><span class="cs-icon">Rf</span><span class="cs-value">${(usd * RATE_MVR).toFixed(2)}</span></span>
+        </div>
+        </div>`;
+        }
         /* ── State ──────────────────────────────────────────────────────────── */
         const state = {
         activePanel: 'products',
@@ -2163,12 +2173,10 @@
         const tax   = parseFloat(document.getElementById('taxInput').value)      || 0;
         const total = Math.max(0, sub - disc + tax);
 
-        document.getElementById('totSubtotal').textContent = fUSD(sub);
-        document.getElementById('totDiscount').textContent = fUSD(disc);
-        document.getElementById('totTax').textContent      = fUSD(tax);
-        document.getElementById('totTotal').textContent    = fUSD(total);
-        document.getElementById('totCurrency').textContent =
-        fBDT(total) + ' / ' + fMVR(total);
+        document.getElementById('totSubtotal').innerHTML = formatCurrencyBlock(sub, 'table-currency');
+document.getElementById('totDiscount').innerHTML = formatCurrencyBlock(disc, 'table-currency');
+document.getElementById('totTax').innerHTML      = formatCurrencyBlock(tax, 'table-currency');
+document.getElementById('totTotal').innerHTML    = formatCurrencyBlock(total, 'stat-currency-block');
 
         // Quick amount buttons
         const amts = [

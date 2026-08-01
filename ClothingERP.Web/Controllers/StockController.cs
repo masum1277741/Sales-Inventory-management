@@ -7,11 +7,13 @@ public class StockController : BaseController
     private readonly IProductService _productSvc;
     private readonly ICurrentBranchProvider _branchProvider;
     private readonly IBranchService _branchSvc;
+    private readonly IExchangeRateService _rateSvc;
 
     public StockController(IStockService stockSvc, ICategoryService catSvc, IProductService productSvc,
-                            ICurrentBranchProvider branchProvider, IBranchService branchSvc)
-        => (_stockSvc, _catSvc, _productSvc, _branchProvider, _branchSvc)
-            = (stockSvc, catSvc, productSvc, branchProvider, branchSvc);
+                            ICurrentBranchProvider branchProvider, IBranchService branchSvc,
+                            IExchangeRateService rateSvc)
+        => (_stockSvc, _catSvc, _productSvc, _branchProvider, _branchSvc, _rateSvc)
+            = (stockSvc, catSvc, productSvc, branchProvider, branchSvc, rateSvc);
 
     private bool IsAdmin =>
         (User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "")
@@ -43,6 +45,8 @@ public class StockController : BaseController
             if (catName != null) stock = stock.Where(s => s.CategoryName == catName);
         }
 
+        var rates = await _rateSvc.GetCurrentRatesAsync();
+
         ViewBag.Filter = filter;
         ViewBag.CategoryId = categoryId;
         ViewBag.Categories = categories;
@@ -51,6 +55,7 @@ public class StockController : BaseController
         ViewBag.LowStock = all.Count(s => s.Status == "Low Stock");
         ViewBag.OutOfStock = all.Count(s => s.Status == "Out of Stock");
         ViewBag.TotalValue = all.Sum(s => s.StockValue);
+        ViewBag.RateBDT = rates.UsdToBdt;
 
         ViewBag.IsAdmin = IsAdmin;
         ViewBag.Branches = IsAdmin ? await _branchSvc.GetAllAsync() : null;

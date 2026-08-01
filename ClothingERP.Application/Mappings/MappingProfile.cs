@@ -88,7 +88,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.Barcode, o => o.MapFrom(s => s.ProductVariant.Barcode))
             .ForMember(d => d.CategoryName, o => o.MapFrom(s => s.ProductVariant.Product.Category.Name))
             .ForMember(d => d.ReorderPoint, o => o.MapFrom(s => (decimal)s.ProductVariant.Product.ReorderPoint))
-            .ForMember(d => d.StockValue, o => o.MapFrom(s => s.Quantity * (s.ProductVariant.CostPriceOverride ?? s.ProductVariant.Product.CostPrice)))
+            .ForMember(d => d.StockValue, o => o.MapFrom(s => s.Quantity * (s.ProductVariant.RetailPriceOverride ?? s.ProductVariant.Product.RetailPrice)))
             .ForMember(d => d.Status, o => o.MapFrom(s =>
                 s.Quantity <= 0 ? "Out of Stock" :
                 s.Quantity <= s.ProductVariant.Product.ReorderPoint ? "Low Stock" : "In Stock"));

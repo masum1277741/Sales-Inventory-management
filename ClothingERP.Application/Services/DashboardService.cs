@@ -51,6 +51,8 @@ public class DashboardService : IDashboardService
         var totalSupplierDue = await _uow.Suppliers.GetQueryable().Where(s => !s.IsDeleted).SumAsync(s => s.CurrentBalance);
         var totalActiveCustomers = await _uow.Customers.CountAsync(c => c.IsActive && !c.IsDeleted);
 
+        var totalRetailStockValue = await _stock.GetTotalRetailStockValueAsync(branchId);
+
         return new DashboardDto
         {
             TodaySales = await _sales.GetTodaySalesAsync(branchId),
@@ -60,7 +62,9 @@ public class DashboardService : IDashboardService
             OutOfStockCount = outOfStock.Count(),
             TotalCustomerDue = totalCustomerDue,
             TotalSupplierDue = totalSupplierDue,
-            TotalStockValue = await _stock.GetTotalStockValueAsync(branchId),
+            TotalStockValue = totalRetailStockValue,
+            TotalRetailStockValue = totalRetailStockValue,
+            TotalCostStockValue = totalRetailStockValue,
             TotalActiveCustomers = totalActiveCustomers,
             MonthlySalesChart = monthlySalesData.Select(m => new MonthlySalesChartDto
             { Month = m.Month, SalesAmount = m.SalesAmount, ProfitAmount = m.ProfitAmount }).ToList(),

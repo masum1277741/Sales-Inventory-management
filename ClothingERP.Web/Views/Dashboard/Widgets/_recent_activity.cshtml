@@ -1,4 +1,7 @@
 ﻿@model ClothingERP.Application.DTOs.DashboardDto
+@{
+    var rateBDT = (decimal)(ViewBag.RateBDT ?? 110m);
+}
 <div class="card border-0 shadow-sm h-100">
     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
         <span class="fw-semibold"><i class="bi bi-clock-history me-2 text-primary"></i>Recent Activity</span>
@@ -16,7 +19,10 @@
                                class="fw-semibold small text-primary text-decoration-none">@inv.InvoiceNumber</a>
                             <div class="text-muted small">@inv.CustomerName — @inv.InvoiceDate.ToString("dd MMM, hh:mm tt")</div>
                         </div>
-                        <div class="fw-bold small">৳@inv.TotalAmount.ToString("N2")</div>
+                        <div class="text-end">
+                            <div class="fw-bold small">@CurrencyHelper.FormatUSD(inv.TotalAmount)</div>
+                            <small class="text-muted">@CurrencyHelper.FormatBDT(inv.TotalAmount * rateBDT)</small>
+                        </div>
                     </div>
                 }
             </div>

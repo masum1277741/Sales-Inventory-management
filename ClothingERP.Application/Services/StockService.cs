@@ -48,6 +48,9 @@ public class StockService : IStockService
     public async Task<decimal> GetTotalStockValueAsync(int? branchId = null)
         => await _uow.Stocks.GetTotalStockValueAsync(branchId);
 
+    public async Task<decimal> GetTotalRetailStockValueAsync(int? branchId = null)
+        => await _uow.Stocks.GetTotalRetailStockValueAsync(branchId);
+
     // ── Manual Adjustment (branch-aware) ───────────────────────────────────
     public async Task<ServiceResult> AdjustStockAsync(StockAdjustmentDto dto, int userId)
     {

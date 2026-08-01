@@ -9,6 +9,7 @@ public static class DashboardWidgetRegistry
         new() { WidgetKey = "stat_total_orders",   Title = "Total Orders",        Icon = "bi-receipt",          Category = "Stats",  AllowResize = false },
         new() { WidgetKey = "stat_low_stock",      Title = "Low Stock Items",     Icon = "bi-exclamation-triangle", Category = "Stats", AllowResize = false },
         new() { WidgetKey = "stat_outstanding",    Title = "Outstanding Due",     Icon = "bi-wallet2",          Category = "Stats",  AllowResize = false },
+        new() { WidgetKey = "stat_inventory_value", Title = "Inventory Value",    Icon = "bi-boxes",            Category = "Stats",  AllowResize = false },
         new() { WidgetKey = "chart_sales_trend",   Title = "Sales Trend Chart",   Icon = "bi-bar-chart",        Category = "Charts", AllowResize = true  },
         new() { WidgetKey = "recent_activity",     Title = "Recent Activity",     Icon = "bi-clock-history",    Category = "Lists",  AllowResize = true  },
         new() { WidgetKey = "quick_actions",       Title = "Quick Actions",       Icon = "bi-lightning",        Category = "Lists",  AllowResize = true  },
@@ -22,11 +23,12 @@ public static class DashboardWidgetRegistry
  
     public static List<WidgetConfigDto> GetDefault() => new()
     {
-        new() { WidgetKey = "stat_today_sales",  Order = 0, IsVisible = true,  Size = "Small" },
-        new() { WidgetKey = "stat_total_orders", Order = 1, IsVisible = true,  Size = "Small" },
-        new() { WidgetKey = "stat_low_stock",    Order = 2, IsVisible = true,  Size = "Small" },
-        new() { WidgetKey = "stat_outstanding",  Order = 3, IsVisible = true,  Size = "Small" },
-        new() { WidgetKey = "chart_sales_trend", Order = 4, IsVisible = true,  Size = "Large" },
+        new() { WidgetKey = "stat_today_sales",      Order = 0, IsVisible = true,  Size = "Small" },
+        new() { WidgetKey = "stat_total_orders",      Order = 1, IsVisible = true,  Size = "Small" },
+        new() { WidgetKey = "stat_low_stock",         Order = 2, IsVisible = true,  Size = "Small" },
+        new() { WidgetKey = "stat_outstanding",       Order = 3, IsVisible = true,  Size = "Small" },
+        new() { WidgetKey = "stat_inventory_value",   Order = 4, IsVisible = true,  Size = "Small" },
+        new() { WidgetKey = "chart_sales_trend",      Order = 5, IsVisible = true,  Size = "Large" },
         new() { WidgetKey = "recent_activity",   Order = 5, IsVisible = true,  Size = "Medium" },
         new() { WidgetKey = "quick_actions",     Order = 6, IsVisible = true,  Size = "Full" },
         new() { WidgetKey = "top_products",      Order = 7, IsVisible = false, Size = "Medium" },

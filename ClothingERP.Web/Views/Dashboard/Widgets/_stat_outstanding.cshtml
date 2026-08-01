@@ -1,11 +1,19 @@
 ﻿@model ClothingERP.Application.DTOs.DashboardDto
+@{
+    var rateBDT = (decimal)(ViewBag.RateBDT ?? 110m);
+    var customerDue = Model.TotalCustomerDue;
+    var supplierDue = Model.TotalSupplierDue;
+    var totalDue = customerDue + supplierDue;
+}
 <div class="stat-card h-100">
     <div class="d-flex align-items-center gap-3">
         <div class="icon-wrap" style="background:#fee2e2;"><i class="bi bi-wallet2" style="color:#7f1d1d;"></i></div>
         <div>
             <div class="text-muted small">Outstanding Due</div>
-            <h4 class="mb-0 fw-bold">৳@((Model.TotalCustomerDue + Model.TotalSupplierDue).ToString("N2"))</h4>
-            <small class="text-muted">Customer: ৳@Model.TotalCustomerDue.ToString("N2") · Supplier: ৳@Model.TotalSupplierDue.ToString("N2")</small>
+            <h4 class="mb-0 fw-bold">@CurrencyHelper.FormatUSD(totalDue)</h4>
+            <small class="text-muted d-block">@CurrencyHelper.FormatBDT(totalDue * rateBDT)</small>
+            <small class="text-muted d-block">Customer: @CurrencyHelper.FormatUSD(customerDue) / @CurrencyHelper.FormatBDT(customerDue * rateBDT)</small>
+            <small class="text-muted d-block">Supplier: @CurrencyHelper.FormatUSD(supplierDue) / @CurrencyHelper.FormatBDT(supplierDue * rateBDT)</small>
         </div>
     </div>
 </div>

@@ -99,12 +99,9 @@
                             <label asp-for="RoleId" class="form-label fw-semibold">
                                 Role <span class="text-danger">*</span>
                             </label>
-                            <select asp-for="RoleId" class="form-select select2" id="roleSelect">
+                            <select asp-for="RoleId" class="form-select select2" id="roleSelect"
+                                    asp-items="@((SelectList)ViewBag.Roles)">
                                 <option value="">— Select Role —</option>
-                                @foreach (var role in (IEnumerable<RoleDto>)ViewBag.Roles)
-                                {
-                                    <option value="@role.Id">@role.Name</option>
-                                }
                             </select>
                             <span asp-validation-for="RoleId" class="text-danger small"></span>
                         </div>

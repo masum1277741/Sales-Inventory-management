@@ -75,7 +75,12 @@ public class StockRepository : GenericRepository<Stock>, IStockRepository
             query = query.Where(s => s.BranchId == branchId.Value);
 
         return await query
-            .SumAsync(s => s.Quantity * (s.ProductVariant.CostPriceOverride ?? s.ProductVariant.Product.CostPrice));
+            .SumAsync(s => s.Quantity * (s.ProductVariant.RetailPriceOverride ?? s.ProductVariant.Product.RetailPrice));
+    }
+
+    public async Task<decimal> GetTotalRetailStockValueAsync(int? branchId = null)
+    {
+        return await GetTotalStockValueAsync(branchId);
     }
 
     // ── Branch-aware Stock Listing ───────────────────────────────────────

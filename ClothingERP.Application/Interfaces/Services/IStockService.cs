@@ -7,6 +7,7 @@ public interface IStockService
     Task<IEnumerable<StockListDto>> GetLowStockAsync(int? branchId = null);
     Task<IEnumerable<StockListDto>> GetOutOfStockAsync(int? branchId = null);
     Task<decimal> GetTotalStockValueAsync(int? branchId = null);
+    Task<decimal> GetTotalRetailStockValueAsync(int? branchId = null);
     Task<ServiceResult> AdjustStockAsync(StockAdjustmentDto dto, int userId);
     Task UpdateStockAsync(int variantId, int branchId, decimal quantity, StockMovementType type,
                           string referenceNumber, int userId);

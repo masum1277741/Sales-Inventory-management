@@ -11,6 +11,8 @@ public class DashboardDto
     public decimal TotalCustomerDue { get; set; }
     public decimal TotalSupplierDue { get; set; }
     public decimal TotalStockValue { get; set; }
+    public decimal TotalRetailStockValue { get; set; }
+    public decimal TotalCostStockValue { get; set; }
     public int TotalActiveCustomers { get; set; }
     public List<MonthlySalesChartDto> MonthlySalesChart { get; set; } = new();
     public List<TopProductDto> TopSellingProducts { get; set; } = new();
