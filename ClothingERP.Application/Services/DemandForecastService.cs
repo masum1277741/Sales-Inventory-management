@@ -3,9 +3,10 @@
 public class DemandForecastService : IDemandForecastService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ICurrentBranchProvider _branchProvider;
     private const int SeasonLength = 7;   
 
-    public DemandForecastService(IUnitOfWork uow) => _uow = uow;
+    public DemandForecastService(IUnitOfWork uow, ICurrentBranchProvider branchProvider) => (_uow, _branchProvider) = (uow, branchProvider);
 
     // ── Settings ──────────────────────────────────────────────────────────
     public async Task<ForecastSettingsDto> GetSettingsAsync()
@@ -53,9 +54,11 @@ public class DemandForecastService : IDemandForecastService
     {
         var since = DateTime.UtcNow.Date.AddDays(-periodDays);
 
+        var branchId = _branchProvider.GetCurrentBranchId();
         var dailySales = await _uow.SalesInvoices.GetQueryable()
             .Include(i => i.Items)
             .Where(i => !i.IsDeleted && i.Status != InvoiceStatus.Cancelled && !i.IsHold &&
+                        i.BranchId == branchId &&
                         i.InvoiceDate >= since)
             .SelectMany(i => i.Items.Where(it => it.ProductVariantId == variantId)
                                      .Select(it => new { i.InvoiceDate.Date, it.Quantity }))
@@ -176,6 +179,7 @@ public class DemandForecastService : IDemandForecastService
     public async Task<DemandForecastDto> ForecastForVariantAsync(int variantId)
     {
         var settings = await GetSettingsAsync();
+        var branchId = _branchProvider.GetCurrentBranchId();
         var variant = await _uow.ProductVariants.GetByIdAsync(variantId);
 
         var result = new DemandForecastDto
@@ -184,7 +188,7 @@ public class DemandForecastService : IDemandForecastService
             ProductName = variant?.Product?.Name ?? "Unknown",
             SizeName = variant?.Size?.Name ?? "",
             ColorName = variant?.Color?.Name ?? "",
-            CurrentStock = (int)((await _uow.Stocks.GetByVariantIdAsync(variantId))?.Quantity ?? 0)
+            CurrentStock = (int)((await _uow.Stocks.GetByVariantAndBranchAsync(variantId, branchId))?.Quantity ?? 0)
         };
 
         var series = await BuildDailySeriesAsync(variantId, settings.AnalysisPeriodDays);
@@ -248,9 +252,10 @@ public class DemandForecastService : IDemandForecastService
 
 
         var since = DateTime.UtcNow.Date.AddDays(-settings.AnalysisPeriodDays);
+        var branchId = _branchProvider.GetCurrentBranchId();
         var activeVariantIds = await _uow.SalesInvoices.GetQueryable()
             .Include(i => i.Items)
-            .Where(i => !i.IsDeleted && i.InvoiceDate >= since && i.Status != InvoiceStatus.Cancelled)
+            .Where(i => !i.IsDeleted && i.InvoiceDate >= since && i.Status != InvoiceStatus.Cancelled && i.BranchId == branchId)
             .SelectMany(i => i.Items.Select(it => it.ProductVariantId))
             .Distinct()
             .ToListAsync();
@@ -288,9 +293,10 @@ public class DemandForecastService : IDemandForecastService
     {
         if (string.IsNullOrWhiteSpace(keyword) || keyword.Length < 2) return new();
 
+        var branchId = _branchProvider.GetCurrentBranchId();
         var variants = await _uow.ProductVariants.GetAllWithDetailsAsync();
         var matches = variants
-            .Where(v => v.IsActive && v.Product.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            .Where(v => v.IsActive && v.Product.BranchId == branchId && v.Product.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
             .Take(10)
             .ToList();
 

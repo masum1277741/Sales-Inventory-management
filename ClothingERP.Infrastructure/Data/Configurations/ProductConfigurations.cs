@@ -79,6 +79,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.WholesalePrice).HasColumnType("decimal(18,2)");
         builder.Property(x => x.SpecialPrice).HasColumnType("decimal(18,2)");
         builder.Property(x => x.TaxRate).HasColumnType("decimal(5,2)");
+        builder.Property(x => x.BranchId).HasDefaultValue(1);
         builder.HasIndex(x => x.SKU).IsUnique();
         builder.HasQueryFilter(x => !x.IsDeleted);
         builder.HasOne(x => x.Category)
@@ -87,9 +88,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .WithMany(x => x.Products).HasForeignKey(x => x.SubCategoryId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Brand)
             .WithMany(x => x.Products).HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
-
 public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVariant>
 {
     public void Configure(EntityTypeBuilder<ProductVariant> builder)

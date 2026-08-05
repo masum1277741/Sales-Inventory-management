@@ -9,6 +9,7 @@ public class Product : BaseEntity
     public int CategoryId { get; set; }
     public int SubCategoryId { get; set; }
     public int BrandId { get; set; }
+    public int BranchId { get; set; }
     public decimal CostPrice { get; set; }
     public decimal RetailPrice { get; set; }
     public decimal WholesalePrice { get; set; }
@@ -20,5 +21,6 @@ public class Product : BaseEntity
     public virtual Category Category { get; set; } = null!;
     public virtual SubCategory SubCategory { get; set; } = null!;
     public virtual Brand Brand { get; set; } = null!;
+    public virtual Branch Branch { get; set; } = null!;
     public virtual ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 }

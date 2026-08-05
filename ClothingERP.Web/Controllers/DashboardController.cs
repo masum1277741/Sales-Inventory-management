@@ -19,24 +19,11 @@ public class DashboardController : BaseController
         => (_dashboard, _commissionSvc, _layoutSvc, _branchProvider, _branchSvc, _rateSvc)
             = (dashboard, commissionSvc, layoutSvc, branchProvider, branchSvc, rateSvc);
 
-    public async Task<IActionResult> Index(int? branchId = null, bool allBranches = false)
+    public async Task<IActionResult> Index()
     {
         ViewData["Title"] = "Dashboard";
 
-        // ── Branch filter logic ────────────────────────────────────────────
-        var myBranchId = _branchProvider.GetCurrentBranchId();
-        var roleName = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
-        var isAdmin = roleName.Equals("Administrator", StringComparison.OrdinalIgnoreCase);
-
-
-        int? filterBranchId;
-        if (isAdmin && allBranches)
-            filterBranchId = null;  // null = all branches
-        else if (isAdmin && branchId.HasValue)
-            filterBranchId = branchId;
-        else
-            filterBranchId = myBranchId;
-
+        var filterBranchId = _branchProvider.GetCurrentBranchId();
         var data = await _dashboard.GetDashboardDataAsync(filterBranchId);
 
         var monthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -53,10 +40,10 @@ public class DashboardController : BaseController
         ViewBag.AvailableWidgets = _layoutSvc.GetAvailableWidgets();
 
 
-        ViewBag.AllBranches = isAdmin;
-        ViewBag.Branches = isAdmin ? await _branchSvc.GetAllAsync() : null;
+        ViewBag.AllBranches = false;
+        ViewBag.Branches = null;
         ViewBag.SelectedBranch = filterBranchId;
-        ViewBag.ShowAllBranches = allBranches && isAdmin;
+        ViewBag.ShowAllBranches = false;
 
         return View(data);
     }

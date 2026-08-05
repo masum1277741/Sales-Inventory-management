@@ -9,9 +9,11 @@ public class Supplier : BaseEntity
     public string? Address { get; set; }
     public string? BankName { get; set; }
     public string? BankAccountNumber { get; set; }
+    public int BranchId { get; set; }
     public decimal CurrentBalance { get; set; } // positive = we owe them
     public bool IsActive { get; set; } = true;
     public int? AverageLeadTimeDays { get; set; }
+    public virtual Branch Branch { get; set; } = null!;
     public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
     public virtual ICollection<SupplierLedger> LedgerEntries { get; set; } = new List<SupplierLedger>();
 }

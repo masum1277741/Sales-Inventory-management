@@ -4,34 +4,43 @@ public class CustomerService : ICustomerService
 {
     private readonly IUnitOfWork _uow; private readonly IMapper _mapper;
     private readonly INotificationService _notificationSvc;
-    public CustomerService(IUnitOfWork uow, IMapper mapper, INotificationService notificationService)
-     => (_uow, _mapper, _notificationSvc) = (uow, mapper, notificationService);
+    private readonly ICurrentBranchProvider _branchProvider;
+    public CustomerService(IUnitOfWork uow, IMapper mapper, INotificationService notificationService, ICurrentBranchProvider branchProvider)
+     => (_uow, _mapper, _notificationSvc, _branchProvider) = (uow, mapper, notificationService, branchProvider);
 
     public async Task<IEnumerable<CustomerListDto>> GetAllAsync()
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var list = await _uow.Customers.GetQueryable()
-            .Include(c => c.CustomerGroup).Where(c => !c.IsDeleted).OrderBy(c => c.Name).ToListAsync();
+            .Include(c => c.CustomerGroup)
+            .Where(c => !c.IsDeleted && c.BranchId == branchId)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
         return _mapper.Map<IEnumerable<CustomerListDto>>(list);
     }
 
     public async Task<CustomerDto?> GetByIdAsync(int id)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var c = await _uow.Customers.GetQueryable().Include(x => x.CustomerGroup)
-                          .FirstOrDefaultAsync(x => x.Id == id);
+                          .FirstOrDefaultAsync(x => x.Id == id && x.BranchId == branchId);
         return c == null ? null : _mapper.Map<CustomerDto>(c);
     }
 
     public async Task<CustomerDto?> GetByPhoneAsync(string phone)
     {
-        var c = await _uow.Customers.GetByPhoneAsync(phone);
+        var branchId = _branchProvider.GetCurrentBranchId();
+        var c = await _uow.Customers.GetQueryable().Include(x => x.CustomerGroup)
+            .FirstOrDefaultAsync(x => x.PhoneNumber == phone && x.BranchId == branchId);
         return c == null ? null : _mapper.Map<CustomerDto>(c);
     }
 
     public async Task<ServiceResult<CustomerDto>> CreateAsync(CreateCustomerDto dto, int userId)
     {
-        if (!string.IsNullOrEmpty(dto.PhoneNumber) && await _uow.Customers.IsPhoneExistsAsync(dto.PhoneNumber))
+        var branchId = _branchProvider.GetCurrentBranchId();
+        if (!string.IsNullOrEmpty(dto.PhoneNumber) && await _uow.Customers.GetQueryable().AnyAsync(c => c.PhoneNumber == dto.PhoneNumber && c.BranchId == branchId && !c.IsDeleted))
             return ServiceResult<CustomerDto>.Fail("Phone number already registered.");
-        var entity = _mapper.Map<Customer>(dto); entity.CreatedBy = userId;
+        var entity = _mapper.Map<Customer>(dto); entity.CreatedBy = userId; entity.BranchId = branchId;
         await _uow.Customers.AddAsync(entity); await _uow.SaveChangesAsync();
         return ServiceResult<CustomerDto>.Ok(_mapper.Map<CustomerDto>(entity), "Customer created.");
     }
@@ -40,9 +49,11 @@ public class CustomerService : ICustomerService
         int customerId, DateTime from, DateTime to)
     {
         // ── Debit entries: Sales Invoices ────────────────────────────────────
+        var branchId = _branchProvider.GetCurrentBranchId();
         var invoices = await _uow.SalesInvoices.GetQueryable()
             .Where(i => !i.IsDeleted &&
                         i.CustomerId == customerId &&
+                        i.BranchId == branchId &&
                         i.Status != InvoiceStatus.Cancelled &&
                         !i.IsHold &&
                         i.InvoiceDate >= from && i.InvoiceDate <= to)
@@ -59,6 +70,7 @@ public class CustomerService : ICustomerService
         var invoicePayments = await _uow.SalesPayments.GetQueryable()
             .Where(p => !p.IsDeleted &&
                         p.SalesInvoice.CustomerId == customerId &&
+                        p.SalesInvoice.BranchId == branchId &&
                         p.PaymentDate >= from && p.PaymentDate <= to)
             .Include(p => p.SalesInvoice)
             .ToListAsync();
@@ -112,8 +124,9 @@ public class CustomerService : ICustomerService
 
     public async Task<ServiceResult<CustomerDto>> UpdateAsync(int id, UpdateCustomerDto dto, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var entity = await _uow.Customers.GetByIdAsync(id);
-        if (entity == null) return ServiceResult<CustomerDto>.Fail("Not found.");
+        if (entity == null || entity.BranchId != branchId) return ServiceResult<CustomerDto>.Fail("Not found.");
         if (!string.IsNullOrEmpty(dto.PhoneNumber) && await _uow.Customers.IsPhoneExistsAsync(dto.PhoneNumber, id))
             return ServiceResult<CustomerDto>.Fail("Phone already used.");
         entity.Name = dto.Name; entity.PhoneNumber = dto.PhoneNumber; entity.Email = dto.Email;
@@ -127,16 +140,18 @@ public class CustomerService : ICustomerService
 
     public async Task<ServiceResult> DeleteAsync(int id)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var entity = await _uow.Customers.GetByIdAsync(id);
-        if (entity == null) return ServiceResult.Fail("Not found.");
+        if (entity == null || entity.BranchId != branchId) return ServiceResult.Fail("Not found.");
         _uow.Customers.Remove(entity); await _uow.SaveChangesAsync();
         return ServiceResult.Ok("Deleted.");
     }
 
     public async Task<ServiceResult> ToggleStatusAsync(int id, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var entity = await _uow.Customers.GetByIdAsync(id);
-        if (entity == null) return ServiceResult.Fail("Not found.");
+        if (entity == null || entity.BranchId != branchId) return ServiceResult.Fail("Not found.");
         entity.IsActive = !entity.IsActive; entity.UpdatedBy = userId;
         _uow.Customers.Update(entity); await _uow.SaveChangesAsync();
         return ServiceResult.Ok("Status toggled.");
@@ -192,8 +207,13 @@ public class CustomerService : ICustomerService
 
     public async Task<IEnumerable<CustomerGroupDto>> GetGroupsAsync()
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var list = await _uow.CustomerGroups.GetQueryable()
-            .Include("Customers").Where(g => !g.IsDeleted).ToListAsync();
+            .Include(g => g.Customers)
+            .Where(g => !g.IsDeleted)
+            .ToListAsync();
+        foreach (var group in list)
+            group.Customers = group.Customers.Where(c => !c.IsDeleted && c.BranchId == branchId).ToList();
         return _mapper.Map<IEnumerable<CustomerGroupDto>>(list);
     }
 

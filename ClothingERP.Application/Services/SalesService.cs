@@ -22,16 +22,18 @@ public class SalesService : ISalesService
 
     public async Task<IEnumerable<SalesInvoiceListDto>> GetAllAsync()
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var list = await _uow.SalesInvoices.GetQueryable()
-            .Include(i => i.Customer).Where(i => !i.IsDeleted && !i.IsHold)
+            .Include(i => i.Customer).Where(i => !i.IsDeleted && !i.IsHold && i.BranchId == branchId)
             .OrderByDescending(i => i.InvoiceDate).ToListAsync();
         return _mapper.Map<IEnumerable<SalesInvoiceListDto>>(list);
     }
 
     public async Task<SalesInvoiceDto?> GetByIdAsync(int id)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var inv = await _uow.SalesInvoices.GetWithDetailsAsync(id);
-        return inv == null ? null : _mapper.Map<SalesInvoiceDto>(inv);
+        return inv == null || inv.BranchId != branchId ? null : _mapper.Map<SalesInvoiceDto>(inv);
     }
 
     public async Task<ServiceResult<SalesInvoiceDto>> CreateAsync(CreateSalesInvoiceDto dto, int userId)
@@ -237,7 +239,7 @@ public class SalesService : ISalesService
             if (dto.CustomerId.HasValue)
             {
                 var customer = await _uow.Customers.GetByIdAsync(dto.CustomerId.Value);
-                if (customer != null)
+                if (customer != null && customer.BranchId == branchId)
                 {
                     customer.TotalPurchaseAmount += invoice.TotalAmount;
                     customer.UpdatedBy = userId;
@@ -266,8 +268,9 @@ public class SalesService : ISalesService
     }
     public async Task<ServiceResult> CancelAsync(int id, string reason, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var inv = await _uow.SalesInvoices.GetWithDetailsAsync(id);
-        if (inv == null) return ServiceResult.Fail("Invoice not found.");
+        if (inv == null || inv.BranchId != branchId) return ServiceResult.Fail("Invoice not found.");
         if (inv.Status == InvoiceStatus.Cancelled) return ServiceResult.Fail("Already cancelled.");
 
         await _uow.BeginTransactionAsync();
@@ -309,8 +312,9 @@ public class SalesService : ISalesService
 
     public async Task<ServiceResult> HoldAsync(int id, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var inv = await _uow.SalesInvoices.GetByIdAsync(id);
-        if (inv == null) return ServiceResult.Fail("Not found.");
+        if (inv == null || inv.BranchId != branchId) return ServiceResult.Fail("Not found.");
         inv.IsHold = true; inv.Status = InvoiceStatus.Hold; inv.UpdatedBy = userId;
         _uow.SalesInvoices.Update(inv); await _uow.SaveChangesAsync();
         return ServiceResult.Ok("Invoice put on hold.");
@@ -318,20 +322,26 @@ public class SalesService : ISalesService
 
     public async Task<ServiceResult> UnholdAsync(int id, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var inv = await _uow.SalesInvoices.GetByIdAsync(id);
-        if (inv == null) return ServiceResult.Fail("Not found.");
+        if (inv == null || inv.BranchId != branchId) return ServiceResult.Fail("Not found.");
         inv.IsHold = false; inv.Status = InvoiceStatus.Confirmed; inv.UpdatedBy = userId;
         _uow.SalesInvoices.Update(inv); await _uow.SaveChangesAsync();
         return ServiceResult.Ok("Invoice resumed.");
     }
 
     public async Task<IEnumerable<SalesInvoiceListDto>> GetHeldAsync()
-        => _mapper.Map<IEnumerable<SalesInvoiceListDto>>(await _uow.SalesInvoices.GetHeldInvoicesAsync());
+    {
+        var branchId = _branchProvider.GetCurrentBranchId();
+        var held = (await _uow.SalesInvoices.GetHeldInvoicesAsync()).Where(i => i.BranchId == branchId);
+        return _mapper.Map<IEnumerable<SalesInvoiceListDto>>(held);
+    }
 
     public async Task<ServiceResult> AddPaymentAsync(int invoiceId, CreateSalesPaymentDto dto, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var inv = await _uow.SalesInvoices.GetByIdAsync(invoiceId);
-        if (inv == null) return ServiceResult.Fail("Invoice not found.");
+        if (inv == null || inv.BranchId != branchId) return ServiceResult.Fail("Invoice not found.");
 
         await _uow.SalesPayments.AddAsync(new SalesPayment
         {

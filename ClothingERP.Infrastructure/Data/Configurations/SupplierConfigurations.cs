@@ -13,7 +13,12 @@ public class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.Property(x => x.BankName).HasMaxLength(200);
         builder.Property(x => x.BankAccountNumber).HasMaxLength(50);
         builder.Property(x => x.CurrentBalance).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.BranchId).HasDefaultValue(1);
         builder.HasQueryFilter(x => !x.IsDeleted);
+        builder.HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

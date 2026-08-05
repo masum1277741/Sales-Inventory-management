@@ -47,9 +47,9 @@ public class DashboardService : IDashboardService
             .Take(5)
             .ToListAsync();
 
-        var totalCustomerDue = await _uow.Customers.GetQueryable().Where(c => !c.IsDeleted).SumAsync(c => c.CurrentBalance);
-        var totalSupplierDue = await _uow.Suppliers.GetQueryable().Where(s => !s.IsDeleted).SumAsync(s => s.CurrentBalance);
-        var totalActiveCustomers = await _uow.Customers.CountAsync(c => c.IsActive && !c.IsDeleted);
+        var totalCustomerDue = await _uow.Customers.GetQueryable().Where(c => !c.IsDeleted && (!branchId.HasValue || c.BranchId == branchId.Value)).SumAsync(c => c.CurrentBalance);
+        var totalSupplierDue = await _uow.Suppliers.GetQueryable().Where(s => !s.IsDeleted && (!branchId.HasValue || s.BranchId == branchId.Value)).SumAsync(s => s.CurrentBalance);
+        var totalActiveCustomers = await _uow.Customers.CountAsync(c => c.IsActive && !c.IsDeleted && (!branchId.HasValue || c.BranchId == branchId.Value));
 
         var totalRetailStockValue = await _stock.GetTotalRetailStockValueAsync(branchId);
 

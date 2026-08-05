@@ -57,19 +57,19 @@ public class StockController : BaseController
         ViewBag.TotalValue = all.Sum(s => s.StockValue);
         ViewBag.RateBDT = rates.UsdToBdt;
 
-        ViewBag.IsAdmin = IsAdmin;
-        ViewBag.Branches = IsAdmin ? await _branchSvc.GetAllAsync() : null;
+        ViewBag.IsAdmin = false;
+        ViewBag.Branches = null;
         ViewBag.SelectedBranch = effectiveBranchId;
-        ViewBag.ShowAllBranches = allBranches && IsAdmin;
+        ViewBag.ShowAllBranches = false;
 
         return View(stock);
     }
 
     // ── Stock Movement History ────────────────────────────────────────────
-    public async Task<IActionResult> Movements(int id, int? branchId = null)
+    public async Task<IActionResult> Movements(int id)
     {
         ViewData["Title"] = "Stock Movement History";
-        var effectiveBranchId = IsAdmin && branchId.HasValue ? branchId : _branchProvider.GetCurrentBranchId();
+        var effectiveBranchId = _branchProvider.GetCurrentBranchId();
         var stock = await _stockSvc.GetByVariantIdAsync(id, effectiveBranchId);
         if (stock == null) return NotFound();
         return View(stock);
@@ -106,11 +106,11 @@ public class StockController : BaseController
 
 
     [HttpGet]
-    public async Task<IActionResult> SearchByBarcode(string barcode, int? branchId = null)
+    public async Task<IActionResult> SearchByBarcode(string barcode)
     {
         if (string.IsNullOrWhiteSpace(barcode)) return Json(null);
 
-        var effectiveBranchId = IsAdmin && branchId.HasValue ? branchId : _branchProvider.GetCurrentBranchId();
+        var effectiveBranchId = _branchProvider.GetCurrentBranchId();
 
         var variant = await _productSvc.GetVariantByBarcodeAsync(barcode);
         if (variant == null) return Json(null);
@@ -132,12 +132,12 @@ public class StockController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> SearchVariants(string keyword, int? branchId = null)
+    public async Task<IActionResult> SearchVariants(string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword) || keyword.Length < 2)
             return Json(Array.Empty<object>());
 
-        var effectiveBranchId = IsAdmin && branchId.HasValue ? branchId : _branchProvider.GetCurrentBranchId();
+        var effectiveBranchId = _branchProvider.GetCurrentBranchId();
 
         var variants = (await _productSvc.SearchVariantsAsync(keyword)).Take(20).ToList();
 
@@ -163,9 +163,9 @@ public class StockController : BaseController
 
     // ── AJAX: Summary Stats ───────────────────────────────────────────────
     [HttpGet]
-    public async Task<IActionResult> Summary(int? branchId = null)
+    public async Task<IActionResult> Summary()
     {
-        var effectiveBranchId = IsAdmin && branchId.HasValue ? branchId : _branchProvider.GetCurrentBranchId();
+        var effectiveBranchId = _branchProvider.GetCurrentBranchId();
         var all = (await _stockSvc.GetAllAsync(effectiveBranchId)).ToList();
         return Json(new
         {

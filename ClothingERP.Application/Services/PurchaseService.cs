@@ -144,8 +144,9 @@ public class PurchaseService : IPurchaseService
 
     public async Task<ServiceResult> CancelOrderAsync(int id, string reason, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var po = await _uow.PurchaseOrders.GetByIdAsync(id);
-        if (po == null) return ServiceResult.Fail("Not found.");
+        if (po == null || po.BranchId != branchId) return ServiceResult.Fail("Not found.");
         if (po.Status == PurchaseOrderStatus.FullyReceived) return ServiceResult.Fail("Cannot cancel fully received order.");
         po.Status = PurchaseOrderStatus.Cancelled;
         po.Notes = $"{po.Notes} | Cancelled: {reason}"; po.UpdatedBy = userId;
@@ -155,17 +156,20 @@ public class PurchaseService : IPurchaseService
 
     public async Task<IEnumerable<GRNListDto>> GetAllGRNsAsync()
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var list = await _uow.GoodsReceiptNotes.GetQueryable()
             .Include(g => g.PurchaseOrder).Include(g => g.Supplier)
             .Include(g => g.Items.Where(i => !i.IsDeleted))
-            .Where(g => !g.IsDeleted).OrderByDescending(g => g.ReceivedDate).ToListAsync();
+            .Where(g => !g.IsDeleted && g.PurchaseOrder.BranchId == branchId)
+            .OrderByDescending(g => g.ReceivedDate).ToListAsync();
         return _mapper.Map<IEnumerable<GRNListDto>>(list);
     }
 
     public async Task<GRNDto?> GetGRNByIdAsync(int id)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var grn = await _uow.GoodsReceiptNotes.GetWithDetailsAsync(id);
-        return grn == null ? null : _mapper.Map<GRNDto>(grn);
+        return grn == null || grn.PurchaseOrder.BranchId != branchId ? null : _mapper.Map<GRNDto>(grn);
     }
 
     public async Task<ServiceResult<GRNDto>> CreateGRNAsync(CreateGRNDto dto, int userId)

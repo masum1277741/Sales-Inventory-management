@@ -26,11 +26,16 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(x => x.LoyaltyPoints).HasColumnType("decimal(18,2)");
         builder.Property(x => x.TotalPurchaseAmount).HasColumnType("decimal(18,2)");
         builder.Property(x => x.CurrentBalance).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.BranchId).HasDefaultValue(1);
         builder.HasIndex(x => x.PhoneNumber);
         builder.HasQueryFilter(x => !x.IsDeleted);
         builder.HasOne(x => x.CustomerGroup)
             .WithMany(x => x.Customers)
             .HasForeignKey(x => x.CustomerGroupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

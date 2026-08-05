@@ -102,7 +102,17 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(st => st.ToBranchId)
             .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Customer>()
+            .Property(c => c.BranchId)
+            .HasDefaultValue(1);
 
+        modelBuilder.Entity<Product>()
+            .Property(p => p.BranchId)
+            .HasDefaultValue(1);
+
+        modelBuilder.Entity<Supplier>()
+            .Property(s => s.BranchId)
+            .HasDefaultValue(1);
         base.OnModelCreating(modelBuilder);
     }
 

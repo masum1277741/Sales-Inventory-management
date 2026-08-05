@@ -14,21 +14,26 @@ public class ProductService : IProductService
     // ── Get All (List) ────────────────────────────────────────────────────
     public async Task<IEnumerable<ProductListDto>> GetAllAsync()
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var products = await _uow.Products.GetAllWithDetailsAsync();
         return _mapper.Map<IEnumerable<ProductListDto>>(
-            products.OrderByDescending(p => p.CreatedAt));
+            products.Where(p => !p.IsDeleted && p.BranchId == branchId)
+                    .OrderByDescending(p => p.CreatedAt));
     }
     public async Task<IEnumerable<ProductVariantDto>> GetAllActiveVariantsAsync()
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var variants = await _uow.ProductVariants.GetAllWithDetailsAsync();
         var result = new List<ProductVariantDto>();
 
         foreach (var v in variants.Where(v => v.IsActive &&
                                               !v.IsDeleted &&
-                                              v.Product.IsActive))
+                                              v.Product.IsActive &&
+                                              !v.Product.IsDeleted &&
+                                              v.Product.BranchId == branchId))
         {
             var dto = _mapper.Map<ProductVariantDto>(v);
-            var stock = await _uow.Stocks.GetByVariantAndBranchAsync(v.Id, _branchProvider.GetCurrentBranchId());
+            var stock = await _uow.Stocks.GetByVariantAndBranchAsync(v.Id, branchId);
             dto.StockQuantity = stock?.Quantity ?? 0;
             result.Add(dto);
         }
@@ -38,14 +43,15 @@ public class ProductService : IProductService
     // ── Get By Id ─────────────────────────────────────────────────────────
     public async Task<ProductDto?> GetByIdAsync(int id)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var product = await _uow.Products.GetByIdWithDetailsAsync(id);
-        if (product == null) return null;
+        if (product == null || product.BranchId != branchId) return null;
 
         var dto = _mapper.Map<ProductDto>(product);
 
         foreach (var variant in dto.Variants)
         {
-            var stock = await _uow.Stocks.GetByVariantIdAsync(variant.Id);
+            var stock = await _uow.Stocks.GetByVariantAndBranchAsync(variant.Id, branchId);
             variant.StockQuantity = stock?.Quantity ?? 0;
         }
 
@@ -67,6 +73,7 @@ public class ProductService : IProductService
             CategoryId = dto.CategoryId,
             SubCategoryId = dto.SubCategoryId,
             BrandId = dto.BrandId,
+            BranchId = _branchProvider.GetCurrentBranchId(),
             CostPrice = dto.CostPrice,
             RetailPrice = dto.RetailPrice,
             WholesalePrice = dto.WholesalePrice,
@@ -85,12 +92,7 @@ public class ProductService : IProductService
         // Variants
         if (dto.Variants?.Any() == true)
         {
-            var branches = (await _uow.Branches.GetAllAsync())
-                .Where(b => b.IsActive)
-                .ToList();
-
-            if (!branches.Any())
-                return ServiceResult<ProductDto>.Fail("No active branch found. Please create a branch first.");
+            var branchId = _branchProvider.GetCurrentBranchId();
 
             foreach (var varDto in dto.Variants)
             {
@@ -112,19 +114,15 @@ public class ProductService : IProductService
                 await _uow.ProductVariants.AddAsync(variant);
                 await _uow.SaveChangesAsync();
 
-                // Initial stock record (0) — one per active branch
-                foreach (var branch in branches)
+                // Initial stock record (0) — current branch only
+                await _uow.Stocks.AddAsync(new Stock
                 {
-                    var stock = new Stock
-                    {
-                        ProductVariantId = variant.Id,
-                        BranchId = branch.Id,
-                        Quantity = 0,
-                        CreatedBy = createdBy,
-                        UpdatedBy = createdBy
-                    };
-                    await _uow.Stocks.AddAsync(stock);
-                }
+                    ProductVariantId = variant.Id,
+                    BranchId = branchId,
+                    Quantity = 0,
+                    CreatedBy = createdBy,
+                    UpdatedBy = createdBy
+                });
                 await _uow.SaveChangesAsync();
             }
         }
@@ -138,9 +136,10 @@ public class ProductService : IProductService
     public async Task<BulkActionResultDto> BulkUpdatePriceAsync(BulkPriceUpdateDto dto, int userId)
     {
         var result = new BulkActionResultDto();
+        var branchId = _branchProvider.GetCurrentBranchId();
 
         var products = await _uow.Products.GetQueryable()
-            .Where(p => dto.ProductIds.Contains(p.Id) && !p.IsDeleted)
+            .Where(p => dto.ProductIds.Contains(p.Id) && !p.IsDeleted && p.BranchId == branchId)
             .ToListAsync();
 
         foreach (var product in products)
@@ -183,8 +182,9 @@ public class ProductService : IProductService
     public async Task<BulkActionResultDto> BulkToggleStatusAsync(BulkStatusUpdateDto dto, int userId)
     {
         var result = new BulkActionResultDto();
+        var branchId = _branchProvider.GetCurrentBranchId();
         var products = await _uow.Products.GetQueryable()
-            .Where(p => dto.Ids.Contains(p.Id) && !p.IsDeleted)
+            .Where(p => dto.Ids.Contains(p.Id) && !p.IsDeleted && p.BranchId == branchId)
             .ToListAsync();
 
         foreach (var product in products)
@@ -206,8 +206,9 @@ public class ProductService : IProductService
     public async Task<BulkActionResultDto> BulkDeleteAsync(BulkDeleteDto dto)
     {
         var result = new BulkActionResultDto();
+        var branchId = _branchProvider.GetCurrentBranchId();
         var products = await _uow.Products.GetQueryable()
-            .Where(p => dto.Ids.Contains(p.Id) && !p.IsDeleted)
+            .Where(p => dto.Ids.Contains(p.Id) && !p.IsDeleted && p.BranchId == branchId)
             .ToListAsync();
 
         foreach (var product in products)
@@ -235,8 +236,9 @@ public class ProductService : IProductService
     public async Task<BulkActionResultDto> BulkUpdateCategoryAsync(BulkCategoryUpdateDto dto, int userId)
     {
         var result = new BulkActionResultDto();
+        var branchId = _branchProvider.GetCurrentBranchId();
         var products = await _uow.Products.GetQueryable()
-            .Where(p => dto.ProductIds.Contains(p.Id) && !p.IsDeleted)
+            .Where(p => dto.ProductIds.Contains(p.Id) && !p.IsDeleted && p.BranchId == branchId)
             .ToListAsync();
 
         foreach (var product in products)
@@ -260,8 +262,9 @@ public class ProductService : IProductService
     public async Task<ServiceResult<ProductDto>> UpdateAsync(
         int id, UpdateProductDto dto, int updatedBy)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var product = await _uow.Products.GetByIdAsync(id);
-        if (product == null)
+        if (product == null || product.BranchId != branchId)
             return ServiceResult<ProductDto>.Fail("Product not found.");
 
         product.Name = dto.Name;
@@ -294,8 +297,9 @@ public class ProductService : IProductService
     // ── Delete ────────────────────────────────────────────────────────────
     public async Task<ServiceResult> DeleteAsync(int id)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var product = await _uow.Products.GetByIdAsync(id);
-        if (product == null)
+        if (product == null || product.BranchId != branchId)
             return ServiceResult.Fail("Product not found.");
 
         // Soft delete
@@ -308,8 +312,9 @@ public class ProductService : IProductService
     // ── Toggle Status ─────────────────────────────────────────────────────
     public async Task<ServiceResult> ToggleStatusAsync(int id, int updatedBy)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var product = await _uow.Products.GetByIdAsync(id);
-        if (product == null)
+        if (product == null || product.BranchId != branchId)
             return ServiceResult.Fail("Product not found.");
 
         product.IsActive = !product.IsActive;
@@ -327,7 +332,11 @@ public class ProductService : IProductService
     public async Task<ServiceResult<ProductVariantDto>> AddVariantAsync(
     int productId, CreateProductVariantDto dto, int createdBy)
     {
-        // Duplicate check
+        var branchId = _branchProvider.GetCurrentBranchId();
+        var product = await _uow.Products.GetByIdAsync(productId);
+        if (product == null || product.BranchId != branchId)
+            return ServiceResult<ProductVariantDto>.Fail("Product not found.");
+
         var existing = (await _uow.ProductVariants.GetAllAsync())
             .FirstOrDefault(v => v.ProductId == productId &&
                                  v.SizeId == dto.SizeId &&
@@ -337,13 +346,6 @@ public class ProductService : IProductService
         if (existing != null)
             return ServiceResult<ProductVariantDto>.Fail(
                 "This Size + Color combination already exists.");
-
-        var branches = (await _uow.Branches.GetAllAsync())
-            .Where(b => b.IsActive)
-            .ToList();
-
-        if (!branches.Any())
-            return ServiceResult<ProductVariantDto>.Fail("No active branch found. Please create a branch first.");
 
         var barcode = _barcode.GenerateBarcodeNumber();
 
@@ -363,19 +365,15 @@ public class ProductService : IProductService
         await _uow.ProductVariants.AddAsync(variant);
         await _uow.SaveChangesAsync();
 
-        // Stock record — one per active branch
-        foreach (var branch in branches)
+        // Stock record — current branch only
+        await _uow.Stocks.AddAsync(new Stock
         {
-            var stock = new Stock
-            {
-                ProductVariantId = variant.Id,
-                BranchId = branch.Id,
-                Quantity = 0,
-                CreatedBy = createdBy,
-                UpdatedBy = createdBy
-            };
-            await _uow.Stocks.AddAsync(stock);
-        }
+            ProductVariantId = variant.Id,
+            BranchId = branchId,
+            Quantity = 0,
+            CreatedBy = createdBy,
+            UpdatedBy = createdBy
+        });
         await _uow.SaveChangesAsync();
 
         return ServiceResult<ProductVariantDto>.Ok(
@@ -386,12 +384,13 @@ public class ProductService : IProductService
     // ── Delete Variant ────────────────────────────────────────────────────
     public async Task<ServiceResult> DeleteVariantAsync(int variantId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var variant = await _uow.ProductVariants.GetByIdAsync(variantId);
-        if (variant == null)
+        if (variant == null || variant.Product == null || variant.Product.BranchId != branchId)
             return ServiceResult.Fail("Variant not found.");
 
         // Stock record আগে delete
-        var stock = await _uow.Stocks.GetByVariantIdAsync(variantId);
+        var stock = await _uow.Stocks.GetByVariantAndBranchAsync(variantId, branchId);
         if (stock != null)
         {
             _uow.Stocks.Remove(stock);
@@ -407,8 +406,9 @@ public class ProductService : IProductService
     // ── Regenerate Barcode ────────────────────────────────────────────────
     public async Task<ServiceResult> RegenerateBarcodeAsync(int variantId, int updatedBy)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var variant = await _uow.ProductVariants.GetByIdAsync(variantId);
-        if (variant == null)
+        if (variant == null || variant.Product == null || variant.Product.BranchId != branchId)
             return ServiceResult.Fail("Variant not found.");
 
         variant.Barcode = _barcode.GenerateBarcodeNumber();
@@ -425,8 +425,9 @@ public class ProductService : IProductService
     // ✅ Return type: ProductVariantDto? (interface match)
     public async Task<ProductVariantDto?> GetVariantByBarcodeAsync(string barcode)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var variants = await _uow.ProductVariants.GetAllWithDetailsAsync();
-        var v = variants.FirstOrDefault(x => x.Barcode == barcode && x.IsActive);
+        var v = variants.FirstOrDefault(x => x.Barcode == barcode && x.IsActive && x.Product.BranchId == branchId);
         if (v == null) return null;
 
         var dto = _mapper.Map<ProductVariantDto>(v);
@@ -445,17 +446,19 @@ public class ProductService : IProductService
         if (string.IsNullOrWhiteSpace(keyword))
             return Enumerable.Empty<ProductVariantDto>();
 
+        var branchId = _branchProvider.GetCurrentBranchId();
         var variants = await _uow.ProductVariants.GetAllWithDetailsAsync();
 
         var matched = variants
             .Where(v => v.IsActive &&
                         v.Product.IsActive &&
                         !v.IsDeleted &&
+                        v.Product.BranchId == branchId &&
                        (v.Product.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                        v.Product.SKU.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                        v.Barcode.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                        v.Size.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                        v.Color.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                         v.Product.SKU.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                         v.Barcode.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                         v.Size.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                         v.Color.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
         var result = new List<ProductVariantDto>();

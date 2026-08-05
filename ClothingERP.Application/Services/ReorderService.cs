@@ -5,7 +5,7 @@ public class ReorderService : IReorderService
     private readonly IUnitOfWork _uow;
 
     public ReorderService(IUnitOfWork uow) => _uow = uow;
-
+    private readonly ICurrentBranchProvider _branchProvider;
     // ── Settings ──────────────────────────────────────────────────────────
     public async Task<ReorderSettingsDto> GetSettingsAsync()
     {
@@ -43,16 +43,18 @@ public class ReorderService : IReorderService
         return ServiceResult.Ok("Reorder settings updated successfully.");
     }
 
-    // ── মূল Algorithm: Sales Velocity হিসাব করে Suggestion তৈরি করো ──────────
+   
     public async Task<List<ReorderSuggestionDto>> GetSuggestionsAsync()
     {
         var settings = await GetSettingsAsync();
         var since = DateTime.UtcNow.AddDays(-settings.AnalysisPeriodDays);
 
-        // ── Step 1: Analysis period এর সব sold item একসাথে আনো ──────────────
+        
+        var branchId = _branchProvider.GetCurrentBranchId();
         var soldItems = await _uow.SalesInvoices.GetQueryable()
             .Include(i => i.Items)
             .Where(i => !i.IsDeleted && i.Status != InvoiceStatus.Cancelled && !i.IsHold &&
+                        i.BranchId == branchId &&
                         i.InvoiceDate >= since)
             .SelectMany(i => i.Items)
             .GroupBy(item => item.ProductVariantId)
@@ -74,7 +76,7 @@ public class ReorderService : IReorderService
 
         var suggestions = new List<ReorderSuggestionDto>();
 
-        foreach (var variant in variants.Where(v => v.IsActive && v.Product.IsActive))
+        foreach (var variant in variants.Where(v => v.IsActive && v.Product.IsActive && v.Product.BranchId == branchId))
         {
             if (!velocityMap.TryGetValue(variant.Id, out var dailyVelocity)) continue;
             if (dailyVelocity < settings.MinDailyVelocity) continue;
@@ -138,6 +140,7 @@ public class ReorderService : IReorderService
 
     public async Task<ServiceResult<int>> GeneratePurchaseOrderAsync(GeneratePOFromSuggestionsDto dto, int userId)
     {
+        var branchId = _branchProvider.GetCurrentBranchId();
         var supplier = await _uow.Suppliers.GetByIdAsync(dto.SupplierId);
         if (supplier == null) return ServiceResult<int>.Fail("Supplier not found.");
 
@@ -150,6 +153,7 @@ public class ReorderService : IReorderService
             OrderDate = DateTime.UtcNow,
             Status = PurchaseOrderStatus.Draft,
             Notes = "Smart Reorder Suggestion থেকে স্বয়ংক্রিয়ভাবে তৈরি",
+            BranchId = branchId,
             CreatedBy = userId
         };
         await _uow.PurchaseOrders.AddAsync(po);
